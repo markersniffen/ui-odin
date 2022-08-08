@@ -1,5 +1,7 @@
 package snui
 
+import "core:fmt"
+
 update :: proc()
 {
 	quad : Quad
@@ -13,6 +15,6 @@ update :: proc()
 	if state.mouse.left == .CLICK do color = {1,0,0,1}
 	if state.mouse.right == .CLICK do color = {0,0,1,1}
 
-	push_quad(quad, {0,0,0,0}, color, 2)
+	push_quad(quad, {0,0,0,0}, color, 0)
 }
 

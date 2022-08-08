@@ -47,10 +47,10 @@ opengl_init :: proc()
 render :: proc()
 {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
-	gl.ClearColor(0, 0, 0, 1)
+	gl.ClearColor(0, 0, 0.2, 1)
 	gl.Viewport(0, 0, i32(state.window_size.x), i32(state.window_size.y))
 	gl.Scissor(0, 0, i32(state.window_size.x), i32(state.window_size.y))
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(state.render.shader)
 	// gl.BindTexture(gl.TEXTURE_2D, state.Show.State.glState.STBTexture)
@@ -71,7 +71,6 @@ render :: proc()
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, state.render.index_index * size_of(u32), &state.render.indices[0], gl.STATIC_DRAW)
 
 	gl.DrawElements(gl.TRIANGLES, i32(state.render.index_index), gl.UNSIGNED_INT, nil)
-
 	glfw.SwapBuffers(state.window)
 
 	state.render.vertex_index = 0
@@ -193,8 +192,7 @@ void main()
 	uv_coords = uv;
 	vertex_color = color;
 	texture_mix = mix_texture;
-	gl_Position.xyz = position;
-    //gl_Position.w = 1;
+	gl_Position.xyzw = vec4(position, 1);
 }
 `
 
