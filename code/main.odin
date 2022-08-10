@@ -57,10 +57,10 @@ main :: proc() {
 	}
 }
 
-read_key :: proc(Key: ^bool) -> bool
+read_key :: proc(key: ^bool) -> bool
 {
-	if Key^ {
-		Key^ = false
+	if key^ {
+		key^ = false
 		return true
 	} else {
 		return false
