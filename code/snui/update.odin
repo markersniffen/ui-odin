@@ -9,6 +9,7 @@ update :: proc()
 
 	if state.mouse.left == .CLICK do color = {1,0,0,1}
 	if state.mouse.right == .CLICK do color = {0,0,1,1}
+	if state.mouse.middle == .CLICK do color = {0,1,1,1}
 
 	push_quad(quad, color, 2.0)
 }

@@ -47,7 +47,7 @@ opengl_init :: proc()
 render :: proc()
 {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
-	gl.ClearColor(0, 0, 0.2, 1)
+	gl.ClearColor(0, 0, 0, 1)
 	gl.Viewport(0, 0, i32(state.window_size.x), i32(state.window_size.y))
 	gl.Scissor(0, 0, i32(state.window_size.x), i32(state.window_size.y))
 	gl.Clear(gl.COLOR_BUFFER_BIT)
@@ -84,6 +84,7 @@ render :: proc()
 push_quad :: proc(quad:Quad, c:v4, border: f32=0.0, uv:Quad={0,0,0,0})
 {
 	vertex_arrays: [4][40]f32
+
 	if border == 0
 	{
 		vertex_arrays[0]  = { 
@@ -117,7 +118,6 @@ push_quad :: proc(quad:Quad, c:v4, border: f32=0.0, uv:Quad={0,0,0,0})
 		copy(state.render.indices[state.render.index_index:state.render.index_index+6], indices[:])
 		state.render.index_index += 6
 		state.render.quad_index += 1
-		fmt.println("Vertex", i)
 	}
 }
 
@@ -142,7 +142,6 @@ void main()
 	uv_coords = uv;
 	vertex_color = color;
 	texture_mix = mix_texture;
-	// gl_Position.xyzw = vec4(position.x, position.y, 0, 1);
 	gl_Position.xyzw = vec4((position.x-window_res.x)/window_res.x, (position.y - window_res.y)/(-window_res.y), position.z, 1);
 }
 `

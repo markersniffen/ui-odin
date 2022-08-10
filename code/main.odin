@@ -93,49 +93,30 @@ keyboard_callback :: proc(Window: glfw.WindowHandle, key: int, scancode: int, ac
 	
 	switch key
 	{
-		case glfw.KEY_LEFT:
-		process_keyboard_input(action, &state.keys.left, true)
-		case glfw.KEY_RIGHT:
-		process_keyboard_input(action, &state.keys.right, true)
-		case glfw.KEY_UP:
-		process_keyboard_input(action, &state.keys.up, true)
-		case glfw.KEY_DOWN:
-		process_keyboard_input(action, &state.keys.down, true)
+		case glfw.KEY_LEFT:				process_keyboard_input(action, &state.keys.left, true)
+		case glfw.KEY_RIGHT:			process_keyboard_input(action, &state.keys.right, true)
+		case glfw.KEY_UP:				process_keyboard_input(action, &state.keys.up, true)
+		case glfw.KEY_DOWN:				process_keyboard_input(action, &state.keys.down, true)
 		
-		case glfw.KEY_ESCAPE:
-		process_keyboard_input(action, &state.keys.escape, true)
-		case glfw.KEY_TAB:
-		process_keyboard_input(action, &state.keys.tab, false)
-		case glfw.KEY_ENTER:
-		process_keyboard_input(action, &state.keys.enter, true)
-		case glfw.KEY_SPACE:
-		process_keyboard_input(action, &state.keys.space, true)
-		case glfw.KEY_BACKSPACE:
-		process_keyboard_input(action, &state.keys.backspace, true)
-		case glfw.KEY_DELETE:
-		process_keyboard_input(action, &state.keys.delete, true)
+		case glfw.KEY_ESCAPE:			process_keyboard_input(action, &state.keys.escape, true)
+		case glfw.KEY_TAB:				process_keyboard_input(action, &state.keys.tab, false)
+		case glfw.KEY_ENTER:		 	process_keyboard_input(action, &state.keys.enter, true)
+		case glfw.KEY_SPACE:			process_keyboard_input(action, &state.keys.space, true)
+		case glfw.KEY_BACKSPACE:		process_keyboard_input(action, &state.keys.backspace, true)
+		case glfw.KEY_DELETE:			process_keyboard_input(action, &state.keys.delete, true)
 		
-		case glfw.KEY_KP_ENTER:
-		process_keyboard_input(action, &state.keys.enter, true)
-		case glfw.KEY_KP_SUBTRACT:
-		process_keyboard_input(action, &state.keys.n_minus, false)
-		case glfw.KEY_KP_ADD:
-		process_keyboard_input(action, &state.keys.n_plus, false)
+		case glfw.KEY_KP_ENTER:			process_keyboard_input(action, &state.keys.enter, true)
+		case glfw.KEY_KP_SUBTRACT:		process_keyboard_input(action, &state.keys.n_minus, false)
+		case glfw.KEY_KP_ADD:			process_keyboard_input(action, &state.keys.n_plus, false)
 		
-		case glfw.KEY_LEFT_ALT:
-		process_keyboard_input(action, &state.keys.alt, false)
-		case glfw.KEY_RIGHT_ALT:
-		process_keyboard_input(action, &state.keys.alt, false)
+		case glfw.KEY_LEFT_ALT:			process_keyboard_input(action, &state.keys.alt, false)
+		case glfw.KEY_RIGHT_ALT:		process_keyboard_input(action, &state.keys.alt, false)
 		
-		case glfw.KEY_LEFT_CONTROL:
-		process_keyboard_input(action, &state.keys.ctrl, false)
-		case glfw.KEY_RIGHT_CONTROL:
-		process_keyboard_input(action, &state.keys.ctrl, false)
+		case glfw.KEY_LEFT_CONTROL:		process_keyboard_input(action, &state.keys.ctrl, false)
+		case glfw.KEY_RIGHT_CONTROL:	process_keyboard_input(action, &state.keys.ctrl, false)
 		
-		case glfw.KEY_LEFT_SHIFT:
-		process_keyboard_input(action, &state.keys.shift, false)
-		case glfw.KEY_RIGHT_SHIFT:
-		process_keyboard_input(action, &state.keys.shift, false)
+		case glfw.KEY_LEFT_SHIFT:		process_keyboard_input(action, &state.keys.shift, false)
+		case glfw.KEY_RIGHT_SHIFT:		process_keyboard_input(action, &state.keys.shift, false)
 	}
 }
 
@@ -155,21 +136,12 @@ scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64)
 mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods: int)
 {
 	using snui
-	if button == int(glfw.MOUSE_BUTTON_LEFT)
+	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }
+	for mouse_button, index in mouse_buttons
 	{
-		if action == int(glfw.PRESS) do state.mouse.left = .CLICK
-		if action == int(glfw.RELEASE) do state.mouse.left = .UP
-	}
-	
-	if button == int(glfw.MOUSE_BUTTON_MIDDLE)
-	{
-		if action == int(glfw.PRESS) do state.mouse.middle = .CLICK
-		if action == int(glfw.RELEASE) do state.mouse.middle = .UP
-	}
-	
-	if button == int(glfw.MOUSE_BUTTON_RIGHT)
-	{
-		if action == int(glfw.PRESS) do state.mouse.right = .CLICK
-		if action == int(glfw.RELEASE) do state.mouse.right = .UP
+		if button == index {
+			if action == int(glfw.PRESS) do mouse_button^ = .CLICK
+			if action == int(glfw.RELEASE) do mouse_button^ = .UP
+		}
 	}
 }
