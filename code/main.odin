@@ -39,6 +39,7 @@ main :: proc() {
 	state.window = window
 
 	opengl_init()
+	stb_font_init()
 
 	for !glfw.WindowShouldClose(window)
 	{
@@ -90,7 +91,7 @@ process_keyboard_input :: proc(action: int, key_state: ^bool, repeat: bool)
 keyboard_callback :: proc(Window: glfw.WindowHandle, key: int, scancode: int, action: int, mods: int)
 {
 	using snui, fmt
-	
+
 	switch key
 	{
 		case glfw.KEY_LEFT:				process_keyboard_input(action, &state.keys.left, true)
