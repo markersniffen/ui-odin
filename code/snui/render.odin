@@ -7,8 +7,8 @@ import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
 import stb "vendor:stb/truetype"
 
-UI_TEXT_HEIGHT :: 16
-UI_HEIGHT :: 16
+UI_TEXT_HEIGHT :: 20
+UI_HEIGHT :: 20
 UI_MARGIN :: 4
 
 RED :: v4 {1,0,0,1}
@@ -64,7 +64,6 @@ stb_font_init :: proc()
 	using stb, mem, fmt
 	NUM_CHARS :: 96
 	
-	
 	data, data_ok := os.read_entire_file("fonts/Roboto-Regular.ttf")
 	defer delete(data)
 	if !data_ok do fmt.println("failed to load font file")
@@ -118,26 +117,24 @@ render :: proc()
 	state.render.quad_index = 0
 }
 
-draw_text :: proc(text: string, quad: Quad)
+draw_text :: proc(text: string, pt: v2, offset: v2 = {0,0})
 {
 	using stb
-	left_margin := f32(quad.l + 2)
-	baseline := f32(quad.b - 5)
 
-	x:= left_margin
-	y:= baseline
-	q: aligned_quad
-	charquad : Quad
+	x:= pt.x + offset.x
+	y:= pt.y + offset.y
+	stb_quad: aligned_quad
 
 	for letter in text
 	{
 		if letter == 10
 		{
-			x = left_margin
+			x = pt.x
 			y += UI_HEIGHT
 		} else {
-			GetBakedQuad(raw_data(state.render.char_data), 512, 512, i32(letter) - 32, &x, &y, &q, true)
-			push_quad({q.x0, q.y0, q.x1, q.y1}, WHITE, 0, {q.s0, q.t1, q.s1, q.t0}, 1)
+			GetBakedQuad(raw_data(state.render.char_data), 512, 512, i32(letter) - 32, &x, &y, &stb_quad, true)
+			char_quad : Quad = {stb_quad.x0, stb_quad.y0, stb_quad.x1, stb_quad.y1}
+			push_quad_font(char_quad, WHITE, {stb_quad.s0, stb_quad.t1, stb_quad.s1, stb_quad.t0})
 		}
 	}
 }
@@ -223,27 +220,34 @@ draw_text :: proc(text: string, quad: Quad)
 
 // }
 
-push_quad :: proc(quad:Quad, c:v4={1,1,1,1}, border: f32=0.0, uv:Quad={0,0,0,0}, mix:f32=0)
+// ! filled solid color rect
+// ! filled gradient rect
+// ! border
+// rounded?
+
+//					 quad       color           border-thick     uv coords          
+
+push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1}, cD:v4={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	mix:f32=0)
 {
 	vertex_arrays: [4][40]f32
 
 	if border == 0
 	{
 		vertex_arrays[0]  = { 
-				quad.l,quad.b,0,	uv.l,uv.t,	c[0],c[1],c[2],c[3],	mix,
-				quad.l,quad.t,0,	uv.l,uv.b,	c[0],c[1],c[2],c[3],	mix,
-				quad.r,quad.t,0,	uv.r,uv.b,	c[0],c[1],c[2],c[3],	mix,
-				quad.r,quad.b,0,	uv.r,uv.t,	c[0],c[1],c[2],c[3],	mix,
+				quad.l,quad.b,0,	uv.l,uv.t,	cC[0],cC[1],cC[2],cC[3],	mix,
+				quad.l,quad.t,0,	uv.l,uv.b,	cA[0],cA[1],cA[2],cA[3],	mix,
+				quad.r,quad.t,0,	uv.r,uv.b,	cB[0],cB[1],cB[2],cB[3],	mix,
+				quad.r,quad.b,0,	uv.r,uv.t,	cD[0],cD[1],cD[2],cD[3],	mix,
 		}
 	} else {
 
 		inner: Quad = {quad.l + border,quad.t + border,quad.r - border,quad.b - border,}
 
 		vertex_arrays = {
-			{ quad.l,quad.t,0, 0,0, c[0],c[1],c[2],c[3], 0,	quad.r,quad.t,0, 0,0, c[0],c[1],c[2],c[3], 0,	inner.r,inner.t,0, 0,0, c[0],c[1],c[2],c[3], 0,	inner.l,inner.t,0, 0,0, c[0],c[1],c[2],c[3], mix},
-			{ quad.r,quad.t,0, 0,0, c[0],c[1],c[2],c[3], 0,	quad.r,quad.b,0, 0,0, c[0],c[1],c[2],c[3], 0,	inner.r,inner.b,0, 0,0, c[0],c[1],c[2],c[3], 0,	inner.r,inner.t,0, 0,0, c[0],c[1],c[2],c[3], mix},
-			{ quad.r,quad.b,0, 0,0, c[0],c[1],c[2],c[3], 0,	quad.l,quad.b,0, 0,0, c[0],c[1],c[2],c[3], 0,	inner.l,inner.b,0, 0,0, c[0],c[1],c[2],c[3], 0,	inner.r,inner.b,0, 0,0, c[0],c[1],c[2],c[3], mix},
-			{ quad.l,quad.b,0, 0,0, c[0],c[1],c[2],c[3], 0,	quad.l,quad.t,0, 0,0, c[0],c[1],c[2],c[3], 0,	inner.l,inner.t,0, 0,0, c[0],c[1],c[2],c[3], 0,	inner.l,inner.b,0, 0,0, c[0],c[1],c[2],c[3], mix},
+			{ quad.l,quad.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	quad.r,quad.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	inner.r,inner.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	inner.l,inner.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], mix},
+			{ quad.r,quad.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	quad.r,quad.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	inner.r,inner.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	inner.r,inner.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], mix},
+			{ quad.r,quad.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	quad.l,quad.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	inner.l,inner.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	inner.r,inner.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], mix},
+			{ quad.l,quad.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	quad.l,quad.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	inner.l,inner.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	inner.l,inner.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], mix},
 		}
 	}
 		
@@ -261,6 +265,57 @@ push_quad :: proc(quad:Quad, c:v4={1,1,1,1}, border: f32=0.0, uv:Quad={0,0,0,0},
 		state.render.index_index += 6
 		state.render.quad_index += 1
 	}
+}
+
+push_quad_solid :: proc(quad: Quad, color:v4)
+{
+	push_quad(quad,	color, color, color, color, 0, {0,0,0,0}, 0)
+}
+
+push_quad_gradient_h :: proc(quad: Quad, color_left:v4, color_right:v4)
+{
+	push_quad(quad,	color_left, color_right, color_left, color_right, 0, {0,0,0,0}, 0)
+}
+
+push_quad_gradient_v :: proc(quad: Quad, color_top:v4, color_bottom:v4)
+{
+	push_quad(quad,	color_top, color_top, color_bottom, color_bottom, 0, {0,0,0,0}, 0)
+}
+
+push_quad_font :: proc(quad: Quad, color:v4, uv:Quad)
+{
+	push_quad(quad,	color, color, color, color, 0, uv, 1)
+}
+
+pt_in_quad 	:: proc(pt: v2, quad: Quad) -> bool
+{
+	result := false;
+	if pt.x > quad.l && pt.y > quad.t && pt.x < quad.r && pt.y < quad.b do result = true;
+	return result;
+}
+
+quad_in_quad	:: proc(quad_a, quad_b: Quad) -> bool
+{
+	result := false
+	if pt_in_quad({quad_a.l,quad_a.t}, quad_b) || pt_in_quad({quad_a.r, quad_a.b}, quad_b) do result = true
+	return result
+}
+
+quad_full_in_quad	:: proc(quad_a, quad_b: Quad) -> bool
+{
+	result := false
+	if pt_in_quad({quad_a.l, quad_a.t}, quad_b) && pt_in_quad({quad_a.r, quad_a.b}, quad_b) do result = true
+	return result
+}
+
+quad_clamp_to_quad :: proc (quad, quad_b: Quad) -> Quad
+{
+	result: Quad = quad
+	result.l = clamp(quad.l, quad_b.l, quad_b.r)
+	result.t = clamp(quad.t, quad_b.t, quad_b.b)
+	result.r = clamp(quad.r, quad_b.l, quad_b.r)
+	result.b = clamp(quad.b, quad_b.t, quad_b.b)
+	return result
 }
 
 // SHADER
@@ -302,6 +357,9 @@ uniform sampler2D tex;
 void main()
 {
 	vec4 Mul = vec4((vertex_color.xyz * vertex_color.aaa), vertex_color.a);
+
+	// vec4 texs = texture(tex, uv_coords);
+	// FragColor = vec4((vertex_color.rgb * texture_mix) + texs.rgb, texs.a);
 
 	if (texture_mix == 0)
 	{
