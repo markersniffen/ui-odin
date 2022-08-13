@@ -27,19 +27,19 @@ main :: proc() {
 		return
 	}
 
-	state = new(State)
-	defer free(state)
 	glfw.MakeContextCurrent(window)
 	glfw.SetKeyCallback(window, cast(glfw.KeyProc)keyboard_callback)
 	glfw.SetMouseButtonCallback(window, cast(glfw.MouseButtonProc)mouse_callback)
 	glfw.SetScrollCallback(window, cast(glfw.ScrollProc)scroll_callback)
 	glfw.SetCharCallback(window, cast(glfw.CharProc)typing_callback)
 	
+	state = new(State)
+	defer free(state)
 	glfw.SetWindowUserPointer(window, state)
 	state.window = window
 
 	opengl_init()
-	stb_font_init()
+	ui_init()
 
 	for !glfw.WindowShouldClose(window)
 	{

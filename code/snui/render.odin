@@ -5,20 +5,18 @@ import "core:mem"
 import "core:os"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
-import stb "vendor:stb/truetype"
 
-UI_TEXT_HEIGHT :: 20
-UI_HEIGHT :: 20
-UI_MARGIN :: 4
+/*
 
-RED :: v4 {1,0,0,1}
-WHITE :: v4 {1,1,1,1}
+This rendering 
+
+*/
 
 Gl :: struct
 {
 	shader: u32,
-	texture: u32,
-	char_data: []stb.bakedchar,
+	font_texture: u32,
+	font_texture_size: i32,
 
 	vertices: []f32,
 	vertex_buffer: u32,
@@ -54,30 +52,20 @@ opengl_init :: proc()
 	state.render.shader, shader_success = gl.load_shaders_source(UIMAIN_VS, UIMAIN_FRAG)
 	if !shader_success do fmt.println("UI shader did not compile!")
 
-	gl.GenTextures(1, &state.render.texture)
-	gl.BindTexture(gl.TEXTURE_2D, state.render.texture)
+	gl.GenTextures(1, &state.render.font_texture)
+	gl.BindTexture(gl.TEXTURE_2D, state.render.font_texture)
 	gl.GenerateMipmap(gl.TEXTURE_2D)
+
+	state.render.font_texture_size = 512 // size of font bitmap
 }
 
-stb_font_init :: proc()
+opengl_load_texture :: proc(texture: u32, image: rawptr) -> bool
 {
-	using stb, mem, fmt
-	NUM_CHARS :: 96
-	
-	data, data_ok := os.read_entire_file("fonts/Roboto-Regular.ttf")
-	defer delete(data)
-	if !data_ok do fmt.println("failed to load font file")
-
-	image:= alloc(512*512)
-	defer free(image)
-	char_data, char_data_ok:= make([]bakedchar, NUM_CHARS)
-	state.render.char_data = char_data
-
-	BakeFontBitmap(raw_data(data), 0, UI_TEXT_HEIGHT, cast([^]u8)image, 512, 512, 32, NUM_CHARS, raw_data(char_data))
-
-	gl.BindTexture(gl.TEXTURE_2D, state.render.texture)
+	gl.BindTexture(gl.TEXTURE_2D, texture)
   	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 512,512, 0, gl.ALPHA, gl.UNSIGNED_BYTE, image)
   	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  	if gl.GetError() != 0 do return false
+  	return true
 }
 
 render :: proc()
@@ -117,115 +105,6 @@ render :: proc()
 	state.render.quad_index = 0
 }
 
-draw_text :: proc(text: string, pt: v2, offset: v2 = {0,0})
-{
-	using stb
-
-	x:= pt.x + offset.x
-	y:= pt.y + offset.y
-	stb_quad: aligned_quad
-
-	for letter in text
-	{
-		if letter == 10
-		{
-			x = pt.x
-			y += UI_HEIGHT
-		} else {
-			GetBakedQuad(raw_data(state.render.char_data), 512, 512, i32(letter) - 32, &x, &y, &stb_quad, true)
-			char_quad : Quad = {stb_quad.x0, stb_quad.y0, stb_quad.x1, stb_quad.y1}
-			push_quad_font(char_quad, WHITE, {stb_quad.s0, stb_quad.t1, stb_quad.s1, stb_quad.t0})
-		}
-	}
-}
-
-// junk :: proc(Text: string, quad: Quad, Justified: int, Editing:= false)
-// {
-// 	using stb, fmt
-// 	LeftMargin := f32(quad.l + 2)
-// 	Baseline := f32(quad.b - 5)
-
-// 	x:= LeftMargin
-// 	y:= Baseline
-// 	q: aligned_quad
-
-// 	QuadHeight:f32
-// 	HalfWidth :f32
-// 	LastPlace :f32
-
-// 	TextQuad := quad
-// 	Lines: f32 = 0
-// 	for Letter in Text do if Letter == 10 do Lines += 1
-// 	TextQuad.b += UI_HEIGHT * Lines
-
-// 	if Editing do push_quad(TextQuad, {0.5, 0, 0, 0.5}, 2)
-
-// 	// NOTE calculate offset for center justified text
-// 	if Justified == 1
-// 	{
-// 		QuadWidth = f32((quad.r - quad.l)/2)
-// 		QuadHeight = f32((quad.b - quad.t)/2)
-// 		for Letter, i in Text
-// 		{
-// 			GetBakedQuad(raw_data(state.render.char_data), 512, 512, i32(Letter) - 32, &x, &y, &q, true)
-// 			if i == 0 do LastPlace = q.x0
-// 			if x > f32(quad.r - 10) do break
-// 			HalfWidth += (q.x1 - LastPlace)/2
-// 			LastPlace = q.x1
-// 		}
-// 		x = LeftMargin - 2
-// 		y = Baseline
-// 	}
-
-// 	Cursor:v4
-
-// 	// NOTE draw text
-// 	for Letter, LetterIndex in Text
-// 	{
-// 		CharQuad: Quad
-// 		if Letter == 10
-// 		{
-// 			x = LeftMargin
-// 			y += UI_HEIGHT
-// 			CharQuad = {f32(x), f32(y) - UI_HEIGHT, f32(x) + UI_MARGIN, f32(y)}
-// 		} else {
-// 			GetBakedQuad(raw_data(state.render.char_data), 512, 512, i32(Letter) - 32, &x, &y, &q, true)
-// 			if x > f32(quad.r - 10) // stop drawing text that goes out of bounds
-// 			{
-// 				GetBakedQuad(raw_data(state.render.char_data), 512, 512, i32('.') - 32, &x, &y, &q, true)
-// 				push_quad({q.x0 - HalfWidth + QuadWidth, q.y0, q.x1 - HalfWidth + QuadWidth, q.y1}, WHITE, 0, {q.s0, q.t1, q.s1, q.t0})
-// 				break
-// 			}
-// 			if Letter == 32 // if keystroke is spacebar, manually calculate a wide enough quad for cursor
-// 			{
-// 				CharQuad= {q.x0 - HalfWidth + QuadWidth, q.y0, q.x0 + UI_MARGIN - HalfWidth + QuadWidth, q.y1}
-// 			} else {
-// 				CharQuad= {q.x0 - HalfWidth + QuadWidth, q.y0, q.x1 - HalfWidth + QuadWidth, q.y1}
-// 			}
-// 			push_quad(CharQuad, {1,1,1,1}, 0, {q.s0, q.t1, q.s1, q.t0})
-// 			TextQuad.b = max(TextQuad.b, f32(y))
-// 		}
-
-// 		if Editing
-// 		{
-// 			// if LetterIndex+1 == Show.State.UICharIndex do Cursor = {CharQuad.r, f32(y - UI_HEIGHT + 5), CharQuad.r + UI_MARGIN, f32(y + 2)}
-// 		}
-// 	}
-// 	if Editing // draw cursor
-// 	{
-// 		// if Show.State.UICharIndex == 0 do Cursor = QuadTo64({LeftMargin, f32(quad.b - UI_HEIGHT), LeftMargin + UI_MARGIN, f32(Quad[3])})
-// 		// PushQuad(Cursor, {0,0,0,0}, RED, 2)
-// 	}
-
-
-// }
-
-// ! filled solid color rect
-// ! filled gradient rect
-// ! border
-// rounded?
-
-//					 quad       color           border-thick     uv coords          
 
 push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1}, cD:v4={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	mix:f32=0)
 {

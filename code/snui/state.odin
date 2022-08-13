@@ -18,6 +18,7 @@ state: ^State
 State :: struct {
 	window: glfw.WindowHandle,
 	render: Gl,
+	ui: Ui,
 	window_size: v2i,
 	mouse: Mouse,
 	keys: Keys,
