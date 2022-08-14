@@ -104,49 +104,60 @@ ui_load_font :: proc(name: string, font_size: f32, texture: u32)
 	if opengl_load_texture(texture, image, state.render.font_texture_size) do fmt.println(fmt.tprintf("Font loaded: %v", name))
 }
 
+draw_text_return :: proc(text: string, quad: Quad, align: Text_Align = .LEFT)
+{
+	max := (quad.b - quad.t) / state.ui.line_space
+	fmt.println(">>>>>>>", text, max, quad.t, quad.b)
+	start, end: int 
+	letter_index: int
+	line_index: int
+	for letter_index < len(text)
+	{
+		if f32(line_index) > max do break
+		jump := f32(line_index) * state.ui.line_space 
+		letter := text[letter_index]
+		if letter == '\n' || letter_index == len(text)-1 {
+			end = letter_index
+			draw_text(text[start:end], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align)
+			fmt.println(text[start:end], letter_index, rune(letter))
+			start = end
+			line_index += 1
+		}
+		letter_index += 1
+	}
+}
+
 draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT )
 {
 	using stb
 
 	push_quad_border(quad, {0,1,0,1}, 1)
 
-	text_width: f32
-	temp_width: f32
-	text_height: f32 = state.ui.font_size
-	for letter in text {
-		if letter == '\n' {
-			text_width = max(text_width, temp_width)
-			temp_width = 0
-			text_height += state.ui.font_size
-		} else {
-			temp_width += state.ui.char_data[letter].advance
-		}
-		text_width = max(text_width, temp_width)
-	}
-
 	left_align: f32 = quad.l + state.ui.margin
 	top_align: f32 = quad.t - state.ui.margin
+	text_height: f32 = state.ui.font_size
+	text_width: f32
 
-	if align == .CENTER do left_align -= text_width / 2
+	if align == .CENTER
+	{
+		for letter in text do text_width += state.ui.char_data[letter].advance
+		left_align -= text_width / 2
+	}
 
-	cursor : v2 = { left_align, top_align }
+	top_left : v2 = { left_align, top_align }
 
 	for letter, i in text
 	{
-		char_quad : Quad = { cursor.x, cursor.y, cursor.x, cursor.y }
-		if letter == 10 // if return, move everything down
+		letter_data : Char_Data = state.ui.char_data[letter]
+		if letter != ' '
 		{
-			cursor.x = left_align
-			cursor.y += state.ui.line_space
-		} else {
-			letter_data : Char_Data = state.ui.char_data[letter]
-			char_quad.l += letter_data.offset.x
-			char_quad.t += letter_data.offset.y
+			char_quad : Quad
+			char_quad.l = top_left.x + letter_data.offset.x
+			char_quad.t = top_left.y + letter_data.offset.y
 			char_quad.r = char_quad.l + letter_data.width
 			char_quad.b = char_quad.t + letter_data.height
-	
 			push_quad_font(char_quad, state.ui.col_font, state.ui.char_data[letter].uv)
 		}
-		if letter != 10 do cursor.x += state.ui.char_data[letter].advance
+		top_left.x += letter_data.advance
 	}
 }
