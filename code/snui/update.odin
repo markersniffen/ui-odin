@@ -23,13 +23,16 @@ update :: proc()
 		state.mouse.scroll = 0
 	}
 
-	draw_text("Welcome to sniff UI\nHere is a new line!", { f32(state.mouse.pos.x), f32(state.mouse.pos.y) })
+	draw_text("Welcome to sniff UI\nHere is a new line!", quad, Text_Align.CENTER)
 
 	// NOTE DEBUG
-	debug_point :v2= {0, state.ui.font_size}
-	draw_text("DEBUG:", debug_point)
-	debug_point.y += state.ui.font_size
-	draw_text(fmt.tprintf("Mouse Pos: %v", state.ui.font_size), debug_point)
-	debug_point.y += state.ui.font_size
+	debug_quad: Quad = {0, 0, f32(state.window_size.x), 0 + state.ui.line_space}
+	draw_text("DEBUG:", debug_quad)
+	debug_quad.t += state.ui.line_space
+	debug_quad.b += state.ui.line_space
+	draw_text(fmt.tprintf("Mouse Pos: %v", state.mouse.pos), debug_quad)
+	debug_quad.t += state.ui.line_space
+	debug_quad.b += state.ui.line_space
+	draw_text(fmt.tprintf("Font Size: %v", state.ui.font_size), debug_quad)
 }
 

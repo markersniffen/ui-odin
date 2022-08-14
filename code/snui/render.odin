@@ -57,10 +57,10 @@ opengl_init :: proc()
 	state.render.font_texture_size = 512 // size of font bitmap
 }
 
-opengl_load_texture :: proc(texture: u32, image: rawptr) -> bool
+opengl_load_texture :: proc(texture: u32, image: rawptr, size:i32) -> bool
 {
 	gl.BindTexture(gl.TEXTURE_2D, texture)
-  	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 512,512, 0, gl.ALPHA, gl.UNSIGNED_BYTE, image)
+  	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, size,size, 0, gl.ALPHA, gl.UNSIGNED_BYTE, image)
   	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
   	if gl.GetError() != 0 do return false
   	return true
@@ -111,10 +111,10 @@ push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1},
 	if border == 0
 	{
 		vertex_arrays[0]  = { 
-				quad.l,quad.b,0,	uv.l,uv.t,	cC[0],cC[1],cC[2],cC[3],	mix,
-				quad.l,quad.t,0,	uv.l,uv.b,	cA[0],cA[1],cA[2],cA[3],	mix,
-				quad.r,quad.t,0,	uv.r,uv.b,	cB[0],cB[1],cB[2],cB[3],	mix,
-				quad.r,quad.b,0,	uv.r,uv.t,	cD[0],cD[1],cD[2],cD[3],	mix,
+				quad.l,quad.t,0,	uv.l,uv.t,	cA[0],cA[1],cA[2],cA[3],	mix,
+				quad.r,quad.t,0,	uv.r,uv.t,	cB[0],cB[1],cB[2],cB[3],	mix,
+				quad.r,quad.b,0,	uv.r,uv.b,	cD[0],cD[1],cD[2],cD[3],	mix,
+				quad.l,quad.b,0,	uv.l,uv.b,	cC[0],cC[1],cC[2],cC[3],	mix,
 		}
 	} else {
 
@@ -157,6 +157,11 @@ push_quad_gradient_h :: proc(quad: Quad, color_left:v4, color_right:v4)
 push_quad_gradient_v :: proc(quad: Quad, color_top:v4, color_bottom:v4)
 {
 	push_quad(quad,	color_top, color_top, color_bottom, color_bottom, 0, {0,0,0,0}, 0)
+}
+
+push_quad_border :: proc(quad: Quad, color:v4, border: f32=2)
+{
+	push_quad(quad,	color, color, color, color, border, {0,0,0,0}, 0)
 }
 
 push_quad_font :: proc(quad: Quad, color:v4, uv:Quad)
