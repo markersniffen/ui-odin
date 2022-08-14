@@ -12,9 +12,9 @@ update :: proc()
 	}
 	color: v4 ={0,1,0,1}
 
-	if state.mouse.left == .CLICK do color = state.ui.col_active
-	if state.mouse.right == .CLICK do color = state.ui.col_hot
-	if state.mouse.middle == .CLICK do color = state.ui.col_base
+	if state.mouse.left == .CLICK do color = state.ui.col.active
+	if state.mouse.right == .CLICK do color = state.ui.col.hot
+	if state.mouse.middle == .CLICK do color = state.ui.col.base
 
 	push_quad_border(quad, color, 1)
 
@@ -23,7 +23,7 @@ update :: proc()
 		state.mouse.scroll = 0
 	}
 
-	draw_text_multiline("Welcome to sniff UI\nHere is a new line!\nSome more text\n-Mark Sniffendfasd!", quad, -2, .RIGHT)
+	draw_text_multiline("Welcome to sniff UI\nHere is a new line!\nSome more text\n-Mark Sniffendfasd!", quad, .CENTER)
 
 	// NOTE DEBUG
 	debug_quad: Quad = {0, 0, f32(state.window_size.x), 0 + state.ui.line_space}

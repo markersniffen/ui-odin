@@ -75,7 +75,6 @@ render :: proc()
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(state.render.shader)
-	// gl.BindTexture(gl.TEXTURE_2D, state.Show.State.glState.STBTexture)
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, state.render.vertex_buffer)
 	gl.BufferData(gl.ARRAY_BUFFER, state.render.vertex_index * size_of(f32), &state.render.vertices[0], gl.STATIC_DRAW)

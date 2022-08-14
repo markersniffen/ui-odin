@@ -3,7 +3,7 @@ package snui
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
 
-uid :: u64
+Uid :: u64
 
 v2 :: [2]f32
 v3 :: [3]f32

@@ -6,6 +6,61 @@ import "core:fmt"
 import "core:os"
 import "core:math"
 
+Ui :: struct {
+	panels: map[Uid]^Panel,
+	panel_memory: [MAX_PANELS]Panel,
+
+	col: Ui_Colors,
+
+	// FONT INFO
+	char_data: map[rune]Char_Data,
+	font_size: f32,			// NOTE pixels tall
+	font_size_large: f32,   // TODO not implemented yet
+ 	font_size_small: f32,	//
+	font_v_center_offset: f32,
+	margin: f32,
+	line_space: f32,
+}
+
+Ui_Colors :: struct {
+	bg: v4,
+	font: v4,
+	highlight: v4,
+	base: v4,
+	hot: v4,
+	active: v4,	
+}
+
+ui_init :: proc()
+{
+	ui_init_font()
+	ui_init_panels()
+}
+
+// PANELS //
+
+MAX_PANELS :: 20
+
+Panel :: struct {
+	uid: Uid,
+	ctx: Quad,
+	size: f32,
+	children: [2]Uid,
+	type: Panel_Type,
+	offset: v2,
+}
+
+Panel_Type :: enum {
+	HORIZONTAL,
+	VERTICAL,
+}
+
+ui_init_panels :: proc() {
+
+}
+
+// FONT|TEXT //
+
 Char_Data :: struct
 {
 	offset: v2,
@@ -21,36 +76,16 @@ Text_Align :: enum {
 	RIGHT,
 }
 
-Ui :: struct {
-	char_data: map[rune]Char_Data,
-
-	font_size: f32,			// NOTE pixels tall
-	font_size_large: f32,
-	font_size_small: f32,
-	
-	font_v_center_offset: f32,
-	margin: f32,
-	line_space: f32,
-
-	col_bg: v4,
-	col_font: v4,
-	col_highlight: v4,
-	col_base: v4,
-	col_hot: v4,
-	col_active: v4,
-}
-
-ui_init :: proc()
-{
+ui_init_font :: proc() {
 	ui_set_font_size()
 	fmt.println("set font size...")
 	
-	state.ui.col_bg = {0.1, 0.1, 0.1, 1}
-	state.ui.col_font = {1,1,1,1}
-	state.ui.col_base = {0.1, 0.1, 0.1, 1}
-	state.ui.col_highlight = {0.0, 0.2, 1, 1}
-	state.ui.col_hot = {1.0,0.5,0.2,1}
-	state.ui.col_active = {0.8,0.3,0.2,1}
+	state.ui.col.bg = {0.1, 0.1, 0.1, 1}
+	state.ui.col.font = {1,1,1,1}
+	state.ui.col.base = {0.1, 0.1, 0.1, 1}
+	state.ui.col.highlight = {0.0, 0.2, 1, 1}
+	state.ui.col.hot = {1.0,0.5,0.2,1}
+	state.ui.col.active = {0.8,0.3,0.2,1}
 }
 
 ui_set_font_size :: proc(size:f32=20)
@@ -106,7 +141,7 @@ ui_load_font :: proc(name: string, font_size: f32, texture: u32)
 	if opengl_load_texture(texture, image, state.render.font_texture_size) do fmt.println(fmt.tprintf("Font loaded: %v", name))
 }
 
-draw_text_multiline :: proc(text:string, quad:Quad, kerning:f32=-2, align:Text_Align=.LEFT)
+draw_text_multiline :: proc(text:string, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2)
 {
 	max := (quad.b - quad.t) / state.ui.line_space
 	start, end: int 
@@ -162,7 +197,7 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT )
 			char_quad.t = top_left.y + letter_data.offset.y
 			char_quad.r = char_quad.l + letter_data.width
 			char_quad.b = char_quad.t + letter_data.height
-			push_quad_font(char_quad, state.ui.col_font, state.ui.char_data[letter].uv)
+			push_quad_font(char_quad, state.ui.col.font, state.ui.char_data[letter].uv)
 		}
 		top_left.x += letter_data.advance
 	}
