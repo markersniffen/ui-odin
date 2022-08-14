@@ -37,28 +37,6 @@ ui_init :: proc()
 	ui_init_panels()
 }
 
-// PANELS //
-
-MAX_PANELS :: 20
-
-Panel :: struct {
-	uid: Uid,
-	ctx: Quad,
-	size: f32,
-	children: [2]Uid,
-	type: Panel_Type,
-	offset: v2,
-}
-
-Panel_Type :: enum {
-	HORIZONTAL,
-	VERTICAL,
-}
-
-ui_init_panels :: proc() {
-
-}
-
 // FONT|TEXT //
 
 Char_Data :: struct

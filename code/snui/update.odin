@@ -25,14 +25,18 @@ update :: proc()
 
 	draw_text_multiline("Welcome to sniff UI\nHere is a new line!\nSome more text\n-Mark Sniffendfasd!", quad, .CENTER)
 
-	// NOTE DEBUG
-	debug_quad: Quad = {0, 0, f32(state.window_size.x), 0 + state.ui.line_space}
-	draw_text("DEBUG:", debug_quad)
-	debug_quad.t += state.ui.line_space
-	debug_quad.b += state.ui.line_space
-	draw_text(fmt.tprintf("Mouse Pos: %v", state.mouse.pos), debug_quad)
-	debug_quad.t += state.ui.line_space
-	debug_quad.b += state.ui.line_space
-	draw_text(fmt.tprintf("Font Size: %v", state.ui.font_size), debug_quad)
-}
+	// // NOTE DEBUG
+	// debug_quad: Quad = {0, 0, f32(state.window_size.x), 0 + state.ui.line_space}
+	// draw_text("DEBUG:", debug_quad)
+	// debug_quad.t += state.ui.line_space
+	// debug_quad.b += state.ui.line_space
+	// draw_text(fmt.tprintf("Mouse Pos: %v", state.mouse.pos), debug_quad)
+	// debug_quad.t += state.ui.line_space
+	// debug_quad.b += state.ui.line_space
+	// draw_text(fmt.tprintf("Font Size: %v", state.ui.font_size), debug_quad)
+
+
+	ui_calc_panel(1, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
+
+	}
 

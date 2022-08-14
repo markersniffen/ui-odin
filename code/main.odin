@@ -20,8 +20,8 @@ main :: proc() {
 
 	state = new(State)
 	state.window = glfw.CreateWindow(WIDTH, HEIGHT, TITLE, nil, nil)
-	defer glfw.Terminate()
 	defer glfw.DestroyWindow(state.window)
+	defer glfw.Terminate()
 	defer free(state)
 
 	if state.window == nil
