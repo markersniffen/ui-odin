@@ -17,38 +17,37 @@ main :: proc() {
 		return
 	}
 
-	window := glfw.CreateWindow(WIDTH, HEIGHT, TITLE, nil, nil)
-	defer glfw.Terminate()
-	defer glfw.DestroyWindow(window)
 
-	if window == nil
+	state = new(State)
+	state.window = glfw.CreateWindow(WIDTH, HEIGHT, TITLE, nil, nil)
+	defer glfw.Terminate()
+	defer glfw.DestroyWindow(state.window)
+	defer free(state)
+
+	if state.window == nil
 	{
 		fmt.eprintln("GLFW has failed to load the window.")
 		return
 	}
 
-	glfw.MakeContextCurrent(window)
-	glfw.SetKeyCallback(window, cast(glfw.KeyProc)keyboard_callback)
-	glfw.SetMouseButtonCallback(window, cast(glfw.MouseButtonProc)mouse_callback)
-	glfw.SetScrollCallback(window, cast(glfw.ScrollProc)scroll_callback)
-	glfw.SetCharCallback(window, cast(glfw.CharProc)typing_callback)
-	
-	state = new(State)
-	defer free(state)
-	glfw.SetWindowUserPointer(window, state)
-	state.window = window
+	glfw.MakeContextCurrent(state.window)
+	glfw.SetKeyCallback(state.window, cast(glfw.KeyProc)keyboard_callback)
+	glfw.SetMouseButtonCallback(state.window, cast(glfw.MouseButtonProc)mouse_callback)
+	glfw.SetScrollCallback(state.window, cast(glfw.ScrollProc)scroll_callback)
+	glfw.SetCharCallback(state.window, cast(glfw.CharProc)typing_callback)
+	glfw.SetWindowUserPointer(state.window, state)
 
 	opengl_init()
 	ui_init()
 
-	for !glfw.WindowShouldClose(window)
+	for !glfw.WindowShouldClose(state.window)
 	{
 		glfw.PollEvents()
 
-		width, height := glfw.GetWindowSize(window)
+		width, height := glfw.GetWindowSize(state.window)
 		state.window_size = {width, height}
 		
-		mouseX, mouseY := glfw.GetCursorPos(window)
+		mouseX, mouseY := glfw.GetCursorPos(state.window)
 		old_mouse := state.mouse.pos
 		state.mouse.pos = {i32(mouseX), i32(mouseY)}
 		state.mouse.delta = state.mouse.pos - old_mouse

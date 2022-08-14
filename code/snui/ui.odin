@@ -42,15 +42,15 @@ ui_set_font_size :: proc(size:f32=20)
 
 	state.ui.margin = 5
 
-	ui_load_font(state.ui.font_size)
+	ui_load_font(state.ui.font_size, "Roboto-Regular")
 }
 
-ui_load_font :: proc(font_size: f32)
+ui_load_font :: proc(font_size: f32, name: string)
 {
 	using stb, mem, fmt
 	NUM_CHARS :: 96
 	
-	data, data_ok := os.read_entire_file("fonts/Roboto-Regular.ttf")
+	data, data_ok := os.read_entire_file(fmt.tprintf("fonts/%v.ttf", name))
 	defer delete(data)
 	if !data_ok do fmt.println("failed to load font file")
 

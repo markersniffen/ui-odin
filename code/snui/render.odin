@@ -7,9 +7,7 @@ import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
 
 /*
-
 This rendering 
-
 */
 
 Gl :: struct
