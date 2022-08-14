@@ -28,6 +28,7 @@ Ui :: struct {
 	font_size_large: f32,
 	font_size_small: f32,
 	
+	font_v_center_offset: f32,
 	margin: f32,
 	line_space: f32,
 
@@ -61,8 +62,9 @@ ui_set_font_size :: proc(size:f32=20)
 	ui_load_font("Roboto-Regular", state.ui.font_size, state.render.font_texture)
 
 	letter_data := state.ui.char_data['W']
-	state.ui.margin = math.round((state.ui.font_size - letter_data.height) * 0.5)
-	state.ui.line_space = state.ui.font_size // state.ui.margin * 2 + state.ui.font_size
+	state.ui.font_v_center_offset = math.round((state.ui.font_size - letter_data.height) * 0.5)
+	state.ui.margin = 4
+	state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
 }
 
 ui_load_font :: proc(name: string, font_size: f32, texture: u32)
@@ -104,22 +106,21 @@ ui_load_font :: proc(name: string, font_size: f32, texture: u32)
 	if opengl_load_texture(texture, image, state.render.font_texture_size) do fmt.println(fmt.tprintf("Font loaded: %v", name))
 }
 
-draw_text_return :: proc(text: string, quad: Quad, align: Text_Align = .LEFT)
+draw_text_multiline :: proc(text:string, quad:Quad, kerning:f32=-2, align:Text_Align=.LEFT)
 {
 	max := (quad.b - quad.t) / state.ui.line_space
-	fmt.println(">>>>>>>", text, max, quad.t, quad.b)
 	start, end: int 
 	letter_index: int
 	line_index: int
 	for letter_index < len(text)
 	{
 		if f32(line_index) > max do break
-		jump := f32(line_index) * state.ui.line_space 
+		jump := f32(line_index) * (state.ui.line_space - (state.ui.margin*2) + kerning) 
 		letter := text[letter_index]
 		if letter == '\n' || letter_index == len(text)-1 {
 			end = letter_index
+			if letter != '\n' do end += 1
 			draw_text(text[start:end], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align)
-			fmt.println(text[start:end], letter_index, rune(letter))
 			start = end
 			line_index += 1
 		}
@@ -131,17 +132,22 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT )
 {
 	using stb
 
-	push_quad_border(quad, {0,1,0,1}, 1)
-
-	left_align: f32 = quad.l + state.ui.margin
-	top_align: f32 = quad.t - state.ui.margin
+	left_align: f32 = quad.l
+	top_align: f32 = quad.t - state.ui.font_v_center_offset + state.ui.margin
 	text_height: f32 = state.ui.font_size
 	text_width: f32
 
-	if align == .CENTER
+	if align != .LEFT
 	{
 		for letter in text do text_width += state.ui.char_data[letter].advance
-		left_align -= text_width / 2
+
+		if align == .CENTER {
+			left_align -= text_width / 2
+		} else if align == .RIGHT {
+			left_align -= text_width + state.ui.font_v_center_offset + state.ui.margin
+		}
+	} else {
+		left_align += state.ui.font_v_center_offset + state.ui.margin
 	}
 
 	top_left : v2 = { left_align, top_align }

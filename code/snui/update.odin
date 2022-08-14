@@ -23,7 +23,7 @@ update :: proc()
 		state.mouse.scroll = 0
 	}
 
-	draw_text_return("Welcome to sniff UI\nHere is a new line!", quad, Text_Align.CENTER)
+	draw_text_multiline("Welcome to sniff UI\nHere is a new line!\nSome more text\n-Mark Sniffendfasd!", quad, -2, .RIGHT)
 
 	// NOTE DEBUG
 	debug_quad: Quad = {0, 0, f32(state.window_size.x), 0 + state.ui.line_space}
