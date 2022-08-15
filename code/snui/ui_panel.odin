@@ -3,7 +3,7 @@ package snui
 import "core:fmt"
 
 MAX_PANELS :: 40
-PANEL_MARGIN :: 3
+PANEL_MARGIN :: 2
 
 Panel :: struct {
 	uid: Uid,
@@ -29,6 +29,9 @@ ui_init_panels :: proc() {
 	p5 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
 	p6 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
 	p7 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
+	p8 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
+	p9 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
+
 
 	p1.uid = 1
 	p1.ctx = {0, 0, f32(state.window_size.x), f32(state.window_size.y)}
@@ -63,15 +66,27 @@ ui_init_panels :: proc() {
 
 	p6.uid = 6
 	p6.size = 0.5
-	p6.children = {0, 0}
+	p6.children = {8, 9}
 	p6.parent = 2
-	p6.direction = .HORIZONTAL
+	p6.direction = .VERTICAL
 
 	p7.uid = 7
 	p7.size = 0.5
 	p7.children = {0, 0}
 	p7.parent = 2
-	p7.direction = .HORIZONTAL
+	p7.direction = .VERTICAL
+
+	p8.uid = 8
+	p8.size = 0.5
+	p8.children = {0, 0}
+	p8.parent = 6
+	p8.direction = .HORIZONTAL
+
+	p9.uid = 9
+	p9.size = 0.5
+	p9.children = {0, 0}
+	p9.parent = 6
+	p9.direction = .HORIZONTAL
 
 	state.ui.panels[p1.uid] = p1
 	state.ui.panels[p2.uid] = p2
@@ -80,6 +95,8 @@ ui_init_panels :: proc() {
 	state.ui.panels[p5.uid] = p5
 	state.ui.panels[p6.uid] = p6
 	state.ui.panels[p7.uid] = p7
+	state.ui.panels[p8.uid] = p8
+	state.ui.panels[p9.uid] = p9
 }
 
 ui_calc_panel :: proc(uid: Uid, ctx: Quad)
@@ -111,18 +128,19 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 			if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, bar) {
 				if state.mouse.left == .CLICK {
 					state.ui.panel_active = panel.uid
-				} else if state.mouse.left == .UP {
-					state.ui.panel_active = 0
 				}
 
 				color = state.ui.col.highlight
 				draw_text(fmt.tprintf("BORDER ID: %v", panel.uid), ctx, .LEFT, state.ui.col.highlight)
 			}
+			if state.mouse.left == .UP {
+				state.ui.panel_active = 0
+			}
 			if state.ui.panel_active == panel.uid {
 				if panel.direction == .HORIZONTAL {
-					panel.size = (f32(state.mouse.pos.x)) / f32(state.window_size.x)
+					panel.size = (f32(state.mouse.pos.x) - ctx.l) * (1 / (ctx.r - ctx.l))
 				} else {
-					panel.size = (f32(state.mouse.pos.y) / f32(state.window_size.y))
+					panel.size = (f32(state.mouse.pos.y) - ctx.t) * (1 / (ctx.b - ctx.t))
 				}
 			}
 			push_quad_solid(bar, color)
