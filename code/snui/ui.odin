@@ -36,7 +36,13 @@ Ui_Colors :: struct {
 ui_init :: proc()
 {
 	ui_init_font()
-	ui_init_panels()
+
+	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS)
+	state.ui.panel_master = ui_create_panel(0)
+	sub_panel := ui_create_panel(state.ui.panel_master)
+	sub_panel = ui_create_panel(sub_panel, .VERTICAL)
+	sub_panel = ui_create_panel(sub_panel, .HORIZONTAL)
+	ui_create_panel(state.ui.panels[state.ui.panel_master].children[0])
 }
 
 // FONT|TEXT //

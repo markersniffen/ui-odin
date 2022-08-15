@@ -12,6 +12,7 @@ Panel :: struct {
 	children: [2]Uid,
 	direction: Panel_Direction,
 	size: f32,
+	type: Panel_Type,
 }
 
 Panel_Direction :: enum {
@@ -19,15 +20,9 @@ Panel_Direction :: enum {
 	VERTICAL,
 }
 
-ui_init_panels :: proc() {
-	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS)
-	
-	state.ui.panel_master = ui_create_panel(0)
-	sub_panel := ui_create_panel(state.ui.panel_master)
-	sub_panel = ui_create_panel(sub_panel, .VERTICAL)
-	sub_panel = ui_create_panel(sub_panel, .HORIZONTAL)
-	ui_create_panel(state.ui.panels[state.ui.panel_master].children[0])
-
+Panel_Type :: enum {
+	DEBUG,
+	TEMP,
 }
 
 ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZONTAL) -> Uid
@@ -145,6 +140,32 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 			}
 			push_quad_border(ctx, color, 2)
 
+			ui_draw_panel(panel.uid, ctx)
 		}
 	}
+}
+
+ui_draw_panel :: proc(panel_uid: Uid, ctx: Quad)
+{
+	if state.ui.panels[panel_uid].type == .DEBUG do ui_panel_debug(ctx)
+}
+
+ui_panel_debug :: proc(ctx: Quad)
+{
+	// NOTE DEBUG
+	debug_quad:= ctx
+	draw_text("DEBUG:", debug_quad)
+	debug_quad.t += state.ui.line_space
+	debug_quad.b += state.ui.line_space
+	draw_text(fmt.tprintf("Mouse Pos: %v", state.mouse.pos), debug_quad)
+	debug_quad.t += state.ui.line_space
+	debug_quad.b += state.ui.line_space
+	for p in state.ui.panels {
+		draw_text(fmt.tprintf("%v", state.ui.panels[p]), debug_quad)
+		debug_quad.t += state.ui.line_space
+		debug_quad.b += state.ui.line_space
+	}
+	draw_text(fmt.tprintf("%v", state.ui.panel_master), debug_quad)
+	debug_quad.t += state.ui.line_space
+	debug_quad.b += state.ui.line_space
 }
