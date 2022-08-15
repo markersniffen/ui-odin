@@ -1,4 +1,4 @@
-package snui
+package ui
 
 import stb "vendor:stb/truetype"
 import "core:mem"
@@ -39,10 +39,30 @@ ui_init :: proc()
 
 	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS)
 	state.ui.panel_master = ui_create_panel(0)
-	sub_panel := ui_create_panel(state.ui.panel_master)
-	sub_panel = ui_create_panel(sub_panel, .VERTICAL)
-	sub_panel = ui_create_panel(sub_panel, .HORIZONTAL)
-	ui_create_panel(state.ui.panels[state.ui.panel_master].children[0])
+	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, 0.05)
+	ui_create_panel(sub_panel,.HORIZONTAL, 0.7)
+}
+
+ui_update :: proc()
+{
+	quad : Quad = {
+		f32(state.mouse.pos.x),
+		f32(state.mouse.pos.y),
+		f32(state.mouse.pos.x)+400,
+		f32(state.mouse.pos.y)+(state.ui.line_space * 5),
+	}
+	color: v4 ={0,1,0,1}
+
+	if state.mouse.left == .CLICK do color = state.ui.col.active
+	if state.mouse.right == .CLICK do color = state.ui.col.hot
+	if state.mouse.middle == .CLICK do color = state.ui.col.base
+
+	push_quad_border(quad, color, 1)
+
+
+
+	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
+
 }
 
 // FONT|TEXT //

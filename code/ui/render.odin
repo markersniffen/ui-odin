@@ -1,14 +1,10 @@
-package snui
+package ui
 
 import "core:fmt"
 import "core:mem"
 import "core:os"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
-
-/*
-This rendering 
-*/
 
 Gl :: struct
 {
@@ -66,7 +62,7 @@ opengl_load_texture :: proc(texture: u32, image: rawptr, size:i32) -> bool
   	return true
 }
 
-render :: proc()
+ui_render :: proc()
 {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 	gl.ClearColor(0, 0, 0, 1)

@@ -1,4 +1,4 @@
-package snui
+package ui
 
 new_uid :: proc() -> Uid
 {

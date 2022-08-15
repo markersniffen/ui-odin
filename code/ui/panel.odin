@@ -1,4 +1,4 @@
-package snui
+package ui
 
 import "core:fmt"
 
@@ -25,13 +25,13 @@ Panel_Type :: enum {
 	TEMP,
 }
 
-ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZONTAL) -> Uid
+ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZONTAL, size:f32=0.5) -> Uid
 {
 	active_panel, active_panel_ok := state.ui.panels[active_panel_uid]
 	if active_panel_ok {
 		new_parent := cast(^Panel)pool_alloc(&state.ui.panel_pool)
 		new_parent.uid = new_uid()
-		new_parent.size = active_panel.size
+		new_parent.size = size
 		new_parent.children[0] = active_panel.uid
 		new_parent.parent = active_panel.parent
 		new_parent.direction = direction

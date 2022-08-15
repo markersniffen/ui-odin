@@ -1,4 +1,4 @@
-package snui
+package ui
 
 import "core:fmt"
 import "core:mem"
@@ -34,12 +34,12 @@ pool_free_all :: proc(pool: ^Pool)
 {
 	mem.zero(&pool.memory[0], pool.chunk_count * pool.chunk_size)
 
-	for chunk in 0..<pool.chunk_count				// loop through number of chunks
+	for chunk in 0..<pool.chunk_count					// loop through number of chunks
 	{
 		ptr := &pool.memory[chunk * pool.chunk_size]	// get pointer to the Chunk memory
-		node: ^Node = cast(^Node)ptr			// create  cast the pointer we just created to a Node object,
-		node.next = pool.head						// Set the Node's "next" value to the current pool's "head" (^Node)
-		pool.head = node							// set the pool's "head" to the current Node
+		node: ^Node = cast(^Node)ptr					// create  cast the pointer we just created to a Node object,
+		node.next = pool.head							// Set the Node's "next" value to the current pool's "head" (^Node)
+		pool.head = node								// set the pool's "head" to the current Node
 	}
 }
 
