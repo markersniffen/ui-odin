@@ -16,6 +16,7 @@ v4i :: [4]i32
 state: ^State
 
 State :: struct {
+	uid: Uid,
 	window: glfw.WindowHandle,
 	render: Gl,
 	ui: Ui,

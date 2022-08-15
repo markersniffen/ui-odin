@@ -18,11 +18,6 @@ update :: proc()
 
 	push_quad_border(quad, color, 1)
 
-	if state.mouse.scroll != 0 {
-		ui_set_font_size(state.ui.font_size + (state.mouse.scroll*10))
-		state.mouse.scroll = 0
-	}
-
 	draw_text_multiline("Welcome to sniff UI\nHere is a new line!\nSome more text\n-Mark Sniffendfasd!", quad, .CENTER)
 
 	// // NOTE DEBUG

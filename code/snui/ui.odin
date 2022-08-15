@@ -8,7 +8,9 @@ import "core:math"
 
 Ui :: struct {
 	panels: map[Uid]^Panel,
-	panel_memory: [MAX_PANELS]Panel,
+	panel_pool: Pool,
+
+	panel_active: Uid,
 
 	col: Ui_Colors,
 
@@ -133,7 +135,7 @@ draw_text_multiline :: proc(text:string, quad:Quad, align:Text_Align=.LEFT, kern
 		if letter == '\n' || letter_index == len(text)-1 {
 			end = letter_index
 			if letter != '\n' do end += 1
-			draw_text(text[start:end], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align)
+			draw_text(text[start:end], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font)
 			start = end
 			line_index += 1
 		}
@@ -141,7 +143,7 @@ draw_text_multiline :: proc(text:string, quad:Quad, align:Text_Align=.LEFT, kern
 	}
 }
 
-draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT )
+draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4 = {1,1,1,1} )
 {
 	using stb
 
@@ -175,7 +177,7 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT )
 			char_quad.t = top_left.y + letter_data.offset.y
 			char_quad.r = char_quad.l + letter_data.width
 			char_quad.b = char_quad.t + letter_data.height
-			push_quad_font(char_quad, state.ui.col.font, state.ui.char_data[letter].uv)
+			push_quad_font(char_quad, color, state.ui.char_data[letter].uv)
 		}
 		top_left.x += letter_data.advance
 	}
