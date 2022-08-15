@@ -22,81 +22,65 @@ Panel_Direction :: enum {
 ui_init_panels :: proc() {
 	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS)
 	
-	p1 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
-	p2 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
-	p3 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
-	p4 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
-	p5 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
-	p6 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
-	p7 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
-	p8 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
-	p9 := cast(^Panel)pool_alloc(&state.ui.panel_pool)
+	state.ui.panel_master = ui_create_panel(0)
+	sub_panel := ui_create_panel(state.ui.panel_master)
+	sub_panel = ui_create_panel(sub_panel, .VERTICAL)
+	sub_panel = ui_create_panel(sub_panel, .HORIZONTAL)
+	ui_create_panel(state.ui.panels[state.ui.panel_master].children[0])
 
+}
 
-	p1.uid = 1
-	p1.ctx = {0, 0, f32(state.window_size.x), f32(state.window_size.y)}
-	p1.size = 0.6
-	p1.children = {2, 3}
-	p1.parent = 0
-	p1.direction = .HORIZONTAL
+ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZONTAL) -> Uid
+{
+	active_panel, active_panel_ok := state.ui.panels[active_panel_uid]
+	if active_panel_ok {
+		new_parent := cast(^Panel)pool_alloc(&state.ui.panel_pool)
+		new_parent.uid = new_uid()
+		new_parent.size = active_panel.size
+		new_parent.children[0] = active_panel.uid
+		new_parent.parent = active_panel.parent
+		new_parent.direction = direction
+		state.ui.panels[new_parent.uid] = new_parent
 
-	p2.uid = 2
-	p2.size = 0.3
-	p2.children = {6, 7}
-	p2.parent = 1
-	p2.direction = .VERTICAL
+		active_panel.parent = new_parent.uid
+		active_panel.children = {0,0}
+		active_panel.size = 0.5 
 
-	p3.uid = 3
-	p3.size = 0.5
-	p3.children = {4, 5}
-	p3.parent = 1
-	p3.direction = .HORIZONTAL
+		panel := cast(^Panel)pool_alloc(&state.ui.panel_pool)
+		panel.uid = new_uid()
+		panel.size = 0.5
+		panel.parent = new_parent.uid
+		panel.direction = direction
+		state.ui.panels[panel.uid] = panel
 
-	p4.uid = 4
-	p4.size = 0.5
-	p4.children = {0, 0}
-	p4.parent = 3
-	p4.direction = .HORIZONTAL
+		new_parent.children[1] = panel.uid
 
-	p5.uid = 5
-	p5.size = 0.5
-	p5.children = {0, 0}
-	p5.parent = 3
-	p5.direction = .HORIZONTAL
+		if active_panel_uid == state.ui.panel_master {
+			state.ui.panel_master = new_parent.uid
+		}
 
-	p6.uid = 6
-	p6.size = 0.5
-	p6.children = {8, 9}
-	p6.parent = 2
-	p6.direction = .VERTICAL
+		grandpa, grandpa_ok:= state.ui.panels[new_parent.parent]
+		if grandpa_ok {
+			if grandpa.children[0] == active_panel_uid {
+				grandpa.children[0] = new_parent.uid
+			} else {
+				grandpa.children[1] = new_parent.uid
+			}
+		}
 
-	p7.uid = 7
-	p7.size = 0.5
-	p7.children = {0, 0}
-	p7.parent = 2
-	p7.direction = .VERTICAL
-
-	p8.uid = 8
-	p8.size = 0.5
-	p8.children = {0, 0}
-	p8.parent = 6
-	p8.direction = .HORIZONTAL
-
-	p9.uid = 9
-	p9.size = 0.5
-	p9.children = {0, 0}
-	p9.parent = 6
-	p9.direction = .HORIZONTAL
-
-	state.ui.panels[p1.uid] = p1
-	state.ui.panels[p2.uid] = p2
-	state.ui.panels[p3.uid] = p3
-	state.ui.panels[p4.uid] = p4
-	state.ui.panels[p5.uid] = p5
-	state.ui.panels[p6.uid] = p6
-	state.ui.panels[p7.uid] = p7
-	state.ui.panels[p8.uid] = p8
-	state.ui.panels[p9.uid] = p9
+		return panel.uid
+	} else {
+		if active_panel_uid == 0 {
+			panel := cast(^Panel)pool_alloc(&state.ui.panel_pool)
+			panel.uid = new_uid()
+			panel.size = 0.5
+			panel.parent = 0
+			panel.direction = direction
+			state.ui.panels[panel.uid] = panel
+			return panel.uid
+		}
+	}
+	return 0
 }
 
 ui_calc_panel :: proc(uid: Uid, ctx: Quad)
@@ -104,9 +88,11 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 	panel, ok := state.ui.panels[uid]
 	if ok
 	{
+		fmt.println("Calcing ", uid, panel)
 		panel.ctx = ctx
 
 		child_a, cok := state.ui.panels[panel.children[0]]
+		fmt.println(cok)
 		if cok
 		{
 			a: Quad
@@ -155,7 +141,7 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 			if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, ctx)
 			{
 				color = state.ui.col.hot
-				draw_text(fmt.tprintf("Panel ID: %v", panel.parent), ctx)
+				draw_text(fmt.tprintf("Panel ID: %v", panel.uid), ctx)
 			}
 			push_quad_border(ctx, color, 2)
 

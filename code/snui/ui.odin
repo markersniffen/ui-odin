@@ -9,7 +9,7 @@ import "core:math"
 Ui :: struct {
 	panels: map[Uid]^Panel,
 	panel_pool: Pool,
-
+	panel_master: Uid,
 	panel_active: Uid,
 
 	col: Ui_Colors,
