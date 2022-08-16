@@ -16,4 +16,6 @@ main :: proc() {
 			ui_render()
 		}
 	}
+
+	quit()
 }

@@ -20,12 +20,7 @@ Panel_Direction :: enum {
 	VERTICAL,
 }
 
-Panel_Type :: enum {
-	DEBUG,
-	TEMP,
-}
-
-ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZONTAL, size:f32=0.5) -> Uid
+ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> Uid
 {
 	active_panel, active_panel_ok := state.ui.panels[active_panel_uid]
 	if active_panel_ok {
@@ -46,7 +41,9 @@ ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZO
 		panel.size = 0.5
 		panel.parent = new_parent.uid
 		panel.direction = direction
+		panel.type = type
 		state.ui.panels[panel.uid] = panel
+
 
 		new_parent.children[1] = panel.uid
 
@@ -78,16 +75,56 @@ ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZO
 	return 0
 }
 
+ui_delete_panel :: proc(panel_uid: Uid)
+{
+	panel, ok := state.ui.panels[panel_uid]
+	if ok
+	{
+		parent, parent_ok := state.ui.panels[panel.parent]
+		if parent_ok
+		{
+			grandpa, grandpa_ok := state.ui.panels[parent.parent]
+			if grandpa_ok
+			{
+				sibling_uid: Uid
+				if parent.children[0] == panel_uid
+				{
+					sibling_uid = parent.children[1]
+				} else {
+					sibling_uid = parent.children[0]
+				}
+				sibling, sibling_ok := state.ui.panels[sibling_uid]
+				if sibling_ok
+				{
+					sibling.parent = parent.parent
+					for child, c in grandpa.children
+					{
+						if child == panel.parent do grandpa.children[c] = sibling_uid
+					}
+					delete_key(&state.ui.panels, parent.uid)
+					delete_key(&state.ui.panels, panel_uid)
+				} else {
+					fmt.println("failed to find sibling")
+				}
+			} else {
+				fmt.println("failed to find grandparent of", panel)
+			}
+		} else {
+			fmt.println("failed to find Parent of", panel)
+		}
+	} else {
+		fmt.println("failed to find panel:", panel)
+	}
+}
+
 ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 {
 	panel, ok := state.ui.panels[uid]
 	if ok
 	{
-		fmt.println("Calcing ", uid, panel)
 		panel.ctx = ctx
 
 		child_a, cok := state.ui.panels[panel.children[0]]
-		fmt.println(cok)
 		if cok
 		{
 			a: Quad
@@ -147,25 +184,6 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 
 ui_draw_panel :: proc(panel_uid: Uid, ctx: Quad)
 {
-	if state.ui.panels[panel_uid].type == .DEBUG do ui_panel_debug(ctx)
+	if state.ui.panels[panel_uid].type == .DEBUG do ui_panel_debug(panel_uid, ctx)
 }
 
-ui_panel_debug :: proc(ctx: Quad)
-{
-	// NOTE DEBUG
-	debug_quad:= ctx
-	draw_text("DEBUG:", debug_quad)
-	debug_quad.t += state.ui.line_space
-	debug_quad.b += state.ui.line_space
-	draw_text(fmt.tprintf("Mouse Pos: %v", state.mouse.pos), debug_quad)
-	debug_quad.t += state.ui.line_space
-	debug_quad.b += state.ui.line_space
-	for p in state.ui.panels {
-		draw_text(fmt.tprintf("%v", state.ui.panels[p]), debug_quad)
-		debug_quad.t += state.ui.line_space
-		debug_quad.b += state.ui.line_space
-	}
-	draw_text(fmt.tprintf("%v", state.ui.panel_master), debug_quad)
-	debug_quad.t += state.ui.line_space
-	debug_quad.b += state.ui.line_space
-}

@@ -116,8 +116,6 @@ update :: proc()
 	width, height := glfw.GetWindowSize(state.window)
 	state.window_size = {width, height}
 	
-	fmt.println(state.window_size)
-
 	mouseX, mouseY := glfw.GetCursorPos(state.window)
 	old_mouse := state.mouse.pos
 	state.mouse.pos = {i32(mouseX), i32(mouseY)}

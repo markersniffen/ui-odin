@@ -16,9 +16,9 @@ Ui :: struct {
 
 	// FONT INFO
 	char_data: map[rune]Char_Data,
-	font_size: f32,			// NOTE pixels tall
-	font_size_large: f32,   // TODO not implemented yet
- 	font_size_small: f32,	//
+	font_size: f32,					// NOTE pixels tall
+	font_size_large: f32,   		// TODO not implemented yet
+ 	font_size_small: f32,			//
 	font_v_center_offset: f32,
 	margin: f32,
 	line_space: f32,
@@ -39,8 +39,8 @@ ui_init :: proc()
 
 	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS)
 	state.ui.panel_master = ui_create_panel(0)
-	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, 0.05)
-	ui_create_panel(sub_panel,.HORIZONTAL, 0.7)
+	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, .DEBUG, 0.05)
+	ui_create_panel(sub_panel, .HORIZONTAL, .TEMP, 0.7)
 }
 
 ui_update :: proc()
@@ -58,11 +58,7 @@ ui_update :: proc()
 	if state.mouse.middle == .CLICK do color = state.ui.col.base
 
 	push_quad_border(quad, color, 1)
-
-
-
 	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
-
 }
 
 // FONT|TEXT //
@@ -104,7 +100,7 @@ ui_set_font_size :: proc(size:f32=20)
 
 	letter_data := state.ui.char_data['W']
 	state.ui.font_v_center_offset = math.round((state.ui.font_size - letter_data.height) * 0.5)
-	state.ui.margin = 4
+	state.ui.margin = 2
 	state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
 }
 
@@ -144,7 +140,9 @@ ui_load_font :: proc(name: string, font_size: f32, texture: u32)
 		state.ui.char_data[rune(i + 32)] = char_data
 	}
 
-	if opengl_load_texture(texture, image, state.render.font_texture_size) do fmt.println(fmt.tprintf("Font loaded: %v", name))
+	if opengl_load_texture(texture, image, state.render.font_texture_size) {
+		fmt.println(fmt.tprintf("Font loaded: %v", name))
+	}
 }
 
 draw_text_multiline :: proc(text:string, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2)
@@ -203,7 +201,9 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4
 			char_quad.t = top_left.y + letter_data.offset.y
 			char_quad.r = char_quad.l + letter_data.width
 			char_quad.b = char_quad.t + letter_data.height
-			push_quad_font(char_quad, color, state.ui.char_data[letter].uv)
+			if pt_in_quad({char_quad.r, char_quad.b}, quad) {
+				push_quad_font(char_quad, color, state.ui.char_data[letter].uv)
+			}
 		}
 		top_left.x += letter_data.advance
 	}
