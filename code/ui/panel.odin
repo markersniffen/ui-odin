@@ -44,7 +44,6 @@ ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZO
 		panel.type = type
 		state.ui.panels[panel.uid] = panel
 
-
 		new_parent.children[1] = panel.uid
 
 		if active_panel_uid == state.ui.panel_master {
@@ -77,6 +76,7 @@ ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZO
 
 ui_delete_panel :: proc(panel_uid: Uid)
 {
+	fmt.println("trying to delete ", panel_uid)
 	panel, ok := state.ui.panels[panel_uid]
 	if ok
 	{
@@ -123,7 +123,6 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 	if ok
 	{
 		panel.ctx = ctx
-
 		child_a, cok := state.ui.panels[panel.children[0]]
 		if cok
 		{
@@ -143,6 +142,8 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 				bar = { ctx.l, ctx.t + size_h - PANEL_MARGIN, ctx.r, ctx.t + size_h + PANEL_MARGIN}
 			}
 			color := state.ui.col.base
+
+			// NOTE - TEMP? - CODE FOR SIZING PANELS //
 			if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, bar) {
 				if state.mouse.left == .CLICK {
 					state.ui.panel_active = panel.uid
@@ -162,20 +163,23 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 				}
 			}
 			push_quad_solid(bar, color)
+			//////////////////////////////
+
 			ui_calc_panel(panel.children[0], a)
 			ui_calc_panel(panel.children[1], b)
 		} else {
 			quad: Quad
-
 			parent, parent_ok := state.ui.panels[panel.parent]
 
-			color :v4= {0.5,0.5,0.5,1}
-			if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, ctx)
-			{
-				color = state.ui.col.hot
-				draw_text(fmt.tprintf("Panel ID: %v", panel.uid), ctx)
-			}
-			push_quad_border(ctx, color, 2)
+			// TEMP CODE /////////////////
+			// color :v4= {0.5,0.5,0.5,1}
+			// if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, ctx)
+			// {
+			// 	color = state.ui.col.hot
+			// 	draw_text(fmt.tprintf("Panel ID: %v", panel.uid), ctx)
+			// }
+			// push_quad_border(ctx, color, 2)
+			//////////////////////////////
 
 			ui_draw_panel(panel.uid, ctx)
 		}
@@ -184,6 +188,15 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 
 ui_draw_panel :: proc(panel_uid: Uid, ctx: Quad)
 {
-	if state.ui.panels[panel_uid].type == .DEBUG do ui_panel_debug(panel_uid, ctx)
+	// input code
+	#partial switch state.ui.panels[panel_uid].type {
+		case .DEBUG: ui_panel_debug(panel_uid, ctx)
+		case .TEMP: ui_panel_temp(panel_uid, ctx)
+	}
+
+	// if state.mouse.left == .CLICK && pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, ctx) {
+	// 	ui_delete_panel(panel_uid)
+	// 	state.mouse.left = .UP
+	// }
 }
 

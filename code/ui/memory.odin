@@ -28,6 +28,8 @@ pool_init :: proc(pool: ^Pool, size: int, count: int)
 	pool.memory, ok = mem.alloc_bytes(size * count) 	// allocated the total bytes
 	pool.head = nil										// sets the head to null
 	pool_free_all(pool)
+
+	fmt.println(fmt.tprintf("Initialized Pool| Size: %v | Count: %v | Kb: %v", size, count, len(pool.memory)/1024))
 }
 
 pool_free_all :: proc(pool: ^Pool)
