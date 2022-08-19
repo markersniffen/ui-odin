@@ -15,6 +15,7 @@ Ui :: struct {
 	widgets: map[Uid]^Widget,
 	widget_pool: Pool,
 
+	parent: uid,
 
 	col: Ui_Colors,
 

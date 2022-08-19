@@ -7,27 +7,31 @@ Panel_Type :: enum {
 	TEMP,
 }
 
-ui_panel_debug :: proc(panel_uid: Uid, ctx: Quad)
+ui_panel_debug :: proc(panel_uid: Uid)
 {
-	// NOTE DEBUG
+	panel, panel_ok := state.ui.panels[panel_uid]
+	if panel_ok {
+		ctx := panel.ctx
+ 		parent_widget := cast(^Widget)pool_alloc(&state.ui.widget_pool)
+		widget.id = fmt.tprintf("%v_parent", panel_uid)
+		widget.ctx = ctx
+		state.ui.widget = parent_widget.uid
 
-	debug_quad:= ctx
-	draw_text("DEBUG:", debug_quad)
-	debug_quad.t += state.ui.line_space
-	draw_text(fmt.tprintf("CTX: %v", ctx), debug_quad)
-	debug_quad.t += state.ui.line_space
-	draw_text(fmt.tprintf("Mouse Pos: %v", state.mouse.pos), debug_quad)
-	debug_quad.t += state.ui.line_space
-	for p in state.ui.panels {
-		draw_text(fmt.tprintf("%v", state.ui.panels[p]), debug_quad)
-		debug_quad.t += state.ui.line_space
+		
+
+
+
+		draw_text("DEBUG:", ctx)
+		// draw_text(fmt.tprintf("CTX: %v", ctx^))
+		// draw_text(fmt.tprintf("Mouse Pos: %v", state.mouse.pos), ctx^)
+		// for p in state.ui.panels {
+		// 	draw_text(fmt.tprintf("%v", state.ui.panels[p]), ctx^)
+		// }
+		// draw_text(fmt.tprintf("%v", state.ui.panel_master), ctx^)
 	}
-	draw_text(fmt.tprintf("%v", state.ui.panel_master), debug_quad)
-	debug_quad.t += state.ui.line_space
 }
 
-ui_panel_temp :: proc(panel_uid: Uid, ctx: Quad)
+ui_panel_temp :: proc(panel_uid: Uid)
 {
-	draw_text("Temp...", ctx)
+	// draw_text("Temp...", ctx)
 }
-

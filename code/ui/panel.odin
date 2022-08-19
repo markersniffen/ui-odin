@@ -10,17 +10,17 @@ Panel :: struct {
 	ctx: Quad,
 	parent: Uid,
 	children: [2]Uid,
-	direction: Panel_Direction,
+	direction: Direction,
 	size: f32,
 	type: Panel_Type,
 }
 
-Panel_Direction :: enum {
+Direction :: enum {
 	HORIZONTAL,
 	VERTICAL,
 }
 
-ui_create_panel :: proc(active_panel_uid: Uid, direction:Panel_Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> Uid
+ui_create_panel :: proc(active_panel_uid: Uid, direction:Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> Uid
 {
 	active_panel, active_panel_ok := state.ui.panels[active_panel_uid]
 	if active_panel_ok {
@@ -145,16 +145,10 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 
 			// NOTE - TEMP? - CODE FOR SIZING PANELS //
 			if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, bar) {
-				if state.mouse.left == .CLICK {
-					state.ui.panel_active = panel.uid
-				}
-
+				if state.mouse.left == .CLICK do state.ui.panel_active = panel.uid
 				color = state.ui.col.highlight
-				draw_text(fmt.tprintf("BORDER ID: %v", panel.uid), ctx, .LEFT, state.ui.col.highlight)
 			}
-			if state.mouse.left == .UP {
-				state.ui.panel_active = 0
-			}
+			if state.mouse.left == .UP do state.ui.panel_active = 0
 			if state.ui.panel_active == panel.uid {
 				if panel.direction == .HORIZONTAL {
 					panel.size = (f32(state.mouse.pos.x) - ctx.l) * (1 / (ctx.r - ctx.l))
@@ -181,22 +175,16 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 			// push_quad_border(ctx, color, 2)
 			//////////////////////////////
 
-			ui_draw_panel(panel.uid, ctx)
+			ui_draw_panel(panel.uid)
 		}
 	}
 }
 
-ui_draw_panel :: proc(panel_uid: Uid, ctx: Quad)
+ui_draw_panel :: proc(panel_uid: Uid)
 {
-	// input code
 	#partial switch state.ui.panels[panel_uid].type {
-		case .DEBUG: ui_panel_debug(panel_uid, ctx)
-		case .TEMP: ui_panel_temp(panel_uid, ctx)
+		case .DEBUG: ui_panel_debug(panel_uid)
+		case .TEMP: ui_panel_temp(panel_uid)
 	}
-
-	// if state.mouse.left == .CLICK && pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, ctx) {
-	// 	ui_delete_panel(panel_uid)
-	// 	state.mouse.left = .UP
-	// }
 }
 

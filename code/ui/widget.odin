@@ -13,10 +13,11 @@ MAX_WIDGETS :: 4096
 */
 
 Widget :: struct {
-	uid: Uid,
+	id: string,
 	parent_uid: Uid,
 	first_child: Uid,
-	num_children: int,
+	next: uid,
+
 	ctx: Quad,
 	ops: bit_set[Widget_Ops],
 	state: bit_set[Widget_State],
@@ -33,6 +34,29 @@ Widget_Ops :: enum {
 Widget_State :: enum {
 	ACTIVE,
 	HOT,	
+}
+
+push_parent :: proc() {
+	parent, parent_ok := state.ui.panels[state.ui.parent]
+	if parent_ok {
+		state.ui.parent = parent.next
+	}
+}
+
+pop_parent :: proc() {
+	parent, parent_ok := state.ui.panels[state.ui.parent]
+	if parent_ok {
+		state.ui.parent = parent.parent
+	}
+}
+
+create_widget :: proc(ctx: Quad, ops:bit_set[Widget_Ops], w_state:bit_set[Widget_State]) {
+	widget := cast(^Widget)pool_alloc(&state.ui.widget_pool)
+	widget.uid = "temp"
+	widget.parent_uid = 0
+	widget.ctx = ctx
+	widget.ops = ops
+	widget.state = w_state
 }
 
 operate_widget :: proc(widget: ^Widget) {
@@ -54,23 +78,12 @@ operate_widget :: proc(widget: ^Widget) {
 
 }
 
-ui_bar :: proc() {
-
-}
-
-ui_text :: proc(name: string, text: string) {
-
-}
-
 ui_button :: proc(name: string, command: string) -> bool {
+	
+	// create_widget()
+
 	return true
-}
 
-ui_textbox :: proc(name:string, text: string) {
-
-}
-
-ui_sheet :: proc(name: string, data: string) {
 
 }
 
