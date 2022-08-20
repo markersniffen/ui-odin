@@ -15,6 +15,7 @@ Panel :: struct {
 	type: Panel_Type,
 
 	widget: ^Widget,
+	box: ^Box,
 }
 
 Direction :: enum {

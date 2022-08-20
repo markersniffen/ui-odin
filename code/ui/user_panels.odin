@@ -12,19 +12,51 @@ ui_panel_debug :: proc(panel_uid: Uid)
 	panel, panel_ok := state.ui.panels[panel_uid]
 	if panel_ok {
 		ctx := panel.ctx
-		
-		panel.widget = ui_master_widget("debug master")
-		ui_push_parent(panel.widget)
-		row := ui_row("temp")
-		ui_push_parent(row)
-		ui_button("Click me")
-		ui_button("Something Else")
-		ui_pop_parent()
-		row = ui_row("row 2")
-		ui_push_parent(row)
-		ui_button("whee0")
-		ui_button("Great!")
 
+		// reset index for boxes
+		state.ui.box_index = 0
+
+		panel.box = ui_master_box("master")
+		ui_push_parent(ui_row())
+		ui_button("First button")
+		ui_button("Second button")
+		ui_pop_parent()
+
+		ui_push_parent(ui_row())
+		ui_button("secnd row button1")
+		ui_button("second row button 2")
+		ui_pop_parent()
+		
+		ctx.b = ctx.t + state.ui.line_space
+		
+		inorder :: proc(box: ^Box, ctx: ^Quad) {
+			if box == nil do return
+			draw_text(box.key, ctx^)
+			ctx.t += state.ui.line_space
+			ctx.b += state.ui.line_space
+
+			inorder(box.first, ctx)
+			inorder(box.next, ctx)
+		}
+		inorder(panel.box, &ctx)
+
+		// panel.widget = ui_master_widget("debug master")
+		// ui_push_parent(panel.widget)
+		// row := ui_row("ROW 1")
+		// ui_push_parent(row)
+		// ui_button("r1 first button")
+		// ui_button("r1 second button")
+		// ui_button("r1 third button")
+		// // if state.mouse.left == .CLICK {
+		// // 	fmt.println(state.mouse.left)
+		// // }
+		// ui_pop_parent()
+		// row2 := ui_row("ROW 2")
+		// ui_push_parent(row2)
+		// ui_button("r2 button1")
+		// ui_button("r2 button2")
+
+		
 
 		// draw_text("DEBUG:", ctx)
 		// draw_text(fmt.tprintf("CTX: %v", ctx^))
@@ -34,20 +66,6 @@ ui_panel_debug :: proc(panel_uid: Uid)
 		// }
 		// draw_text(fmt.tprintf("%v", state.ui.panel_master), ctx^)
 
-		p := panel.widget
-		ctx.b = ctx.t + state.ui.line_space
-		for {
-			draw_text(p.key, ctx)
-			ctx.t += state.ui.line_space
-			ctx.b += state.ui.line_space
-			if p.next != nil {
-				p = p.next
-			} else {
-				p = p.first_child
-				ctx.l += 20
-			}
-			if p == nil do break
-		}
 	}
 }
 

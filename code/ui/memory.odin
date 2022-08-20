@@ -12,6 +12,7 @@ Node :: struct
 
 Pool :: struct
 {
+	name: string,
 	memory: []byte,
 	chunk_size: int,
 	chunk_count: int,
@@ -19,8 +20,9 @@ Pool :: struct
 	head: ^Node,
 }
 
-pool_init :: proc(pool: ^Pool, size: int, count: int)
+pool_init :: proc(pool: ^Pool, size: int, count: int, name: string)
 {
+	pool.name = name
 	pool.chunk_size = size								// set chunk_size
 	pool.chunk_count = count							// set count
 	pool.original_size = size
@@ -29,7 +31,8 @@ pool_init :: proc(pool: ^Pool, size: int, count: int)
 	pool.head = nil										// sets the head to null
 	pool_free_all(pool)
 
-	fmt.println(fmt.tprintf("Initialized Pool| Size: %v | Count: %v | Kb: %v", size, count, len(pool.memory)/1024))
+	
+	fmt.println(fmt.tprintf("Initialized >>%v<< Pool | Size: %v | Count: %v | Kb: %v", name, size, count, len(pool.memory)/1024))
 }
 
 pool_free_all :: proc(pool: ^Pool)
@@ -47,6 +50,7 @@ pool_free_all :: proc(pool: ^Pool)
 
 pool_alloc :: proc(pool: ^Pool) -> rawptr
 {
+	fmt.println("allocing memory >>", pool.name)
 	new_alloc := pool.head
 	if new_alloc != nil
 	{

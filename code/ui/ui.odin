@@ -12,12 +12,14 @@ Ui :: struct {
 	panel_master: Uid,
 	panel_active: Uid,
 
-	widgets: map[string]^Widget,
-	widget_pool: Pool,
+	// widgets: map[string]^Widget,
+	// widget_pool: Pool,
+	// parent: ^Widget,
 
-	parent: ^Widget,
-
-
+	boxes: map[string]^Box,
+	box_pool: Pool,
+	box_parent: ^Box,
+	box_index: u64,
 
 	col: Ui_Colors,
 
@@ -42,18 +44,15 @@ ui_init :: proc()
 {
 	ui_init_font()
 
-	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS)
+	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS, "Panels")
 	state.ui.panel_master = ui_create_panel(0)
 	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, .DEBUG, 0.05)
 	ui_create_panel(sub_panel, .HORIZONTAL, .TEMP, 0.7)
 
-	pool_init(&state.ui.widget_pool, size_of(Widget), MAX_WIDGETS)
+	// pool_init(&state.ui.widget_pool, size_of(Widget), MAX_WIDGETS, "Widgets")
 
-	widget := new(Widget)
-	widget.ops = {.CLICK, .SELECT, .TEXT}
-	fmt.println(widget)
+	pool_init(&state.ui.box_pool, size_of(Box), MAX_ELEMENTS, "Boxes")
 
-	operate_widget(widget)
 }
 
 ui_update :: proc()

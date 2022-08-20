@@ -48,91 +48,89 @@ ui_generate_key :: proc(key: string) -> string {
 	return key
 }
 
-create_widget :: proc(key: string, ops:bit_set[Widget_Ops], master:bool=false) -> ^Widget {
-	widget: ^Widget
-	fmt.println(">>>>>>>>", key)
+// create_widget :: proc(key: string, ops:bit_set[Widget_Ops], master:bool=false) -> ^Widget {
+// 	widget: ^Widget
 
-	// if widget doesn't exist, create it
-	if !(key in state.ui.widgets) {
-		fmt.println("creating NEW widget", key)
-		widget = cast(^Widget)pool_alloc(&state.ui.widget_pool)
-		widget.key = ui_generate_key(key)
-		widget.parent = state.ui.parent
-		widget.ops = ops
-		state.ui.widgets[widget.key] = widget
-	} else {
-		widget = state.ui.widgets[key]
-	}
+// 	// if widget doesn't exist, create it
+// 	if !(key in state.ui.widgets) {
+// 		fmt.println("Creating ", key)
+// 		if state.ui.parent != nil do fmt.println("Parent..", state.ui.parent.key)
+// 		widget = cast(^Widget)pool_alloc(&state.ui.widget_pool)
+// 		widget.key = ui_generate_key(key)
+// 		widget.parent = state.ui.parent
+// 		widget.ops = ops
+// 		state.ui.widgets[widget.key] = widget
+// 	} else {
+// 		widget = state.ui.widgets[key]
+// 	}
 
-	if !master {
-		fmt.println("Not the master...")
-		widget.parent = state.ui.parent
+// 	if !master {
+// 		widget.parent = state.ui.parent
 		
-		if widget.parent.first_child == nil || widget.parent.first_child == widget {
-			widget.parent.first_child = widget
-		} else {
-			child := widget.parent.first_child
-			for {  
-				if child.next == nil || child.next == widget {
-					break
-				}
-				child = child.next
-			}
-			child.next = widget
-		}
-	}
-	fmt.println("END", widget.parent)
-	return widget
-}
+// 		if widget.parent.first_child == nil || widget.parent.first_child == widget {
+// 			widget.parent.first_child = widget
+// 		} else if widget.parent.first_child != nil {
+// 			child := widget.parent.first_child
+// 			for {  
+// 				if child.next == nil || child.next == widget {
+// 					break
+// 				}
+// 				child = child.next
+// 			}
+// 			child.next = widget
+// 		}
+// 	}
+// 	return widget
+// }
 
-delete_widget :: proc(key: string) {
-	widget, widget_ok := state.ui.widgets[key]; if widget_ok {
-		pool_free(&state.ui.widget_pool, widget)
-		delete_key(&state.ui.widgets, key)
-	// if widget doesn't exist create one
-	} else {
-		fmt.println("no widget to delete...")
-	}
-}
+// delete_widget :: proc(key: string) {
+// 	widget, widget_ok := state.ui.widgets[key]; if widget_ok {
+// 		pool_free(&state.ui.widget_pool, widget)
+// 		delete_key(&state.ui.widgets, key)
+// 	// if widget doesn't exist create one
+// 	} else {
+// 		fmt.println("no widget to delete...")
+// 	}
+// }
 
-ui_master_widget :: proc(key: string) -> ^Widget {
-	widget := create_widget(key, {}, true)
-	return widget
-}
+// ui_master_widget :: proc(key: string) -> ^Widget {
+// 	widget := create_widget(key, {}, true)
+// 	return widget
+// }
 
-ui_row :: proc(name:string) -> ^Widget {
-	widget := create_widget(name, {})
-	return widget
-	// state.ui.ctx
-}
+// ui_row :: proc(name:string) -> ^Widget {
+// 	widget := create_widget(name, {})
+// 	return widget
+// 	// state.ui.ctx
+// }
 
-ui_button :: proc(key: string) -> bit_set[Widget_State] {
-	widget := create_widget(key, {.CLICK})
-	return widget.state
-}
+// ui_button :: proc(key: string) -> bit_set[Widget_State] {
+// 	widget := create_widget(key, {.CLICK})
+// 	return widget.state
+// }
 
-ui_push_parent :: proc(widget: ^Widget) {
-	state.ui.parent = widget
-}
+// ui_push_parent :: proc(widget: ^Widget) {
+// 	state.ui.parent = widget
+// }
 
-ui_pop_parent :: proc() {
-	state.ui.parent = state.ui.parent.parent
-}
+// ui_pop_parent :: proc() {
+// 	state.ui.parent = state.ui.parent.parent
+// }
 
-operate_widget :: proc(widget: ^Widget) {
+// operate_widget :: proc(widget: ^Widget) {
 
-	ops := widget.ops
-	// fmt.println("operating on widget:", widget)
+// 	ops := widget.ops
+// 	// fmt.println("operating on widget:", widget)
 
-	if .CLICK in ops {
-		// fmt.println("CLICK")
-	}
+// 	if .CLICK in ops {
+// 		// fmt.println("CLICK")
+// 	}
 
-	if .SELECT in ops {
-		// fmt.println("SELECT")
-	}
+// 	if .SELECT in ops {
+// 		// fmt.println("SELECT")
+// 	}
 
-	if .TEXT in ops {
-		// fmt.println("TEXT")
-	}
-}
+// 	if .TEXT in ops {
+// 		// fmt.println("TEXT")
+// 	}
+// }
