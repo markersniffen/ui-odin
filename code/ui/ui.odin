@@ -16,10 +16,13 @@ Ui :: struct {
 	// widget_pool: Pool,
 	// parent: ^Widget,
 
+	frame: u64,
+
 	boxes: map[string]^Box,
 	box_pool: Pool,
 	box_parent: ^Box,
 	box_index: u64,
+
 
 	col: Ui_Colors,
 
@@ -58,6 +61,15 @@ ui_init :: proc()
 ui_update :: proc()
 {
 	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
+
+	for key in state.ui.boxes {
+		box := state.ui.boxes[key]
+		if box.last_frame_touched <= state.ui.frame {
+			pool_free(&state.ui.box_pool, box)
+			delete_key(&state.ui.boxes, key)
+		}
+	}
+	state.ui.frame += 1
 }
 
 ui_render :: proc()

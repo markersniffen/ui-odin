@@ -15,12 +15,20 @@ ui_panel_debug :: proc(panel_uid: Uid)
 
 		// reset index for boxes
 		state.ui.box_index = 0
+		
+		test := false
+		if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, ctx) do test = true
 
 		panel.box = ui_master_box("master")
 		ui_push_parent(ui_row())
 		ui_button("First button")
 		ui_button("Second button")
 		ui_pop_parent()
+
+		if test {
+			ui_button("hidden one")
+			ui_button("hidden two")
+		}
 
 		ui_push_parent(ui_row())
 		ui_button("secnd row button1")

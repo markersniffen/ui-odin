@@ -14,6 +14,8 @@ Box :: struct {
 
 	hash_next: ^Box,
 	hash_prev: ^Box,
+
+	last_frame_touched: u64,
 }
 
 ui_generate_box :: proc(key: string) -> ^Box {
@@ -47,6 +49,8 @@ ui_create_box :: proc(key: string, parent: ^Box) -> ^Box {
 		}
 	}
 
+
+	box.last_frame_touched = state.ui.frame
 	return(box)
 }
 
