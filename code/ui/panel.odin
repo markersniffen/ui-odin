@@ -13,6 +13,8 @@ Panel :: struct {
 	direction: Direction,
 	size: f32,
 	type: Panel_Type,
+
+	widget: ^Widget,
 }
 
 Direction :: enum {

@@ -13,14 +13,22 @@ MAX_WIDGETS :: 4096
 */
 
 Widget :: struct {
-	id: string,
-	parent_uid: Uid,
-	first_child: Uid,
-	next: uid,
+	parent: ^Widget,			// for navigating hierarchy
+	first_child: ^Widget,
+	next: ^Widget,
+	// more
+	// ...
+
+	hash_prev: Uid,				// used for quickly going through all persitent widgets
+	hash_next: Uid,
+	key: string,					// unique identifier
+	last_frame_touched: u64,	// if frame is greater than this, prune me
 
 	ctx: Quad,
 	ops: bit_set[Widget_Ops],
 	state: bit_set[Widget_State],
+
+	// had persisten animation data here?
 }
 
 Widget_Ops :: enum {
@@ -36,54 +44,95 @@ Widget_State :: enum {
 	HOT,	
 }
 
-push_parent :: proc() {
-	parent, parent_ok := state.ui.panels[state.ui.parent]
-	if parent_ok {
-		state.ui.parent = parent.next
+ui_generate_key :: proc(key: string) -> string {
+	return key
+}
+
+create_widget :: proc(key: string, ops:bit_set[Widget_Ops], master:bool=false) -> ^Widget {
+	widget: ^Widget
+	fmt.println(">>>>>>>>", key)
+
+	// if widget doesn't exist, create it
+	if !(key in state.ui.widgets) {
+		fmt.println("creating NEW widget", key)
+		widget = cast(^Widget)pool_alloc(&state.ui.widget_pool)
+		widget.key = ui_generate_key(key)
+		widget.parent = state.ui.parent
+		widget.ops = ops
+		state.ui.widgets[widget.key] = widget
+	} else {
+		widget = state.ui.widgets[key]
+	}
+
+	if !master {
+		fmt.println("Not the master...")
+		widget.parent = state.ui.parent
+		
+		if widget.parent.first_child == nil || widget.parent.first_child == widget {
+			widget.parent.first_child = widget
+		} else {
+			child := widget.parent.first_child
+			for {  
+				if child.next == nil || child.next == widget {
+					break
+				}
+				child = child.next
+			}
+			child.next = widget
+		}
+	}
+	fmt.println("END", widget.parent)
+	return widget
+}
+
+delete_widget :: proc(key: string) {
+	widget, widget_ok := state.ui.widgets[key]; if widget_ok {
+		pool_free(&state.ui.widget_pool, widget)
+		delete_key(&state.ui.widgets, key)
+	// if widget doesn't exist create one
+	} else {
+		fmt.println("no widget to delete...")
 	}
 }
 
-pop_parent :: proc() {
-	parent, parent_ok := state.ui.panels[state.ui.parent]
-	if parent_ok {
-		state.ui.parent = parent.parent
-	}
+ui_master_widget :: proc(key: string) -> ^Widget {
+	widget := create_widget(key, {}, true)
+	return widget
 }
 
-create_widget :: proc(ctx: Quad, ops:bit_set[Widget_Ops], w_state:bit_set[Widget_State]) {
-	widget := cast(^Widget)pool_alloc(&state.ui.widget_pool)
-	widget.uid = "temp"
-	widget.parent_uid = 0
-	widget.ctx = ctx
-	widget.ops = ops
-	widget.state = w_state
+ui_row :: proc(name:string) -> ^Widget {
+	widget := create_widget(name, {})
+	return widget
+	// state.ui.ctx
+}
+
+ui_button :: proc(key: string) -> bit_set[Widget_State] {
+	widget := create_widget(key, {.CLICK})
+	return widget.state
+}
+
+ui_push_parent :: proc(widget: ^Widget) {
+	state.ui.parent = widget
+}
+
+ui_pop_parent :: proc() {
+	state.ui.parent = state.ui.parent.parent
 }
 
 operate_widget :: proc(widget: ^Widget) {
 
 	ops := widget.ops
-	fmt.println("operating on widget:", widget)
+	// fmt.println("operating on widget:", widget)
 
 	if .CLICK in ops {
-		fmt.println("CLICK")
+		// fmt.println("CLICK")
 	}
 
 	if .SELECT in ops {
-		fmt.println("SELECT")
+		// fmt.println("SELECT")
 	}
 
 	if .TEXT in ops {
-		fmt.println("TEXT")
+		// fmt.println("TEXT")
 	}
-
 }
-
-ui_button :: proc(name: string, command: string) -> bool {
-	
-	// create_widget()
-
-	return true
-
-
-}
-

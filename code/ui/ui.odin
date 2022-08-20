@@ -12,18 +12,18 @@ Ui :: struct {
 	panel_master: Uid,
 	panel_active: Uid,
 
-	widgets: map[Uid]^Widget,
+	widgets: map[string]^Widget,
 	widget_pool: Pool,
 
-	parent: uid,
+	parent: ^Widget,
+
+
 
 	col: Ui_Colors,
 
-	// FONT INFO
+	// "GLOBAL" FONT INFO
 	char_data: map[rune]Char_Data,
 	font_size: f32,					// NOTE pixels tall
-	font_size_large: f32,   		// TODO not implemented yet
- 	font_size_small: f32,			//
 	font_v_center_offset: f32,
 	margin: f32,
 	line_space: f32,
@@ -61,6 +61,11 @@ ui_update :: proc()
 	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
 }
 
+ui_render :: proc()
+{
+	
+}
+
 // FONT|TEXT //
 
 Char_Data :: struct
@@ -93,8 +98,8 @@ ui_init_font :: proc() {
 ui_set_font_size :: proc(size:f32=20)
 {
 	state.ui.font_size = size
-	state.ui.font_size_small = state.ui.font_size * .75
-	state.ui.font_size_large = state.ui.font_size * 1.25
+	// state.ui.font_size_small = state.ui.font_size * .75
+	// state.ui.font_size_large = state.ui.font_size * 1.25
 	
 	ui_load_font("Roboto-Regular", state.ui.font_size, state.render.font_texture)
 
