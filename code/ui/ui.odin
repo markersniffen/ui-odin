@@ -12,17 +12,12 @@ Ui :: struct {
 	panel_master: Uid,
 	panel_active: Uid,
 
-	// widgets: map[string]^Widget,
-	// widget_pool: Pool,
-	// parent: ^Widget,
-
-	frame: u64,
-
 	boxes: map[string]^Box,
 	box_pool: Pool,
 	box_parent: ^Box,
 	box_index: u64,
 
+	frame: u64,
 
 	col: Ui_Colors,
 
@@ -48,33 +43,75 @@ ui_init :: proc()
 	ui_init_font()
 
 	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS, "Panels")
-	state.ui.panel_master = ui_create_panel(0)
+
+	state.ui.panel_master = ui_create_panel(0, .VERTICAL, .DEBUG)
 	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, .DEBUG, 0.05)
 	ui_create_panel(sub_panel, .HORIZONTAL, .TEMP, 0.7)
-
-	// pool_init(&state.ui.widget_pool, size_of(Widget), MAX_WIDGETS, "Widgets")
-
 	pool_init(&state.ui.box_pool, size_of(Box), MAX_ELEMENTS, "Boxes")
-
 }
 
 ui_update :: proc()
 {
 	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
 
+	if read_key(&state.keys.left) do state.debug.temp -= 1
+	if read_key(&state.keys.right) do state.debug.temp += 1
+
 	for key in state.ui.boxes {
 		box := state.ui.boxes[key]
-		if box.last_frame_touched <= state.ui.frame {
-			pool_free(&state.ui.box_pool, box)
+		if state.ui.frame > box.last_frame_touched {
+			fmt.println(key)
+			// remove links
+			if box.parent.first == box && box.parent.last == box {
+				box.parent.first = nil
+				box.parent.last = nil
+			}
+			else if box.parent.first == box && box.parent.last != box
+			{
+				box.parent.first = box.next
+				box.parent.first.prev = nil
+			}
+			else if box.parent.first != box && box.parent.last == box
+			{
+				box.prev.next = nil
+				box.parent.last = box.prev
+			}
+			else if box.parent.first != box && box.parent.last != box
+			{
+				box.prev.next = box.next
+				box.next.prev = box.prev
+			}
+
 			delete_key(&state.ui.boxes, key)
+			pool_free(&state.ui.box_pool, box)
 		}
 	}
 	state.ui.frame += 1
+	state.ui.box_index = 0
 }
 
 ui_render :: proc()
 {
+	for panel_uid in state.ui.panels {
+		panel, panel_ok := state.ui.panels[panel_uid]
+		if panel_ok {
+			if panel.box != nil {
+				ctx := panel.ctx
+				ctx.b = ctx.t + state.ui.line_space
 	
+				inorder :: proc(box: ^Box, ctx: ^Quad) {
+					if box == nil do return
+					draw_text(box.key, ctx^)
+					ctx.t += state.ui.line_space
+					ctx.b += state.ui.line_space
+
+					inorder(box.first, ctx)
+					inorder(box.next, ctx)
+				}
+				inorder(panel.box, &ctx)
+			}
+		}
+	}
 }
 
 // FONT|TEXT //

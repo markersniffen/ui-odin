@@ -30,6 +30,8 @@ State :: struct {
 	mouse: Mouse,
 	keys: Keys,
 	mode: Mode,
+
+	debug: Debug,
 }
 
 Mode :: enum {

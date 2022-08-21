@@ -50,7 +50,7 @@ pool_free_all :: proc(pool: ^Pool)
 
 pool_alloc :: proc(pool: ^Pool) -> rawptr
 {
-	fmt.println("allocing memory >>", pool.name)
+	// fmt.println("allocing memory >>", pool.name)
 	new_alloc := pool.head
 	if new_alloc != nil
 	{

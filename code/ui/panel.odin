@@ -14,7 +14,6 @@ Panel :: struct {
 	size: f32,
 	type: Panel_Type,
 
-	widget: ^Widget,
 	box: ^Box,
 }
 

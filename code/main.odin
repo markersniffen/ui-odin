@@ -13,6 +13,7 @@ main :: proc() {
 		{
 			update()
 			ui_update()
+			ui_render()
 			opengl_render()
 		}
 	}

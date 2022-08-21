@@ -7,10 +7,11 @@ MAX_ELEMENTS :: 4096
 Box :: struct {
 	key: string,
 
-	parent: ^Box,
-	first: ^Box,
-	next: ^Box,
-	last: ^Box,
+	parent: ^Box,	// parent
+	first: ^Box,	// first child
+	last: ^Box,		// last child
+	next: ^Box,		// next sibling
+	prev: ^Box,		// prev sibling
 
 	hash_next: ^Box,
 	hash_prev: ^Box,
@@ -32,21 +33,17 @@ ui_create_box :: proc(key: string, parent: ^Box) -> ^Box {
 	if !box_ok {
 		box = ui_generate_box(key)
 		box.parent = parent
-		parent.last = box
 
+		// try adding as first child first
 		if parent.first == nil {
 			parent.first = box
-			parent.next = nil
-		} else if parent.next == nil {
-			parent.next = box	
-		} else { // if parent.next != nill
-			child := parent.next
-			for {
-				if child.next == nil do break
-				child.next = child
-			}
-			child.next = box
+			box.prev = nil
+		} else if parent.first != nil {
+			parent.last.next = box
+			box.prev = parent.last
 		}
+		parent.last = box
+		box.next = nil
 	}
 
 
@@ -59,13 +56,13 @@ ui_master_box :: proc(key: string) -> ^Box {
 	if !box_ok {
 		box = ui_generate_box(key)
 	}
+	box.last_frame_touched = state.ui.frame
 	ui_push_parent(box)
 	return box
 }
 
 ui_row :: proc() -> ^Box {
 	state.ui.box_index += 1
-	fmt.println("creating row", state.ui.box_index)
 	box := ui_create_box(fmt.tprintf("row_%v", state.ui.box_index), state.ui.box_parent)
 	return box
 }
