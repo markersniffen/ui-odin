@@ -5,6 +5,7 @@ import "core:fmt"
 Panel_Type :: enum {
 	NULL,
 	DEBUG,
+	PANEL_LIST,
 	TEMP,
 }
 
@@ -42,5 +43,24 @@ ui_panel_temp :: proc(panel: ^Panel)
 		ui_push_parent(ui_row())
 		ui_button("X")
 		ui_button("Y")
+	}
+}
+
+ui_panel_panel_list :: proc(panel: ^Panel) {
+		if panel != nil {
+		ctx := panel.ctx
+
+		// reset index for boxes
+		panel.box = ui_master_box(fmt.tprintf("master_%v", panel.type))
+		ui_push_parent(ui_row())
+		
+		ui_button(fmt.tprintf("Active: %v", state.ui.panel_active))
+
+		for p in state.ui.panels {
+			panel, pok := state.ui.panels[p]
+
+			ui_button(fmt.tprintf("Panel: %v", panel))
+		}
+		ui_pop_parent()
 	}
 }

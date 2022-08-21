@@ -13,10 +13,8 @@ Panel :: struct {
 	child_b: ^Panel,
 
 	direction: Direction,
-
 	size: f32,
 	type: Panel_Type,
-
 	ctx: Quad,
 	box: ^Box,
 }
@@ -25,8 +23,6 @@ Direction :: enum {
 	HORIZONTAL,
 	VERTICAL,
 }
-
-
 
 ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> ^Panel
 {
@@ -73,6 +69,7 @@ ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, ty
 		panel.size = 0.5
 		panel.parent = nil
 		panel.direction = direction
+		panel.type = type
 		state.ui.panels[panel.uid] = panel
 		return panel
 	}
@@ -184,6 +181,7 @@ ui_draw_panel :: proc(panel: ^Panel)
 {
 	#partial switch panel.type {
 		case .DEBUG: ui_panel_debug(panel)
+		case .PANEL_LIST: ui_panel_panel_list(panel)
 		case .TEMP: ui_panel_temp(panel)
 	}
 }

@@ -46,7 +46,7 @@ ui_init :: proc()
 
 	state.ui.panel_master = ui_create_panel(nil, .VERTICAL, .DEBUG)
 	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, .DEBUG, 0.05)
-	ui_create_panel(sub_panel, .HORIZONTAL, .TEMP, 0.7)
+	ui_create_panel(sub_panel, .HORIZONTAL, .PANEL_LIST, 0.7)
 	pool_init(&state.ui.box_pool, size_of(Box), MAX_ELEMENTS, "Boxes")
 }
 
@@ -60,7 +60,6 @@ ui_update :: proc()
 	for key in state.ui.boxes {
 		box := state.ui.boxes[key]
 		if state.ui.frame > box.last_frame_touched {
-			fmt.println(key)
 			// remove links
 			if box.parent.first == box && box.parent.last == box {
 				box.parent.first = nil
