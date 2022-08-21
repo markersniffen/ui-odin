@@ -52,37 +52,18 @@ ui_init :: proc()
 
 ui_update :: proc()
 {
-	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
-
+	// NOTE temp input for testing
 	if read_key(&state.keys.left) do state.debug.temp -= 1
 	if read_key(&state.keys.right) do state.debug.temp += 1
 
+	// calculate panels, includes box-builder code
+	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
+
+    // prune nodes that aren't used
 	for key in state.ui.boxes {
 		box := state.ui.boxes[key]
 		if state.ui.frame > box.last_frame_touched {
-			// remove links
-			if box.parent.first == box && box.parent.last == box {
-				box.parent.first = nil
-				box.parent.last = nil
-			}
-			else if box.parent.first == box && box.parent.last != box
-			{
-				box.parent.first = box.next
-				box.parent.first.prev = nil
-			}
-			else if box.parent.first != box && box.parent.last == box
-			{
-				box.prev.next = nil
-				box.parent.last = box.prev
-			}
-			else if box.parent.first != box && box.parent.last != box
-			{
-				box.prev.next = box.next
-				box.next.prev = box.prev
-			}
-
-			delete_key(&state.ui.boxes, key)
-			pool_free(&state.ui.box_pool, box)
+			ui_delete_box(box)
 		}
 	}
 	state.ui.frame += 1
