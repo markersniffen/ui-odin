@@ -8,10 +8,9 @@ Panel_Type :: enum {
 	TEMP,
 }
 
-ui_panel_debug :: proc(panel_uid: Uid)
+ui_panel_debug :: proc(panel: ^Panel)
 {
-	panel, panel_ok := state.ui.panels[panel_uid]
-	if panel_ok {
+	if panel != nil {
 		ctx := panel.ctx
 
 		// reset index for boxes
@@ -34,10 +33,9 @@ ui_panel_debug :: proc(panel_uid: Uid)
 	}
 }
 
-ui_panel_temp :: proc(panel_uid: Uid)
+ui_panel_temp :: proc(panel: ^Panel)
 {
-	panel, panel_ok := state.ui.panels[panel_uid]
-	if panel_ok {
+	if panel != nil {
 		// reset index for boxes
 		// state.ui.box_index = 0
 		panel.box = ui_master_box(fmt.tprintf("master_%v", panel.type))

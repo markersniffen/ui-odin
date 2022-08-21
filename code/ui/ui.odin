@@ -9,8 +9,8 @@ import "core:math"
 Ui :: struct {
 	panels: map[Uid]^Panel,
 	panel_pool: Pool,
-	panel_master: Uid,
-	panel_active: Uid,
+	panel_master: ^Panel,
+	panel_active: ^Panel,
 
 	boxes: map[string]^Box,
 	box_pool: Pool,
@@ -44,7 +44,7 @@ ui_init :: proc()
 
 	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS, "Panels")
 
-	state.ui.panel_master = ui_create_panel(0, .VERTICAL, .DEBUG)
+	state.ui.panel_master = ui_create_panel(nil, .VERTICAL, .DEBUG)
 	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, .DEBUG, 0.05)
 	ui_create_panel(sub_panel, .HORIZONTAL, .TEMP, 0.7)
 	pool_init(&state.ui.box_pool, size_of(Box), MAX_ELEMENTS, "Boxes")

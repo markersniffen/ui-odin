@@ -7,13 +7,17 @@ PANEL_MARGIN :: 2
 
 Panel :: struct {
 	uid: Uid,
-	ctx: Quad,
-	parent: Uid,
-	children: [2]Uid,
+
+	parent: ^Panel,
+	child_a: ^Panel,
+	child_b: ^Panel,
+
 	direction: Direction,
+
 	size: f32,
 	type: Panel_Type,
 
+	ctx: Quad,
 	box: ^Box,
 }
 
@@ -22,89 +26,85 @@ Direction :: enum {
 	VERTICAL,
 }
 
-ui_create_panel :: proc(active_panel_uid: Uid, direction:Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> Uid
+
+
+ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> ^Panel
 {
-	active_panel, active_panel_ok := state.ui.panels[active_panel_uid]
-	if active_panel_ok {
+	if active_panel != nil {
 		new_parent := cast(^Panel)pool_alloc(&state.ui.panel_pool)
 		new_parent.uid = new_uid()
 		new_parent.size = size
-		new_parent.children[0] = active_panel.uid
+		new_parent.child_a = active_panel
 		new_parent.parent = active_panel.parent
 		new_parent.direction = direction
 		state.ui.panels[new_parent.uid] = new_parent
 
-		active_panel.parent = new_parent.uid
-		active_panel.children = {0,0}
+		active_panel.parent = new_parent
+		active_panel.child_a = nil
+		active_panel.child_b = nil
 		active_panel.size = 0.5 
 
 		panel := cast(^Panel)pool_alloc(&state.ui.panel_pool)
 		panel.uid = new_uid()
 		panel.size = 0.5
-		panel.parent = new_parent.uid
+		panel.parent = new_parent
 		panel.direction = direction
 		panel.type = type
 		state.ui.panels[panel.uid] = panel
 
-		new_parent.children[1] = panel.uid
+		new_parent.child_b = panel
 
-		if active_panel_uid == state.ui.panel_master {
-			state.ui.panel_master = new_parent.uid
+		if active_panel == state.ui.panel_master {
+			state.ui.panel_master = new_parent
 		}
 
-		grandpa, grandpa_ok:= state.ui.panels[new_parent.parent]
-		if grandpa_ok {
-			if grandpa.children[0] == active_panel_uid {
-				grandpa.children[0] = new_parent.uid
+		grandpa := new_parent.parent
+		if grandpa != nil {
+			if grandpa.child_a == active_panel {
+				grandpa.child_a = new_parent
 			} else {
-				grandpa.children[1] = new_parent.uid
+				grandpa.child_b = new_parent
 			}
 		}
-
-		return panel.uid
+		return panel
 	} else {
-		if active_panel_uid == 0 {
-			panel := cast(^Panel)pool_alloc(&state.ui.panel_pool)
-			panel.uid = new_uid()
-			panel.size = 0.5
-			panel.parent = 0
-			panel.direction = direction
-			state.ui.panels[panel.uid] = panel
-			return panel.uid
-		}
+		panel := cast(^Panel)pool_alloc(&state.ui.panel_pool)
+		panel.uid = new_uid()
+		panel.size = 0.5
+		panel.parent = nil
+		panel.direction = direction
+		state.ui.panels[panel.uid] = panel
+		return panel
 	}
-	return 0
+	return nil
 }
 
-ui_delete_panel :: proc(panel_uid: Uid)
+ui_delete_panel :: proc(panel: ^Panel)
 {
-	fmt.println("trying to delete ", panel_uid)
-	panel, ok := state.ui.panels[panel_uid]
-	if ok
+	fmt.println("trying to delete ", panel.uid)
+	if panel != nil
 	{
-		parent, parent_ok := state.ui.panels[panel.parent]
-		if parent_ok
+		parent := panel.parent
+		if parent != nil
 		{
-			grandpa, grandpa_ok := state.ui.panels[parent.parent]
-			if grandpa_ok
+			grandpa := parent.parent
+			if grandpa != nil
 			{
-				sibling_uid: Uid
-				if parent.children[0] == panel_uid
+				sibling: ^Panel
+				if parent.child_a == panel
 				{
-					sibling_uid = parent.children[1]
+					sibling = parent.child_b
 				} else {
-					sibling_uid = parent.children[0]
+					sibling = parent.child_a
 				}
-				sibling, sibling_ok := state.ui.panels[sibling_uid]
-				if sibling_ok
+				if sibling != nil
 				{
 					sibling.parent = parent.parent
-					for child, c in grandpa.children
-					{
-						if child == panel.parent do grandpa.children[c] = sibling_uid
-					}
+					if grandpa.child_a == panel.parent do grandpa.child_a = sibling
+					if grandpa.child_b == panel.parent do grandpa.child_b = sibling
+
 					delete_key(&state.ui.panels, parent.uid)
-					delete_key(&state.ui.panels, panel_uid)
+					delete_key(&state.ui.panels, panel.uid)
 				} else {
 					fmt.println("failed to find sibling")
 				}
@@ -119,14 +119,13 @@ ui_delete_panel :: proc(panel_uid: Uid)
 	}
 }
 
-ui_calc_panel :: proc(uid: Uid, ctx: Quad)
+ui_calc_panel :: proc(panel: ^Panel, ctx: Quad)
 {
-	panel, ok := state.ui.panels[uid]
-	if ok
+	if panel != nil
 	{
 		panel.ctx = ctx
-		child_a, cok := state.ui.panels[panel.children[0]]
-		if cok
+		child_a := panel.child_a
+		if child_a != nil
 		{
 			a: Quad
 			b: Quad
@@ -147,11 +146,11 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 
 			// NOTE - TEMP? - CODE FOR SIZING PANELS //
 			if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, bar) {
-				if state.mouse.left == .CLICK do state.ui.panel_active = panel.uid
+				if state.mouse.left == .CLICK do state.ui.panel_active = panel
 				color = state.ui.col.highlight
 			}
-			if state.mouse.left == .UP do state.ui.panel_active = 0
-			if state.ui.panel_active == panel.uid {
+			if state.mouse.left == .UP do state.ui.panel_active = nil
+			if state.ui.panel_active == panel {
 				if panel.direction == .HORIZONTAL {
 					panel.size = (f32(state.mouse.pos.x) - ctx.l) * (1 / (ctx.r - ctx.l))
 				} else {
@@ -161,11 +160,10 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 			push_quad_solid(bar, color)
 			//////////////////////////////
 
-			ui_calc_panel(panel.children[0], a)
-			ui_calc_panel(panel.children[1], b)
+			ui_calc_panel(panel.child_a, a)
+			ui_calc_panel(panel.child_b, b)
 		} else {
 			quad: Quad
-			parent, parent_ok := state.ui.panels[panel.parent]
 
 			// TEMP CODE /////////////////
 			// color :v4= {0.5,0.5,0.5,1}
@@ -177,16 +175,16 @@ ui_calc_panel :: proc(uid: Uid, ctx: Quad)
 			// push_quad_border(ctx, color, 2)
 			//////////////////////////////
 
-			ui_draw_panel(panel.uid)
+			ui_draw_panel(panel)
 		}
 	}
 }
 
-ui_draw_panel :: proc(panel_uid: Uid)
+ui_draw_panel :: proc(panel: ^Panel)
 {
-	#partial switch state.ui.panels[panel_uid].type {
-		case .DEBUG: ui_panel_debug(panel_uid)
-		case .TEMP: ui_panel_temp(panel_uid)
+	#partial switch panel.type {
+		case .DEBUG: ui_panel_debug(panel)
+		case .TEMP: ui_panel_temp(panel)
 	}
 }
 
