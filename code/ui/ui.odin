@@ -21,7 +21,7 @@ Ui :: struct {
 
 	col: Ui_Colors,
 
-	stack: Ui_Stack,
+	ctx: UI_Context,
 
 	// "GLOBAL" FONT INFO
 	char_data: map[rune]Char_Data,
@@ -31,11 +31,13 @@ Ui :: struct {
 	line_space: f32,
 }
 
-Ui_Stack :: struct {
+UI_Context :: struct {
 	font_color: v4,
 	bg_color: v4,
 	border_color: v4,
+	border: f32,
 	size: [2]UI_Size,
+	direction: Direction,
 }
 
 Ui_Colors :: struct {
@@ -55,9 +57,9 @@ ui_init :: proc()
 	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS, "Panels")
 
 	// Setup panels ------------------------------
-	state.ui.panel_master = ui_create_panel(nil, .VERTICAL, .DEBUG)
+	state.ui.panel_master = ui_create_panel(nil, .VERTICAL, .PANEL_LIST)
 	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, .DEBUG, 0.05)
-	ui_create_panel(sub_panel, .HORIZONTAL, .PANEL_LIST, 0.7)
+	ui_create_panel(sub_panel, .HORIZONTAL, .TEMP, 0.7)
 	pool_init(&state.ui.box_pool, size_of(Box), MAX_ELEMENTS, "Boxes")
 }
 
@@ -72,8 +74,7 @@ ui_update :: proc()
 	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
 
     // prune nodes that aren't used ------------------------------
-	for key in state.ui.boxes {
-		box := state.ui.boxes[key]
+	for _, box in state.ui.boxes {
 		if state.ui.frame > box.last_frame_touched {
 			ui_delete_box(box)
 		}
@@ -90,26 +91,52 @@ ui_update :: proc()
 //______ UI RENDER ______//
 ui_render :: proc()
 {
-	for panel_uid in state.ui.panels {
-		panel, panel_ok := state.ui.panels[panel_uid]
-		if panel_ok {
-			if panel.box != nil {
-				ctx := panel.ctx
-				ctx.b = ctx.t + state.ui.line_space
-	
-				inorder :: proc(box: ^Box, ctx: ^Quad) {
-					if box == nil do return
-					draw_text(box.key, ctx^)
-					ctx.t += state.ui.line_space
-					ctx.b += state.ui.line_space
-
-					inorder(box.first, ctx)
-					inorder(box.next, ctx)
-				}
-				inorder(panel.box, &ctx)
+	for _, panel in state.ui.panels {
+		root := panel.box
+		fmt.println("STARTING RENDER OF", root.key)
+		inorder :: proc(box: ^Box) {
+			if box == nil do return
+			if box.parent != nil {
+				box.ctx.l = box.parent.ctx.l + box.offset.x
+				box.ctx.t = box.parent.ctx.t + box.offset.y
+				box.ctx.r = box.ctx.l + box.calc_size.x
+				box.ctx.b = box.ctx.t + box.calc_size.y
 			}
+			if .DRAWBACKGROUND in box.flags {
+				push_quad_solid(box.ctx, box.bg_color)
+			}
+			if .DRAWBORDER in box.flags {
+				push_quad_border(box.ctx, box.border_color, box.border)
+			}
+			if .DRAWTEXT in box.flags{
+				draw_text(box.key, box.ctx)
+			}
+			inorder(box.first)
+			inorder(box.next)
 		}
+		inorder(panel.box)
 	}
+
+	// for panel_uid in state.ui.panels {
+	// 	panel, panel_ok := state.ui.panels[panel_uid]
+	// 	if panel_ok {
+	// 		if panel.box != nil {
+	// 			ctx := panel.ctx
+	// 			ctx.b = ctx.t + state.ui.line_space
+	
+	// 			inorder :: proc(box: ^Box, ctx: ^Quad) {
+	// 				if box == nil do return
+	// 				draw_text(box.key, ctx^)
+	// 				ctx.t += state.ui.line_space
+	// 				ctx.b += state.ui.line_space
+
+	// 				inorder(box.first, ctx)
+	// 				inorder(box.next, ctx)
+	// 			}
+	// 			inorder(panel.box, &ctx)
+	// 		}
+	// 	}
+	// }
 }
 
 //______ FONT/TEXT ______//

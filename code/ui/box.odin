@@ -21,7 +21,11 @@ Box :: struct {
 	flags: bit_set[Box_Flags],
 	ops: Box_Ops,
 
+	bg_color: v4,
+	border_color: v4,
+	border: f32,
 	size: [2]UI_Size,
+	direction: Direction,
 	calc_size: v2,
 	offset: v2,		// from parent
 	ctx: Quad,
@@ -79,6 +83,12 @@ ui_create_box :: proc(key: string, parent: ^Box, flags:bit_set[Box_Flags]={}) ->
 		box = ui_generate_box(key)
 		box.parent = parent
 
+		box.size = state.ui.ctx.size
+		box.direction = state.ui.ctx.direction
+		box.bg_color = state.ui.ctx.bg_color
+		box.border_color = state.ui.ctx.border_color
+		box.border = state.ui.ctx.border
+
 		// try adding as first child first
 		if parent.first == nil {
 			parent.first = box
@@ -118,22 +128,55 @@ ui_ops :: proc(box: ^Box) {
 }
 
 ui_calc_boxes :: proc() {
-	// iterate through boxes ------------------------------
+	// PIXEL SIZE ------------------------------
 	for _, box in state.ui.boxes {
 		// for each axis (x/y) ------------------------------
 		for size, index in box.size {
-			calc_size := box.calc_size[index]
-			
-			#partial switch size.type {
-				case .PIXELS:
-				calc_size = size.value		
-
-				// case .TEXT_CONTENT:
-				// calc_size = 
-				// fmt.println("text-content")		
+			calc_size := &box.calc_size[index]
+			if size.type == .PIXELS {
+				calc_size^ = size.value		
 			}
 		}
 	}	
+	// PARENT SIZE ------------------------------
+	for _, box in state.ui.boxes {
+		// for each axis (x/y) ------------------------------
+		for size, index in box.size {
+			calc_size := &box.calc_size[index]
+			
+			if size.type == .PERCENT_PARENT {
+				psize := box.parent.calc_size[index]
+				calc_size^ = psize * size.value
+			}
+		}
+	}
+	// RELATIVE POSITION & QUAD ----------------------
+	for _, box in state.ui.boxes {
+		switch box.direction {
+			case .HORIZONTAL:
+				if box.prev == nil {
+					box.offset.x = 0
+				} else {
+					new_calc_size : f32
+					for prev := box.prev; prev != nil; prev = prev.prev {
+						new_calc_size += prev.calc_size.x
+					} 
+					box.offset.x = new_calc_size
+				}
+				if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
+			case .VERTICAL:
+				if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
+				if box.prev == nil {
+					box.offset.y = 0
+				} else {
+					new_calc_size: f32
+					for prev := box.prev; prev != nil; prev = prev.prev {
+						new_calc_size += prev.calc_size.y
+					}
+					box.offset.y = new_calc_size
+				}
+		}
+	}
 }
 
 ui_delete_box :: proc(box: ^Box) {
