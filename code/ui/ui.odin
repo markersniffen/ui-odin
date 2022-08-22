@@ -21,12 +21,21 @@ Ui :: struct {
 
 	col: Ui_Colors,
 
+	stack: Ui_Stack,
+
 	// "GLOBAL" FONT INFO
 	char_data: map[rune]Char_Data,
 	font_size: f32,					// NOTE pixels tall
 	font_v_center_offset: f32,
 	margin: f32,
 	line_space: f32,
+}
+
+Ui_Stack :: struct {
+	font_color: v4,
+	bg_color: v4,
+	border_color: v4,
+	size: [2]UI_Size,
 }
 
 Ui_Colors :: struct {
@@ -38,38 +47,47 @@ Ui_Colors :: struct {
 	active: v4,	
 }
 
+//______ INITIALIZATION ______ //
 ui_init :: proc()
 {
 	ui_init_font()
 
 	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS, "Panels")
 
+	// Setup panels ------------------------------
 	state.ui.panel_master = ui_create_panel(nil, .VERTICAL, .DEBUG)
 	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, .DEBUG, 0.05)
 	ui_create_panel(sub_panel, .HORIZONTAL, .PANEL_LIST, 0.7)
 	pool_init(&state.ui.box_pool, size_of(Box), MAX_ELEMENTS, "Boxes")
 }
 
+//______ UI UPDATE ______//
 ui_update :: proc()
 {
-	// NOTE temp input for testing
+	// temp input for testing ------------------------------ 
 	if read_key(&state.keys.left) do state.debug.temp -= 1
 	if read_key(&state.keys.right) do state.debug.temp += 1
 
-	// calculate panels, includes box-builder code
+	// calculate panels, includes box-builder code ------------------------------
 	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
 
-    // prune nodes that aren't used
+    // prune nodes that aren't used ------------------------------
 	for key in state.ui.boxes {
 		box := state.ui.boxes[key]
 		if state.ui.frame > box.last_frame_touched {
 			ui_delete_box(box)
 		}
 	}
+
+	// calculate size of boxes ------------------------------
+	ui_calc_boxes()
+
+	// advance frame / reset box index for keys ------------------------------
 	state.ui.frame += 1
 	state.ui.box_index = 0
 }
 
+//______ UI RENDER ______//
 ui_render :: proc()
 {
 	for panel_uid in state.ui.panels {
@@ -94,8 +112,7 @@ ui_render :: proc()
 	}
 }
 
-// FONT|TEXT //
-
+//______ FONT/TEXT ______//
 Char_Data :: struct
 {
 	offset: v2,

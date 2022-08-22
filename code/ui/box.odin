@@ -20,6 +20,11 @@ Box :: struct {
 
 	flags: bit_set[Box_Flags],
 	ops: Box_Ops,
+
+	size: [2]UI_Size,
+	calc_size: v2,
+	offset: v2,		// from parent
+	ctx: Quad,
 }
 
 Box_Flags :: enum {
@@ -43,6 +48,20 @@ Box_Ops :: struct {
   released: bool,
   dragging: bool,
   hovering: bool,
+}
+
+UI_Size_Type :: enum {
+  NIL,
+  PIXELS,
+  TEXT_CONTENT,
+  PERCENT_PARENT,
+  CHILDREN_SUM,
+}
+
+UI_Size :: struct {
+	type: UI_Size_Type,
+	value: f32,
+	// strictness: ??
 }
 
 ui_generate_box :: proc(key: string) -> ^Box {
@@ -79,6 +98,44 @@ ui_create_box :: proc(key: string, parent: ^Box, flags:bit_set[Box_Flags]={}) ->
 	return(box)
 }
 
+ui_ops :: proc(box: ^Box) {
+	ops := box.ops
+
+	if mouse_in_quad(box.ctx) {
+		ops.clicked = read_mouse(&state.mouse.left)
+		if ops.clicked {
+			fmt.println("Clicked!")
+		}
+	}
+
+	if ops.double_clicked {
+		fmt.println("double clicked!")
+	}
+
+	if ops.right_clicked {
+		fmt.println("right clicked!")
+	}
+}
+
+ui_calc_boxes :: proc() {
+	// iterate through boxes ------------------------------
+	for _, box in state.ui.boxes {
+		// for each axis (x/y) ------------------------------
+		for size, index in box.size {
+			calc_size := box.calc_size[index]
+			
+			#partial switch size.type {
+				case .PIXELS:
+				calc_size = size.value		
+
+				// case .TEXT_CONTENT:
+				// calc_size = 
+				// fmt.println("text-content")		
+			}
+		}
+	}	
+}
+
 ui_delete_box :: proc(box: ^Box) {
 	if box.parent.first == box && box.parent.last == box {
 		box.parent.first = nil
@@ -104,56 +161,3 @@ ui_delete_box :: proc(box: ^Box) {
 	pool_free(&state.ui.box_pool, box)
 }
 
-ui_ops :: proc(box: ^Box) {
-	ops := box.ops
-	fmt.println("operating on box:", )
-
-	if ops.clicked {
-		fmt.println("Clicked!")
-	}
-
-	if ops.double_clicked {
-		fmt.println("double clicked!")
-	}
-
-	if ops.right_clicked {
-		fmt.println("right clicked!")
-	}
-
-}
-
-// BUILDER CODE THAT MAKES BOXES
-ui_master_box :: proc(key: string) -> ^Box {
-	box, box_ok := state.ui.boxes[key]
-	if !box_ok {
-		box = ui_generate_box(key)
-	}
-	box.last_frame_touched = state.ui.frame
-	box.flags = { .MASTER }
-	ui_push_parent(box)
-	return box
-}
-
-ui_row :: proc() -> ^Box {
-	state.ui.box_index += 1 // TODO is this a good idea?
-	box := ui_create_box(fmt.tprintf("row_%v", state.ui.box_index), state.ui.box_parent, {})
-	return box
-}
-
-ui_text :: proc(key: string) -> Box_Ops {
-	box := ui_create_box(key, state.ui.box_parent, { .DRAWTEXT })
-	return box.ops
-}
-
-ui_button :: proc(key: string) -> Box_Ops {
-	box := ui_create_box(key, state.ui.box_parent, { .CLICKABLE, .DRAWTEXT, .DRAWBACKGROUND, .DRAWBORDER })
-	return box.ops
-}
-
-ui_push_parent :: proc(box: ^Box) {
-	state.ui.box_parent = box
-}
-
-ui_pop_parent :: proc() {
-	state.ui.box_parent = state.ui.box_parent.parent
-}

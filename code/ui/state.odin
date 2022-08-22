@@ -204,6 +204,16 @@ scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64)
 	state.mouse.scroll = f32(y/10)
 }
 
+read_mouse :: proc(button: ^Button) -> bool
+{
+	if button^ == .CLICK {
+		button^ = .UP
+		return true
+	}
+	return false
+}
+
+
 mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods: int)
 {
 	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }

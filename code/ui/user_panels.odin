@@ -9,12 +9,18 @@ Panel_Type :: enum {
 	TEMP,
 }
 
+//______ PANELS ______//
+
 ui_panel_debug :: proc(panel: ^Panel)
 {
 	if panel != nil {
 		ctx := panel.ctx
 
 		// reset index for boxes
+		
+		ui_set_size_x(.PIXELS, 600)
+		ui_set_size_y(.PIXELS, state.ui.line_space)
+
 		panel.box = ui_master_box(fmt.tprintf("master_%v", panel.type))
 		ui_push_parent(ui_row())
 		ui_button("First button")
@@ -61,6 +67,6 @@ ui_panel_panel_list :: proc(panel: ^Panel) {
 
 			ui_button(fmt.tprintf("Panel: %v", panel))
 		}
-		ui_pop_parent()
+		ui_pop_parent()// NOTE ___________________________________________________________
 	}
 }
