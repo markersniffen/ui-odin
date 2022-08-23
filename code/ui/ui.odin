@@ -86,8 +86,8 @@ ui_init :: proc()
 	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS, "Panels")
 
 	// Setup panels ------------------------------
-	state.ui.panel_master = ui_create_panel(nil, .VERTICAL, .PANEL_LIST)
-	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, .DEBUG, 0.05)
+	state.ui.panel_master = ui_create_panel(nil, .VERTICAL, .FILE_MENU)
+	sub_panel := ui_create_panel(state.ui.panel_master, .VERTICAL, .DEBUG, 0.5)
 	ui_create_panel(sub_panel, .HORIZONTAL, .TEMP, 0.7)
 	pool_init(&state.ui.box_pool, size_of(Box), MAX_BOXES, "Boxes")
 }
@@ -99,6 +99,23 @@ ui_update :: proc()
 	if read_key(&state.keys.left) do state.debug.temp -= 1
 	if read_key(&state.keys.right) do state.debug.temp += 1
 
+	// TODO temp change panel type (not working)
+	if state.ui.panel_active != nil {
+		num := int(state.ui.panel_active.type)
+		if state.mouse.scroll > 0 {
+			num = clamp(num + 1, 1, 4)
+			fmt.println(num)	
+		}
+
+		if state.mouse.scroll < 0 {
+			num = clamp(num - 1, 1, 4)
+			fmt.println(num)	
+		}
+		state.mouse.scroll = 0
+		state.ui.panel_active.type = Panel_Type(num)
+	}
+
+	// fmt.println(">>>>", state.ui.panel_active.type)	
 	// calculate panels, includes box-builder code ------------------------------
 	ui_calc_panel(state.ui.panel_master, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
 
@@ -115,14 +132,19 @@ ui_update :: proc()
 	// advance frame / reset box index for keys ------------------------------
 	state.ui.frame += 1
 	state.ui.box_index = 0
-}
 
-//______ UI RENDER ______//
-ui_render :: proc()
-{
+	// queue panels/boxes for rendering ------------------------------
 	for _, panel in state.ui.panels {
 		root := panel.box
-		inorder :: proc(box: ^Box) {
+		if panel.child_a == nil {
+			#partial switch panel.type {
+				case .DEBUG: 		ui_panel_debug(panel)
+				case .PANEL_LIST: 	ui_panel_panel_list(panel)
+				case .TEMP: 		ui_panel_temp(panel)
+				case .FILE_MENU:	ui_panel_file_menu(panel)
+			}
+		}
+		iterate_boxes :: proc(box: ^Box) {
 			if box == nil do return
 			if box.parent != nil {
 				box.ctx.l = box.parent.ctx.l + box.offset.x
@@ -151,9 +173,10 @@ ui_render :: proc()
 			if .DRAWTEXT in box.flags {
 				draw_text(box.key, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx))
 			}
-			inorder(box.first)
-			inorder(box.next)
+			iterate_boxes(box.first)
+			iterate_boxes(box.next)
 		}
-		inorder(panel.box)
+		iterate_boxes(panel.box)
 	}
 }
+

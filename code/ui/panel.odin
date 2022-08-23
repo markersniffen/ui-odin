@@ -14,9 +14,18 @@ Panel :: struct {
 
 	direction: Direction,
 	size: f32,
+	scaleable: bool,
 	type: Panel_Type,
 	ctx: Quad,
 	box: ^Box,
+}
+
+Panel_Type :: enum {
+	NULL,
+	DEBUG,
+	PANEL_LIST,
+	TEMP,
+	FILE_MENU,
 }
 
 ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> ^Panel
@@ -27,6 +36,7 @@ ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, ty
 		new_parent.size = size
 		new_parent.child_a = active_panel
 		new_parent.parent = active_panel.parent
+		new_parent.scaleable = active_panel.scaleable
 		new_parent.direction = direction
 		state.ui.panels[new_parent.uid] = new_parent
 
@@ -41,6 +51,13 @@ ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, ty
 		panel.parent = new_parent
 		panel.direction = direction
 		panel.type = type
+
+		if panel.type == .FILE_MENU {
+			panel.scaleable = false
+		} else {
+			panel.scaleable = true
+		}
+
 		state.ui.panels[panel.uid] = panel
 
 		new_parent.child_b = panel
@@ -65,6 +82,11 @@ ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, ty
 		panel.parent = nil
 		panel.direction = direction
 		panel.type = type
+		if panel.type == .FILE_MENU {
+			panel.scaleable = false
+		} else {
+			panel.scaleable = true
+		}
 		state.ui.panels[panel.uid] = panel
 		return panel
 	}
@@ -137,17 +159,21 @@ ui_calc_panel :: proc(panel: ^Panel, ctx: Quad)
 			color := state.ui.col.base
 
 			// NOTE - TEMP? - CODE FOR SIZING PANELS //
-			if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, bar) {
-				if read_mouse(&state.mouse.left, .DRAG) do state.ui.panel_active = panel
-				color = state.ui.col.highlight
-			}
-			if state.mouse.left == .UP do state.ui.panel_active = nil
-			if state.ui.panel_active == panel {
-				if panel.direction == .HORIZONTAL {
-					panel.size = (f32(state.mouse.pos.x) - ctx.l) * (1 / (ctx.r - ctx.l))
-				} else {
-					panel.size = (f32(state.mouse.pos.y) - ctx.t) * (1 / (ctx.b - ctx.t))
+			if panel.scaleable {
+				if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, bar) {
+					if read_mouse(&state.mouse.left, .DRAG) do state.ui.panel_active = panel
+					color = state.ui.col.highlight
 				}
+				if state.mouse.left == .UP do state.ui.panel_active = nil
+				if state.ui.panel_active == panel {
+					if panel.direction == .HORIZONTAL {
+						panel.size = (f32(state.mouse.pos.x) - ctx.l) * (1 / (ctx.r - ctx.l))
+					} else {
+						panel.size = (f32(state.mouse.pos.y) - ctx.t) * (1 / (ctx.b - ctx.t))
+					}
+				}
+			} else {
+				panel.size = state.ui.line_space * (1 / f32(state.window_size.y))
 			}
 			push_quad_solid(bar, color)
 			//////////////////////////////
@@ -155,17 +181,10 @@ ui_calc_panel :: proc(panel: ^Panel, ctx: Quad)
 			ui_calc_panel(panel.child_a, a)
 			ui_calc_panel(panel.child_b, b)
 		} else {
-			ui_draw_panel(panel)
+			if mouse_in_quad(ctx) {
+				state.ui.panel_active = panel
+				push_quad_border(ctx, {1,0,0,1}, 2)
+			}
 		}
 	}
 }
-
-ui_draw_panel :: proc(panel: ^Panel)
-{
-	#partial switch panel.type {
-		case .DEBUG: ui_panel_debug(panel)
-		case .PANEL_LIST: ui_panel_panel_list(panel)
-		case .TEMP: ui_panel_temp(panel)
-	}
-}
-

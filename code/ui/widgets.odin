@@ -50,9 +50,7 @@ ui_set_border :: proc(color: v4) {
 	state.ui.ctx.border_color = color
 }
 
-
 //______ WDIGETS ______//
-
 
 ui_row :: proc() -> ^Box {
 	state.ui.box_index += 1 // TODO is this a good idea?

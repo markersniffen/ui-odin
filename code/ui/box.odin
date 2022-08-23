@@ -33,6 +33,7 @@ Box :: struct {
 
 Box_Flags :: enum {
 	MASTER,
+
 	CLICKABLE,
 	HOVERABLE,
 	SELECTABLE,
@@ -170,24 +171,35 @@ ui_calc_boxes :: proc() {
 }
 
 ui_delete_box :: proc(box: ^Box) {
-	if box.parent.first == box && box.parent.last == box {
-		box.parent.first = nil
-		box.parent.last = nil
-	}
-	else if box.parent.first == box && box.parent.last != box
-	{
-		box.parent.first = box.next
-		box.parent.first.prev = nil
-	}
-	else if box.parent.first != box && box.parent.last == box
-	{
-		box.prev.next = nil
-		box.parent.last = box.prev
-	}
-	else if box.parent.first != box && box.parent.last != box
-	{
-		box.prev.next = box.next
-		box.next.prev = box.prev
+	if box.parent != nil {
+		if box.parent.first == box && box.parent.last == box {
+			box.parent.first = nil
+			box.parent.last = nil
+		}
+		else if box.parent.first == box && box.parent.last != box
+		{
+			if box.next != nil do box.parent.first = box.next
+			box.parent.first.prev = nil
+		}
+		else if box.parent.first != box && box.parent.last == box
+		{
+			box.prev.next = nil
+			box.parent.last = box.prev
+		}
+		else if box.parent.first != box && box.parent.last != box
+		{
+			box.prev.next = box.next
+			box.next.prev = box.prev
+		}
+	} else {
+		if box.prev != nil && box.next != nil {
+			box.prev.next = box.next
+			box.next.prev = box.prev
+		} else if box.prev != nil && box.next == nil {
+			box.prev.next = nil
+		} else if box.prev == nil && box. next != nil {
+			box.next.prev = nil
+		}
 	}
 
 	delete_key(&state.ui.boxes, box.key)
