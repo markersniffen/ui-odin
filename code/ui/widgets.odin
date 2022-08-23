@@ -76,6 +76,7 @@ ui_button :: proc(key: string) -> Box_Ops {
 		.DRAWTEXT,
 		.DRAWBORDER,
 		.DRAWBACKGROUND,
+		.DRAWGRADIENT,
 	})
 	return box.ops
 }

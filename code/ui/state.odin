@@ -51,9 +51,9 @@ Mouse :: struct {
 Button :: enum { 
 	UP,
 	CLICK,
+	RELEASE,
 	DRAG,
-	LOCKED,
-}
+	}
 
 Keys :: struct
 {
@@ -122,6 +122,8 @@ update :: proc()
 	old_mouse := state.mouse.pos
 	state.mouse.pos = {i32(mouseX), i32(mouseY)}
 	state.mouse.delta = state.mouse.pos - old_mouse
+
+	// fmt.println(state.mouse.left)	
 }
 
 
@@ -204,15 +206,14 @@ scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64)
 	state.mouse.scroll = f32(y/10)
 }
 
-read_mouse :: proc(button: ^Button, reset:bool=false) -> bool
+read_mouse :: proc(button: ^Button, type: Button) -> bool
 {
-	if button^ == .CLICK {
-		if reset do button^ = .UP
-		return true
-	}
-	return false
+	result := false
+	if button^ == type do result = true
+	if button^ == .CLICK do button^ = .DRAG
+	if button^ == .RELEASE do button^ = .UP
+	return result
 }
-
 
 mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods: int)
 {
@@ -220,8 +221,11 @@ mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods
 	for mouse_button, index in mouse_buttons
 	{
 		if button == index {
-			if action == int(glfw.PRESS) do mouse_button^ = .CLICK
-			if action == int(glfw.RELEASE) do mouse_button^ = .UP
+			if action == int(glfw.PRESS) {
+					mouse_button^ = .CLICK
+				} else if action == int(glfw.RELEASE) {
+					mouse_button^ = .RELEASE
+				}
 		}
 	}
 }

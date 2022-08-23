@@ -37,10 +37,13 @@ Box_Flags :: enum {
 	HOVERABLE,
 	SELECTABLE,
 	VIEWSCROLL,
+
 	DRAWTEXT,
 	DRAWBORDER,
 	DRAWBACKGROUND,
+	DRAWGRADIENT,
 	CLIP,
+
 	HOTANIMATION,
 	ACTIVEANIMATION,
 }
@@ -93,7 +96,7 @@ ui_create_box :: proc(key: string, parent: ^Box, flags:bit_set[Box_Flags]={}) ->
 	// PROCESS OPS ------------------------------
 	if mouse_in_quad(box.ctx) {
 		if .CLICKABLE in box.flags {
-			box.ops.clicked = read_mouse(&state.mouse.left)
+			box.ops.clicked = read_mouse(&state.mouse.left, .RELEASE)
 		}
 
 		if .HOVERABLE in box.flags && !box.ops.clicked {
@@ -101,7 +104,6 @@ ui_create_box :: proc(key: string, parent: ^Box, flags:bit_set[Box_Flags]={}) ->
 		}
 	} else {
 		box.ops.hovering = false
-		if box.ops.clicked do box.ops.clicked = read_mouse(&state.mouse.left)
 	}
 
 	box.last_frame_touched = state.ui.frame

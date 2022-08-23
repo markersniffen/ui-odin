@@ -144,6 +144,10 @@ ui_render :: proc()
 			if .CLICKABLE in box.flags {
 				if box.ops.clicked do push_quad_gradient_v(box.ctx, state.ui.col.active, state.ui.col.hot)
 			}
+			if .DRAWGRADIENT in box.flags {
+				push_quad_gradient_v(box.ctx, {1,1,1,0.1}, {0,0,0,0})
+			}
+
 			if .DRAWTEXT in box.flags {
 				draw_text(box.key, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx))
 			}

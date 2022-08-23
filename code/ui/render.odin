@@ -167,7 +167,7 @@ push_quad_font :: proc(quad: Quad, color:v4, uv:Quad)
 pt_in_quad 	:: proc(pt: v2, quad: Quad) -> bool
 {
 	result := false;
-	if pt.x > quad.l && pt.y > quad.t && pt.x < quad.r && pt.y < quad.b do result = true;
+	if pt.x >= quad.l && pt.y >= quad.t && pt.x <= quad.r && pt.y <= quad.b do result = true;
 	return result;
 }
 

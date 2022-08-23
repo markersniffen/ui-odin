@@ -24,8 +24,7 @@ Text_Align :: enum {
 }
 
 ui_init_font :: proc() {
-	ui_load_font("Roboto-Regular", state.ui.font_size, state.render.font_texture)
-	
+	ui_set_font_size()
 	state.ui.col.base 			= {0.1, 0.1, 0.1, 1}
 
 	state.ui.col.bg 			= {0.1, 0.1, 0.1, 1}
@@ -37,8 +36,8 @@ ui_init_font :: proc() {
 	state.ui.col.font 			= {  1,   1,   1, 1}
 	state.ui.col.font_hot 		= {  1, 0.6, 0.6, 1}
 
-	state.ui.col.hot 			= {0.5, 0.3, 0.1, 1}
-	state.ui.col.active 		= {0.6, 0.4, 0.2, 1}
+	state.ui.col.hot 			= {0.4, 0.4, 0.3, 1}
+	state.ui.col.active 		= {0.8, 0.4, 0.1, 1}
 	
 	state.ui.col.highlight 		= {0.0, 0.2,   1, 1}
 }
@@ -83,11 +82,18 @@ ui_load_font :: proc(name: string, font_size: f32=0, texture: u32=0)
 		fmt.println(fmt.tprintf("Font loaded: %v", name))
 	}
 
-	// SET FONT SIZE ------------------------------	
+}
+
+ui_set_font_size :: proc(size: f32 = 18) {
+	state.ui.font_size = size
+
+	ui_load_font("Roboto-Regular", state.ui.font_size, state.render.font_texture)
+
 	letter_data := state.ui.char_data['W']
 	state.ui.font_offset_y = math.round((state.ui.font_size - letter_data.height) * 0.5)
-	state.ui.margin = 2
+	state.ui.margin = 4
 	state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
+
 }
 
 draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4 = {1,1,1,1} )
