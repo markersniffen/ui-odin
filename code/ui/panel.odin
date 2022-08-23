@@ -19,11 +19,6 @@ Panel :: struct {
 	box: ^Box,
 }
 
-Direction :: enum {
-	HORIZONTAL,
-	VERTICAL,
-}
-
 ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> ^Panel
 {
 	if active_panel != nil {
@@ -143,7 +138,7 @@ ui_calc_panel :: proc(panel: ^Panel, ctx: Quad)
 
 			// NOTE - TEMP? - CODE FOR SIZING PANELS //
 			if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, bar) {
-				if state.mouse.left == .CLICK do state.ui.panel_active = panel
+				if read_mouse(&state.mouse.left) do state.ui.panel_active = panel
 				color = state.ui.col.highlight
 			}
 			if state.mouse.left == .UP do state.ui.panel_active = nil
@@ -160,18 +155,6 @@ ui_calc_panel :: proc(panel: ^Panel, ctx: Quad)
 			ui_calc_panel(panel.child_a, a)
 			ui_calc_panel(panel.child_b, b)
 		} else {
-			quad: Quad
-
-			// TEMP CODE /////////////////
-			// color :v4= {0.5,0.5,0.5,1}
-			// if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, ctx)
-			// {
-			// 	color = state.ui.col.hot
-			// 	draw_text(fmt.tprintf("Panel ID: %v", panel.uid), ctx)
-			// }
-			// push_quad_border(ctx, color, 2)
-			//////////////////////////////
-
 			ui_draw_panel(panel)
 		}
 	}

@@ -26,31 +26,34 @@ ui_panel_debug :: proc(panel: ^Panel)
 		ui_push_parent(ui_row())
 
 		ui_set_dir(.HORIZONTAL)
-		ui_set_size_x(.PERCENT_PARENT, 0.1)
-		ui_set_size_y(.PERCENT_PARENT, 1)
+		ui_set_size_x(.TEXT_CONTENT, 1)
+		ui_set_size_y(.TEXT_CONTENT, 1)
 
 		ui_button("First button")
-		ui_button("Second button")
-		ui_button("Third button")
+		// ui_button("Second button")
+		// ui_button("Third button")
 
-		if state.debug.temp >= 0 {
-			for i in 0..=state.debug.temp {
-				ui_button(fmt.tprintf("special_%v", i))
-			}
-		}
-		ui_pop_parent()
-		ui_set_dir(.VERTICAL)
-		ui_set_size_x(.PERCENT_PARENT, 1)
-		ui_set_size_y(.PIXELS, state.ui.line_space)
-		ui_push_parent(ui_row())
-		ui_button("secnd row button1")
-		ui_button("second row button 2")
-		if state.debug.temp >= 0 {
-			for i in 0..=state.debug.temp {
-				ui_button(fmt.tprintf("sl_%v", i))
-			}
-		}
-		ui_pop_parent()
+		// if state.debug.temp >= 0 {
+		// 	for i in 0..=state.debug.temp {
+		// 		ui_button(fmt.tprintf("special_%v", i))
+		// 	}
+		// }
+		// ui_pop_parent()
+		// ui_set_dir(.VERTICAL)
+		// ui_set_size_x(.PERCENT_PARENT, 1)
+		// ui_set_size_y(.PIXELS, state.ui.line_space)
+		// ui_push_parent(ui_row())
+
+		// ui_set_size_x(.TEXT_CONTENT, 1)
+		// ui_set_size_y(.TEXT_CONTENT, 1)
+		// ui_button("secnd row button1")
+		// ui_button("second row button 2")
+		// if state.debug.temp >= 0 {
+		// 	for i in 0..=state.debug.temp {
+		// 		ui_button(fmt.tprintf("sl_%v", i))
+		// 	}
+		// }
+		// ui_pop_parent()
 	}
 }
 
@@ -85,8 +88,6 @@ ui_panel_temp :: proc(panel: ^Panel)
 		ui_button("Pos X")
 		ui_button("Pos Y")
 		ui_button("Pos Z")
-
-
 	}
 }
 

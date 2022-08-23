@@ -195,6 +195,11 @@ quad_clamp_to_quad :: proc (quad, quad_b: Quad) -> Quad
 	return result
 }
 
+pt_offset_quad :: proc(pt: v2, quad: Quad) -> Quad
+{
+	return {quad.l + pt.x, quad.t + pt.y, quad.r + pt.x, quad.b + pt.y}
+}
+
 // SHADER
 
 UIMAIN_VS ::

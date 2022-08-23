@@ -56,19 +56,25 @@ ui_set_border :: proc(color: v4) {
 
 ui_row :: proc() -> ^Box {
 	state.ui.box_index += 1 // TODO is this a good idea?
-	box := ui_create_box(fmt.tprintf("row_%v", state.ui.box_index), state.ui.box_parent, {.DRAWBORDER})
+	box := ui_create_box(fmt.tprintf("row_%v", state.ui.box_index), state.ui.box_parent, {
+		// .DRAWBORDER,
+	})
 	return box
 }
 
 ui_label :: proc(key: string) -> Box_Ops {
-	box := ui_create_box(key, state.ui.box_parent, { .DRAWTEXT })
+	box := ui_create_box(key, state.ui.box_parent, {
+		.DRAWTEXT,
+	})
 	return box.ops
 }
 
 ui_button :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key, state.ui.box_parent, {
 		.CLICKABLE,
+		.HOVERABLE,
 		.DRAWTEXT,
+		.DRAWBORDER,
 		.DRAWBACKGROUND,
 	})
 	return box.ops

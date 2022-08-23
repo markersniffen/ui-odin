@@ -2,7 +2,7 @@ package ui
 
 import "core:fmt"
 
-MAX_ELEMENTS :: 4096
+MAX_BOXES :: 4096
 
 Box :: struct {
 	key: string,
@@ -24,7 +24,7 @@ Box :: struct {
 	bg_color: v4,
 	border_color: v4,
 	border: f32,
-	size: [2]UI_Size,
+	size: [XY]UI_Size,
 	direction: Direction,
 	calc_size: v2,
 	offset: v2,		// from parent
@@ -34,6 +34,7 @@ Box :: struct {
 Box_Flags :: enum {
 	MASTER,
 	CLICKABLE,
+	HOVERABLE,
 	SELECTABLE,
 	VIEWSCROLL,
 	DRAWTEXT,
@@ -52,20 +53,6 @@ Box_Ops :: struct {
   released: bool,
   dragging: bool,
   hovering: bool,
-}
-
-UI_Size_Type :: enum {
-  NIL,
-  PIXELS,
-  TEXT_CONTENT,
-  PERCENT_PARENT,
-  CHILDREN_SUM,
-}
-
-UI_Size :: struct {
-	type: UI_Size_Type,
-	value: f32,
-	// strictness: ??
 }
 
 ui_generate_box :: proc(key: string) -> ^Box {
@@ -102,29 +89,23 @@ ui_create_box :: proc(key: string, parent: ^Box, flags:bit_set[Box_Flags]={}) ->
 	}
 
 	box.flags = flags
-	ui_ops(box)
+
+	// PROCESS OPS ------------------------------
+	if mouse_in_quad(box.ctx) {
+		if .CLICKABLE in box.flags {
+			box.ops.clicked = read_mouse(&state.mouse.left)
+		}
+
+		if .HOVERABLE in box.flags && !box.ops.clicked {
+			box.ops.hovering = true
+		}
+	} else {
+		box.ops.hovering = false
+		if box.ops.clicked do box.ops.clicked = read_mouse(&state.mouse.left)
+	}
 
 	box.last_frame_touched = state.ui.frame
 	return(box)
-}
-
-ui_ops :: proc(box: ^Box) {
-	ops := box.ops
-
-	if mouse_in_quad(box.ctx) {
-		ops.clicked = read_mouse(&state.mouse.left)
-		if ops.clicked {
-			fmt.println("Clicked!")
-		}
-	}
-
-	if ops.double_clicked {
-		fmt.println("double clicked!")
-	}
-
-	if ops.right_clicked {
-		fmt.println("right clicked!")
-	}
 }
 
 ui_calc_boxes :: proc() {
@@ -133,8 +114,15 @@ ui_calc_boxes :: proc() {
 		// for each axis (x/y) ------------------------------
 		for size, index in box.size {
 			calc_size := &box.calc_size[index]
-			if size.type == .PIXELS {
-				calc_size^ = size.value		
+			#partial switch size.type {
+				case .PIXELS:
+				calc_size^ = size.value
+				case .TEXT_CONTENT:
+				if index == X {
+					calc_size^ = ui_text_size(X, box.key) + (state.ui.margin*2)
+				} else if index == Y {
+					calc_size^ = ui_text_size(Y, box.key)
+				}
 			}
 		}
 	}	
