@@ -6,8 +6,7 @@ import "core:os"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
 
-Gl :: struct
-{
+Gl :: struct {
 	shader: u32,
 	font_texture: u32,
 	font_texture_size: i32,
@@ -22,16 +21,14 @@ Gl :: struct
 	quad_index: int,
 }
 
-Quad :: struct
-{
+Quad :: struct {
 	l: f32,
 	t: f32,
 	r: f32,
 	b: f32,
 }
 
-opengl_init :: proc()
-{
+opengl_init :: proc() {
 	gl.load_up_to(3, 3, glfw.gl_set_proc_address)
 	gl.Enable(gl.BLEND)
 	gl.Enable(gl.SCISSOR_TEST)
@@ -53,8 +50,7 @@ opengl_init :: proc()
 	state.render.font_texture_size = 512 // size of font bitmap
 }
 
-opengl_load_texture :: proc(texture: u32, image: rawptr, size:i32) -> bool
-{
+opengl_load_texture :: proc(texture: u32, image: rawptr, size:i32) -> bool {
 	gl.BindTexture(gl.TEXTURE_2D, texture)
   	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, size,size, 0, gl.ALPHA, gl.UNSIGNED_BYTE, image)
   	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -62,8 +58,7 @@ opengl_load_texture :: proc(texture: u32, image: rawptr, size:i32) -> bool
   	return true
 }
 
-opengl_render :: proc()
-{
+opengl_render :: proc() {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 	gl.ClearColor(0, 0, 0, 1)
 	gl.Viewport(0, 0, i32(state.window_size.x), i32(state.window_size.y))
@@ -98,9 +93,7 @@ opengl_render :: proc()
 	state.render.quad_index = 0
 }
 
-
-push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1}, cD:v4={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	mix:f32=0)
-{
+push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1}, cD:v4={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	mix:f32=0) {
 	vertex_arrays: [4][40]f32
 
 	if border == 0
@@ -139,54 +132,45 @@ push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1},
 	}
 }
 
-push_quad_solid :: proc(quad: Quad, color:v4)
-{
+push_quad_solid :: proc(quad: Quad, color:v4) {
 	push_quad(quad,	color, color, color, color, 0, {0,0,0,0}, 0)
 }
 
-push_quad_gradient_h :: proc(quad: Quad, color_left:v4, color_right:v4)
-{
+push_quad_gradient_h :: proc(quad: Quad, color_left:v4, color_right:v4) {
 	push_quad(quad,	color_left, color_right, color_left, color_right, 0, {0,0,0,0}, 0)
 }
 
-push_quad_gradient_v :: proc(quad: Quad, color_top:v4, color_bottom:v4)
-{
+push_quad_gradient_v :: proc(quad: Quad, color_top:v4, color_bottom:v4) {
 	push_quad(quad,	color_top, color_top, color_bottom, color_bottom, 0, {0,0,0,0}, 0)
 }
 
-push_quad_border :: proc(quad: Quad, color:v4, border: f32=2)
-{
+push_quad_border :: proc(quad: Quad, color:v4, border: f32=2) {
 	push_quad(quad,	color, color, color, color, border, {0,0,0,0}, 0)
 }
 
-push_quad_font :: proc(quad: Quad, color:v4, uv:Quad)
-{
+push_quad_font :: proc(quad: Quad, color:v4, uv:Quad) {
 	push_quad(quad,	color, color, color, color, 0, uv, 1)
 }
 
-pt_in_quad 	:: proc(pt: v2, quad: Quad) -> bool
-{
+pt_in_quad 	:: proc(pt: v2, quad: Quad) -> bool {
 	result := false;
 	if pt.x >= quad.l && pt.y >= quad.t && pt.x <= quad.r && pt.y <= quad.b do result = true;
 	return result;
 }
 
-quad_in_quad	:: proc(quad_a, quad_b: Quad) -> bool
-{
+quad_in_quad	:: proc(quad_a, quad_b: Quad) -> bool {
 	result := false
 	if pt_in_quad({quad_a.l,quad_a.t}, quad_b) || pt_in_quad({quad_a.r, quad_a.b}, quad_b) do result = true
 	return result
 }
 
-quad_full_in_quad	:: proc(quad_a, quad_b: Quad) -> bool
-{
+quad_full_in_quad	:: proc(quad_a, quad_b: Quad) -> bool {
 	result := false
 	if pt_in_quad({quad_a.l, quad_a.t}, quad_b) && pt_in_quad({quad_a.r, quad_a.b}, quad_b) do result = true
 	return result
 }
 
-quad_clamp_to_quad :: proc (quad, quad_b: Quad) -> Quad
-{
+quad_clamp_to_quad :: proc (quad, quad_b: Quad) -> Quad {
 	result: Quad = quad
 	result.l = clamp(quad.l, quad_b.l, quad_b.r)
 	result.t = clamp(quad.t, quad_b.t, quad_b.b)
@@ -195,12 +179,11 @@ quad_clamp_to_quad :: proc (quad, quad_b: Quad) -> Quad
 	return result
 }
 
-pt_offset_quad :: proc(pt: v2, quad: Quad) -> Quad
-{
+pt_offset_quad :: proc(pt: v2, quad: Quad) -> Quad {
 	return {quad.l + pt.x, quad.t + pt.y, quad.r + pt.x, quad.b + pt.y}
 }
 
-// SHADER
+//______ SHADER ______//
 
 UIMAIN_VS ::
 `

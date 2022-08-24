@@ -8,8 +8,7 @@ import "core:math"
 
 //______ FONT/TEXT ______//
 
-Char_Data :: struct
-{
+Char_Data :: struct {
 	offset: v2,
 	width: f32,
 	height: f32,
@@ -42,8 +41,7 @@ ui_init_font :: proc() {
 	state.ui.col.highlight 		= {0.0, 0.2,   1, 1}
 }
 
-ui_load_font :: proc(name: string, font_size: f32=0, texture: u32=0)
-{
+ui_load_font :: proc(name: string, font_size: f32=0, texture: u32=0) {
 	using stb, mem, fmt
 	NUM_CHARS :: 96
 	
@@ -81,7 +79,6 @@ ui_load_font :: proc(name: string, font_size: f32=0, texture: u32=0)
 	if opengl_load_texture(texture, image, state.render.font_texture_size) {
 		fmt.println(fmt.tprintf("Font loaded: %v", name))
 	}
-
 }
 
 ui_set_font_size :: proc(size: f32 = 18) {
@@ -93,11 +90,9 @@ ui_set_font_size :: proc(size: f32 = 18) {
 	state.ui.font_offset_y = math.round((state.ui.font_size - letter_data.height) * 0.5)
 	state.ui.margin = 4
 	state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
-
 }
 
-draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4 = {1,1,1,1} )
-{
+draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4 = {1,1,1,1} ) {
 	using stb
 
 	left_align: f32 = quad.l
@@ -138,8 +133,7 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4
 	}
 }
 
-draw_text_multiline :: proc(text:string, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2)
-{
+draw_text_multiline :: proc(text:string, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2) {
 	max := (quad.b - quad.t) / state.ui.line_space
 	start, end: int 
 	letter_index: int

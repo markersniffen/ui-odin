@@ -6,6 +6,7 @@ MAX_BOXES :: 4096
 
 Box :: struct {
 	key: string,
+	name: string,
 
 	parent: ^Box,	// parent
 	first: ^Box,	// first child
@@ -32,7 +33,7 @@ Box :: struct {
 }
 
 Box_Flags :: enum {
-	MASTER,
+	ROOT,
 
 	CLICKABLE,
 	HOVERABLE,
@@ -59,19 +60,44 @@ Box_Ops :: struct {
   hovering: bool,
 }
 
+ui_split_key :: proc(key: string) -> string {
+	a, b: string
+	for letter, index in key {
+		if letter == '#' {
+			a = key[:index]
+			b = key[index:]
+			break
+		}
+	}
+	fmt.println("KEYGEN", a, b)
+	return a
+}
+
+ui_gen_key :: proc(key: string="") -> string {
+	if key != "" {
+		return fmt.tprintf("%v_%v", key, state.ui.ctx.panel.uid)
+	} else {
+		return fmt.tprintf("Box%v_Panel%v", key, state.ui.ctx.panel.uid)
+	}
+}
+
 ui_generate_box :: proc(key: string) -> ^Box {
 	box := cast(^Box)pool_alloc(&state.ui.box_pool)
-	box.key = key
-	assert(!(key in state.ui.boxes))
-	state.ui.boxes[key] = box
+	box.key = ui_gen_key(key)
+	box.name = key
+	assert(!(box.key in state.ui.boxes))
+	state.ui.boxes[box.key] = box
 	return box
 }
 
-ui_create_box :: proc(key: string, parent: ^Box, flags:bit_set[Box_Flags]={}) -> ^Box {
+ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}) -> ^Box {
+	key := ui_gen_key(_key)
 	box, box_ok := state.ui.boxes[key]
+	parent := state.ui.box_parent
+	
 	// if box doesn't exist, create it
 	if !box_ok {
-		box = ui_generate_box(key)
+		box = ui_generate_box(_key)
 		box.parent = parent
 
 		box.size = state.ui.ctx.size
@@ -85,6 +111,7 @@ ui_create_box :: proc(key: string, parent: ^Box, flags:bit_set[Box_Flags]={}) ->
 			parent.first = box
 			box.prev = nil
 		} else if parent.first != nil {
+			assert(parent.last != nil)
 			parent.last.next = box
 			box.prev = parent.last
 		}
@@ -92,6 +119,8 @@ ui_create_box :: proc(key: string, parent: ^Box, flags:bit_set[Box_Flags]={}) ->
 		box.next = nil
 	}
 
+	// state.ui.box_active_building.next = box
+	state.ui.box_active_building = box
 	box.flags = flags
 
 	// PROCESS OPS ------------------------------
@@ -122,9 +151,9 @@ ui_calc_boxes :: proc() {
 				calc_size^ = size.value
 				case .TEXT_CONTENT:
 				if index == X {
-					calc_size^ = ui_text_size(X, box.key) + (state.ui.margin*2)
+					calc_size^ = ui_text_size(X, box.name) + (state.ui.margin*2)
 				} else if index == Y {
-					calc_size^ = ui_text_size(Y, box.key)
+					calc_size^ = ui_text_size(Y, box.name)
 				}
 			}
 		}
@@ -138,6 +167,25 @@ ui_calc_boxes :: proc() {
 			if size.type == .PERCENT_PARENT {
 				psize := box.parent.calc_size[index]
 				calc_size^ = psize * size.value
+			}
+		}
+	}
+	// RELATIVE TO SIBLINGS ------------------------------
+	for _, box in state.ui.boxes {
+		// for each axis (x/y) ------------------------------
+		for size, index in box.size {
+			calc_size := &box.calc_size[index]
+
+			if size.type == .MIN_SIBLINGS {
+				calc_size^ = 0
+				for prev:= box.prev; prev != nil; prev = prev.prev {
+					calc_size^ += prev.calc_size[index]
+				}
+
+				for next:= box.next; next != nil; next = next.next {
+					calc_size^ += next.calc_size[index]
+				}
+				calc_size^ = box.parent.calc_size[index] - calc_size^
 			}
 		}
 	}
@@ -171,6 +219,7 @@ ui_calc_boxes :: proc() {
 }
 
 ui_delete_box :: proc(box: ^Box) {
+	// TODO figure out how to delete all the boxes at once?
 	if box.parent != nil {
 		if box.parent.first == box && box.parent.last == box {
 			box.parent.first = nil
@@ -188,21 +237,32 @@ ui_delete_box :: proc(box: ^Box) {
 		}
 		else if box.parent.first != box && box.parent.last != box
 		{
-			box.prev.next = box.next
-			box.next.prev = box.prev
+			if box.prev != nil do box.prev.next = box.next
+			if box.next != nil do box.next.prev = box.prev
 		}
 	} else {
 		if box.prev != nil && box.next != nil {
 			box.prev.next = box.next
 			box.next.prev = box.prev
+			
+			if box.parent != nil {
+				box.parent.first = nil
+				box.parent.last = nil
+			}
 		} else if box.prev != nil && box.next == nil {
 			box.prev.next = nil
+
+			if box.parent != nil {
+				box.parent.last = box.prev
+			}
 		} else if box.prev == nil && box. next != nil {
 			box.next.prev = nil
+
+			if box.parent != nil {
+				box.parent.first = box.next
+			}
 		}
 	}
-
 	delete_key(&state.ui.boxes, box.key)
 	pool_free(&state.ui.box_pool, box)
 }
-

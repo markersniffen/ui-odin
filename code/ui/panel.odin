@@ -20,16 +20,7 @@ Panel :: struct {
 	box: ^Box,
 }
 
-Panel_Type :: enum {
-	NULL,
-	DEBUG,
-	PANEL_LIST,
-	TEMP,
-	FILE_MENU,
-}
-
-ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> ^Panel
-{
+ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> ^Panel {
 	if active_panel != nil {
 		new_parent := cast(^Panel)pool_alloc(&state.ui.panel_pool)
 		new_parent.uid = new_uid()
@@ -62,8 +53,8 @@ ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, ty
 
 		new_parent.child_b = panel
 
-		if active_panel == state.ui.panel_master {
-			state.ui.panel_master = new_parent
+		if active_panel == state.ui.panel_root {
+			state.ui.panel_root = new_parent
 		}
 
 		grandpa := new_parent.parent
@@ -93,8 +84,7 @@ ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, ty
 	return nil
 }
 
-ui_delete_panel :: proc(panel: ^Panel)
-{
+ui_delete_panel :: proc(panel: ^Panel) {
 	fmt.println("trying to delete ", panel.uid)
 	if panel != nil
 	{
@@ -133,8 +123,7 @@ ui_delete_panel :: proc(panel: ^Panel)
 	}
 }
 
-ui_calc_panel :: proc(panel: ^Panel, ctx: Quad)
-{
+ui_calc_panel :: proc(panel: ^Panel, ctx: Quad) {
 	if panel != nil
 	{
 		panel.ctx = ctx
@@ -181,10 +170,10 @@ ui_calc_panel :: proc(panel: ^Panel, ctx: Quad)
 			ui_calc_panel(panel.child_a, a)
 			ui_calc_panel(panel.child_b, b)
 		} else {
-			if mouse_in_quad(ctx) {
-				state.ui.panel_active = panel
-				push_quad_border(ctx, {1,0,0,1}, 2)
-			}
+			// if mouse_in_quad(ctx) {
+			// 	state.ui.panel_active = panel
+			// 	push_quad_border(ctx, {1,0,0,1}, 2)
+			// }
 		}
 	}
 }

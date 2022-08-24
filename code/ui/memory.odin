@@ -18,6 +18,8 @@ Pool :: struct
 	chunk_count: int,
 	original_size: int,
 	head: ^Node,
+
+	nodes_used: int,
 }
 
 pool_init :: proc(pool: ^Pool, size: int, count: int, name: string)
@@ -46,6 +48,8 @@ pool_free_all :: proc(pool: ^Pool)
 		node.next = pool.head							// Set the Node's "next" value to the current pool's "head" (^Node)
 		pool.head = node								// set the pool's "head" to the current Node
 	}
+
+	pool.nodes_used = 0
 }
 
 pool_alloc :: proc(pool: ^Pool) -> rawptr
@@ -57,6 +61,7 @@ pool_alloc :: proc(pool: ^Pool) -> rawptr
 		pool.head = pool.head.next
 		mem.zero(new_alloc, pool.chunk_size)
 		
+		pool.nodes_used += 1
 		return new_alloc
 	}
 	return nil
@@ -82,6 +87,8 @@ pool_free :: proc(pool: ^Pool, ptr: rawptr) -> bool
 	node = cast(^Node)ptr
 	node.next = pool.head
 	pool.head = node
+
+	pool.nodes_used -= 1
 	return true
 }
 

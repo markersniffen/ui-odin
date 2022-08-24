@@ -53,10 +53,9 @@ Button :: enum {
 	CLICK,
 	RELEASE,
 	DRAG,
-	}
+}
 
-Keys :: struct
-{
+Keys :: struct {
 	left: bool,
 	right: bool,
 	up: bool,
@@ -78,9 +77,7 @@ Keys :: struct
 	shift: bool,
 }
 
-
-init :: proc() -> bool
-{
+init :: proc() -> bool {
 	if !bool(glfw.Init())
 	{
 		fmt.eprintln("GLFW has failed to load.")
@@ -108,8 +105,7 @@ init :: proc() -> bool
 	return true
 }
 
-update :: proc()
-{
+update :: proc() {
 	state.quit = bool(glfw.WindowShouldClose(state.window))
 	if state.quit do return
 
@@ -126,16 +122,13 @@ update :: proc()
 	// fmt.println(state.mouse.left)	
 }
 
-
-quit :: proc()
-{
+quit :: proc() {
 	glfw.DestroyWindow(state.window)
 	glfw.Terminate()
 	free(state)
 }
 
-read_key :: proc(key: ^bool) -> bool
-{
+read_key :: proc(key: ^bool) -> bool {
 	if key^ {
 		key^ = false
 		return true
@@ -144,8 +137,7 @@ read_key :: proc(key: ^bool) -> bool
 	}
 }
 
-process_keyboard_input :: proc(action: int, key_state: ^bool, repeat: bool)
-{
+process_keyboard_input :: proc(action: int, key_state: ^bool, repeat: bool) {
 	if action == int(glfw.RELEASE)
 	{
 		key_state^ = false
@@ -164,8 +156,7 @@ process_keyboard_input :: proc(action: int, key_state: ^bool, repeat: bool)
 	}
 }
 
-keyboard_callback :: proc(Window: glfw.WindowHandle, key: int, scancode: int, action: int, mods: int)
-{
+keyboard_callback :: proc(Window: glfw.WindowHandle, key: int, scancode: int, action: int, mods: int) {
 	switch key
 	{
 		case glfw.KEY_LEFT:				process_keyboard_input(action, &state.keys.left, true)
@@ -195,19 +186,16 @@ keyboard_callback :: proc(Window: glfw.WindowHandle, key: int, scancode: int, ac
 	}
 }
 
-typing_callback :: proc(window: glfw.WindowHandle, codepoint: u32)
-{
+typing_callback :: proc(window: glfw.WindowHandle, codepoint: u32) {
 	// fmt.println(rune(codepoint))
 	// State.UILastChar = rune(codepoint);
 }
 
-scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64)
-{
+scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64) {
 	state.mouse.scroll = f32(y/10)
 }
 
-read_mouse :: proc(button: ^Button, type: Button) -> bool
-{
+read_mouse :: proc(button: ^Button, type: Button) -> bool {
 	result := false
 	if button^ == type do result = true
 	if button^ == .CLICK do button^ = .DRAG
@@ -215,8 +203,7 @@ read_mouse :: proc(button: ^Button, type: Button) -> bool
 	return result
 }
 
-mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods: int)
-{
+mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods: int) {
 	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }
 	for mouse_button, index in mouse_buttons
 	{
