@@ -92,6 +92,12 @@ ui_init :: proc() {
 	sub_panel := ui_create_panel(state.ui.panel_root, .VERTICAL, .DEBUG, 0.5)
 	ui_create_panel(sub_panel, .HORIZONTAL, .TEMP, 0.7)
 	pool_init(&state.ui.box_pool, size_of(Box), MAX_BOXES, "Boxes")
+
+	// SET DEFAULT COLORS ------------------------------
+	state.ui.ctx.font_color = {1,1,1,1}
+	state.ui.ctx.bg_color = state.ui.col.bg
+	state.ui.ctx.border = 1 
+	state.ui.ctx.font_color = state.ui.col.border
 }
 
 //______ UI UPDATE ______//
@@ -137,14 +143,14 @@ ui_update :: proc() {
 
 	// queue panels/boxes for rendering ------------------------------
 	for _, panel in state.ui.panels {
+		state.ui.ctx.panel = panel
 		root_box := panel.box
 		if panel.child_a == nil {
-			state.ui.ctx.panel = panel
 			#partial switch panel.type {
-				case .DEBUG: 			ui_panel_debug(panel)
-				case .PANEL_LIST: 	ui_panel_panel_list(panel)
-				case .TEMP: 			ui_panel_temp(panel)
-				case .FILE_MENU:		ui_panel_file_menu(panel)
+				case .DEBUG: 			ui_panel_debug()
+				case .PANEL_LIST: 	ui_panel_panel_list()
+				case .TEMP: 			ui_panel_temp()
+				case .FILE_MENU:		ui_panel_file_edit_view()
 			}
 		}
 		iterate_boxes :: proc(box: ^Box) {

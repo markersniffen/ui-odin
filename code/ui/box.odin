@@ -176,7 +176,8 @@ ui_calc_boxes :: proc() {
 		for size, index in box.size {
 			calc_size := &box.calc_size[index]
 
-			if size.type == .MIN_SIBLINGS {
+			if size.type == .MIN_SIBLINGS
+			{
 				calc_size^ = 0
 				for prev:= box.prev; prev != nil; prev = prev.prev {
 					calc_size^ += prev.calc_size[index]
@@ -186,6 +187,15 @@ ui_calc_boxes :: proc() {
 					calc_size^ += next.calc_size[index]
 				}
 				calc_size^ = box.parent.calc_size[index] - calc_size^
+			}
+			else if size.type == .CHILDREN_SUM
+			{
+				calc_size^ = 0
+				for child := box.first; child != nil ; child = child.next {
+					fmt.println(">>>>", child.key, child.calc_size)
+					calc_size^ += child.calc_size[index]
+				}
+				fmt.println(box.key, calc_size^)
 			}
 		}
 	}
