@@ -22,24 +22,40 @@ ui_panel_menu :: proc() {
 }
 
 ui_panel_file_edit_view :: proc() {
-	ui_root_box()
+	// ui_root_box()
+	index := 0
+	iterate_boxes :: proc(box: ^Box) {
+		parentkey := ""
+		if box != nil {
+			if box.parent != nil do parentkey = box.parent.key
+			fmt.print(fmt.tprintf("%v [%v] >", box.key, parentkey))
+		}
+		if box != nil {
+			for child := box.first; child != nil; child = child.next {
+				iterate_boxes(child)
+			}
+		}
+	}
 
-	ui_row()
-	ui_set_size_x(.TEXT_CONTENT, 1)
-	ui_set_size_y(.TEXT_CONTENT, 1)
-	ui_button("File")
-	ui_button("Edit")
-	ui_button("View")
-	ui_spacer_fill()
-	ui_button(" - ")
-	ui_button(" O ")
-	ui_button(" X ")
+	iterate_boxes(state.debug.box)
+	fmt.print('\n')
 
-	ui_end_row()
+	// ui_row()
+	// ui_set_size_x(.TEXT_CONTENT, 1)
+	// ui_set_size_y(.TEXT_CONTENT, 1)
+	// ui_button("File")
+	// ui_button("Edit")
+	// ui_button("View")
+	// ui_spacer_fill()
+	// ui_button(" - ")
+	// ui_button(" O ")
+	// ui_button(" X ")
+
+	// ui_end_row()
 }
 
 ui_panel_debug :: proc() {
-	ui_root_box()
+	state.debug.box = ui_root_box()
 	// ui_panel_menu()
 
 	ui_set_size_x(.TEXT_CONTENT, 1)
@@ -50,14 +66,44 @@ ui_panel_debug :: proc() {
 	ui_button("Test3")
 	ui_button("Test4")
 	ui_end_row()
+	
 
-	ui_col()
-	ui_button("x1")
-	ui_button("x2")
-	ui_button("x3")
-	ui_end_col()
+	ui_set_dir(.VERTICAL)
+	ui_set_size_x(.PERCENT_PARENT, 1)
+	ui_set_size_y(.CHILDREN_SUM, 1)
+	ui_layout()	// row/box that holds multiple columns
+
+		ui_set_dir(.HORIZONTAL)
+		ui_set_size_x(.PERCENT_PARENT, 0.25)
+		ui_set_size_y(.CHILDREN_SUM, 1)
+		ui_layout() // column (1) of buttons
+			ui_set_dir(.VERTICAL)
+			ui_set_size_x(.PERCENT_PARENT, 1)
+			ui_set_size_y(.PIXELS, state.ui.line_space)
+			ui_button("WHEE")
+			ui_button("Baz")
+			ui_button("Bop")
+			ui_button("FOo")
+		ui_pop_parent()
+
+		ui_set_dir(.HORIZONTAL)
+		ui_set_size_x(.PERCENT_PARENT, 0.25)
+		ui_set_size_y(.CHILDREN_SUM, 1)
+		ui_layout() // column (2) of buttons
+			ui_set_dir(.VERTICAL)
+			ui_set_size_x(.PERCENT_PARENT, 1)
+			ui_set_size_y(.PIXELS, state.ui.line_space)
+			ui_button("x")
+			ui_button("y")
+			ui_button("z")
+			ui_button("w")
+		ui_pop_parent()
+
+	ui_pop_parent()
 
 	ui_row()
+	ui_set_size_x(.TEXT_CONTENT, 1)
+	ui_set_size_y(.TEXT_CONTENT, 1)
 	ui_button("Test5")
 	ui_button("Test6")
 	ui_button("Test7")

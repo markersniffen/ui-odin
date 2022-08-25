@@ -48,6 +48,8 @@ Box_Flags :: enum {
 
 	HOTANIMATION,
 	ACTIVEANIMATION,
+
+	DEBUG,
 }
 
 Box_Ops :: struct {
@@ -93,7 +95,7 @@ ui_generate_box :: proc(key: string) -> ^Box {
 ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}) -> ^Box {
 	key := ui_gen_key(_key)
 	box, box_ok := state.ui.boxes[key]
-	parent := state.ui.box_parent
+	parent := state.ui.ctx.box_parent
 	
 	// if box doesn't exist, create it
 	if !box_ok {
@@ -119,8 +121,10 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}) -> ^Box {
 		box.next = nil
 	}
 
-	// state.ui.box_active_building.next = box
-	state.ui.box_active_building = box
+	// ADD BOX TO LINKED LIST ------------------------------
+	box.hash_prev = state.ui.ctx.box
+	state.ui.ctx.box.hash_next = box
+	state.ui.ctx.box = box
 	box.flags = flags
 
 	// PROCESS OPS ------------------------------
@@ -192,8 +196,12 @@ ui_calc_boxes :: proc() {
 			{
 				calc_size^ = 0
 				for child := box.first; child != nil ; child = child.next {
-					fmt.println(">>>>", child.key, child.calc_size)
-					calc_size^ += child.calc_size[index]
+					if child.direction == box.direction {
+						calc_size^ = child.calc_size[index]
+						break
+					} else {
+						calc_size^ += child.calc_size[index]
+					}
 				}
 				fmt.println(box.key, calc_size^)
 			}

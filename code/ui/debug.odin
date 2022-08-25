@@ -2,4 +2,5 @@ package ui
 
 Debug :: struct {
 	temp: int,
+	box: ^Box,
 }

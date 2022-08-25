@@ -35,6 +35,8 @@ Ui :: struct {
 
 UI_Context :: struct {
 	panel: ^Panel,
+	box_parent: ^Box,
+	box: ^Box,
 	font_color: v4,
 	bg_color: v4,
 	border_color: v4,
@@ -181,6 +183,10 @@ ui_update :: proc() {
 
 			if .DRAWTEXT in box.flags {
 				draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx))
+			}
+
+			if .DEBUG in box.flags {
+				push_quad_border(box.ctx, {0.8, 0.2, 0.2, 1}, 1)
 			}
 			iterate_boxes(box.first)
 			iterate_boxes(box.next)

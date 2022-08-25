@@ -26,17 +26,17 @@ ui_root_box :: proc() -> ^Box {
 	state.ui.ctx.panel.box = box
 	box.hash_prev = nil
 	box.hash_next = nil
-	state.ui.box_active_building = box
+	state.ui.ctx.box = box
 	ui_push_parent(box)
 	return box
 }	
 
 ui_push_parent :: proc(box: ^Box) {
-	state.ui.box_parent = box
+	state.ui.ctx.box_parent = box
 }
 
 ui_pop_parent :: proc() {
-	state.ui.box_parent = state.ui.box_parent.parent
+	state.ui.ctx.box_parent = state.ui.ctx.box_parent.parent
 }
 
 ui_set_size_x :: proc(type: UI_Size_Type, value: f32) {
@@ -67,14 +67,14 @@ ui_empty :: proc(direction: Direction) -> ^Box {
 	state.ui.box_index += 1 // TODO is this a good idea?
 	oldsize := state.ui.ctx.size[X]
 	name: string
+	ui_set_dir(.VERTICAL)
 	if direction == .HORIZONTAL {
-		ui_set_dir(.VERTICAL)
 		ui_set_size_x(.PERCENT_PARENT, 1)
 		ui_set_size_y(.PIXELS, state.ui.line_space)
 		name = "row"
-	} else if direction == .VERTICAL {
-		ui_set_dir(.HORIZONTAL)
-		ui_set_size_x(.PERCENT_PARENT, 1)
+	} else if direction == .HORIZONTAL {
+		// ui_set_dir(.HORIZONTAL)
+		ui_set_size_x(.CHILDREN_SUM, 1)
 		ui_set_size_y(.CHILDREN_SUM, 1)
 		name = "col"
 	}
@@ -84,6 +84,14 @@ ui_empty :: proc(direction: Direction) -> ^Box {
 	state.ui.ctx.size = oldsize
 	return box
 }
+
+ui_layout :: proc() -> ^Box {
+	state.ui.box_index += 1 // TODO is this a good idea?
+	box := ui_create_box(fmt.tprintf("layout_%v", state.ui.box_index), {.DEBUG})
+	ui_push_parent(box)
+	return box
+}
+
 
 ui_row :: proc() -> ^Box {
 	return ui_empty(.HORIZONTAL)
@@ -108,8 +116,8 @@ ui_button :: proc(key: string) -> Box_Ops {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWTEXT,
-		.DRAWBORDER,
-		.DRAWBACKGROUND,
+		// .DRAWBORDER,
+		// .DRAWBACKGROUND,
 		.DRAWGRADIENT,
 	})
 	return box.ops
