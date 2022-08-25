@@ -39,18 +39,27 @@ ui_pop_parent :: proc() {
 	state.ui.ctx.box_parent = state.ui.ctx.box_parent.parent
 }
 
-ui_set_size_x :: proc(type: UI_Size_Type, value: f32) {
+ui_pop :: proc() do ui_pop_parent()
+ui_end_row :: proc() do ui_pop_parent()
+ui_end_col :: proc() do ui_pop_parent()
+
+ui_size :: proc (x_type: UI_Size_Type, x_value: f32, y_type: UI_Size_Type, y_value: f32) {
+	ui_size_x(x_type, x_value)
+	ui_size_y(y_type, y_value)
+}
+
+ui_size_x :: proc(type: UI_Size_Type, value: f32) {
 	state.ui.ctx.size.x.type = type
 	state.ui.ctx.size.x.value = value
 }
 
-ui_set_size_y :: proc(type: UI_Size_Type, value: f32) {
+ui_size_y :: proc(type: UI_Size_Type, value: f32) {
 	state.ui.ctx.size.y.type = type
 	state.ui.ctx.size.y.value = value
 }
 
-ui_set_dir :: proc(direction: Direction) {
-	state.ui.ctx.direction = direction
+ui_axis :: proc(axis: Axis) {
+	state.ui.ctx.axis = axis
 }
 
 ui_set_border_color :: proc(color: v4) {
@@ -63,46 +72,55 @@ ui_set_border_thickness :: proc(value: f32) {
 
 //______ WDIGETS ______//
 
-ui_empty :: proc(direction: Direction) -> ^Box {
+ui_empty :: proc(axis: Axis) -> ^Box {
 	state.ui.box_index += 1 // TODO is this a good idea?
 	oldsize := state.ui.ctx.size[X]
 	name: string
-	ui_set_dir(.VERTICAL)
-	if direction == .HORIZONTAL {
-		ui_set_size_x(.PERCENT_PARENT, 1)
-		ui_set_size_y(.PIXELS, state.ui.line_space)
+	ui_axis(.Y)
+	if axis == .X {
+		ui_size_x(.PERCENT_PARENT, 1)
+		ui_size_y(.PIXELS, state.ui.line_space)
 		name = "row"
-	} else if direction == .HORIZONTAL {
-		// ui_set_dir(.HORIZONTAL)
-		ui_set_size_x(.CHILDREN_SUM, 1)
-		ui_set_size_y(.CHILDREN_SUM, 1)
+	} else if axis == .X {
+		// ui_axis(.HORIZONTAL)
+		ui_size_x(.CHILDREN_SUM, 1)
+		ui_size_y(.CHILDREN_SUM, 1)
 		name = "col"
 	}
 	box := ui_create_box(fmt.tprintf("%v_%v", name, state.ui.box_index), {.DRAWBORDER})
 	ui_push_parent(box)
-	ui_set_dir(direction)
+	ui_axis(axis)
 	state.ui.ctx.size = oldsize
 	return box
 }
 
-ui_layout :: proc() -> ^Box {
+ui_layout :: proc(
+		axis: 		Axis,
+		x: 			UI_Size_Type	=	.PERCENT_PARENT,
+		x_value: 	f32				=	1,
+		y: 			UI_Size_Type	=	.PERCENT_PARENT,
+		y_value: 	f32				=	1,
+	) -> ^Box {
+
+	ui_axis(axis)
+	ui_size(x, x_value, y, y_value)
+
 	state.ui.box_index += 1 // TODO is this a good idea?
-	box := ui_create_box(fmt.tprintf("layout_%v", state.ui.box_index), {.DEBUG})
+	box := ui_create_box(fmt.tprintf("layout_%v", state.ui.box_index), {})
 	ui_push_parent(box)
 	return box
 }
 
 
 ui_row :: proc() -> ^Box {
-	return ui_empty(.HORIZONTAL)
+	return ui_empty(.X)
 }
 
 ui_col :: proc() -> ^Box {
-	return ui_empty(.VERTICAL)
+	return ui_empty(.Y)
 }
 
-ui_end_row :: proc() do ui_pop_parent()
-ui_end_col :: proc() do ui_pop_parent()
+
 
 ui_label :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key,{
@@ -116,19 +134,20 @@ ui_button :: proc(key: string) -> Box_Ops {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWTEXT,
-		// .DRAWBORDER,
-		// .DRAWBACKGROUND,
+		.DRAWBORDER,
+		.DRAWBACKGROUND,
 		.DRAWGRADIENT,
 	})
+	box.text_align = .CENTER
 	return box.ops
 }
 
 ui_spacer_fill :: proc() -> Box_Ops {
 	state.ui.box_index += 1 // TODO is this a good idea?
 	oldsize := state.ui.ctx.size[X]
-	ui_set_size_x(.MIN_SIBLINGS, 1)
+	ui_size_x(.MIN_SIBLINGS, 1)
 	box := ui_create_box(fmt.tprintf("space_%v", state.ui.box_index), {
 	})
-	ui_set_size_x(oldsize.type, oldsize.value)
+	ui_size_x(oldsize.type, oldsize.value)
 	return box.ops
 }

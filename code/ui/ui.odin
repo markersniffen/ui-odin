@@ -41,8 +41,10 @@ UI_Context :: struct {
 	bg_color: v4,
 	border_color: v4,
 	border: f32,
+	text_align: Text_Align,
 	size: [XY]UI_Size,
-	direction: Direction,
+	// direction: Direction,
+	axis: Axis,
 }
 
 Ui_Colors :: struct {
@@ -81,6 +83,12 @@ UI_Size_Type :: enum {
 Direction :: enum {
 	HORIZONTAL,
 	VERTICAL,
+}
+
+Axis :: enum {
+	X,
+	Y,
+	XY,
 }
 
 //______ INITIALIZATION ______ //
@@ -182,12 +190,9 @@ ui_update :: proc() {
 			}
 
 			if .DRAWTEXT in box.flags {
-				draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx))
+				draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
 			}
 
-			if .DEBUG in box.flags {
-				push_quad_border(box.ctx, {0.8, 0.2, 0.2, 1}, 1)
-			}
 			iterate_boxes(box.first)
 			iterate_boxes(box.next)
 		}

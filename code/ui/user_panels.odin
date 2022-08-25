@@ -14,7 +14,7 @@ Panel_Type :: enum {
 
 ui_panel_menu :: proc() {
 	// ui_row()
-	// ui_set_size_x(.TEXT_CONTENT, 1)
+	// ui_size_x(.TEXT_CONTENT, 1)
 	// ui_label(fmt.tprintf("Panel %v | Type: %v", state.ui.ctx.panel.uid, state.ui.ctx.panel.type))
 	// ui_spacer_fill()
 	// if ui_button("CLOSE PANEL").clicked do ui_delete_panel(state.ui.ctx.panel)
@@ -23,26 +23,9 @@ ui_panel_menu :: proc() {
 
 ui_panel_file_edit_view :: proc() {
 	// ui_root_box()
-	index := 0
-	iterate_boxes :: proc(box: ^Box) {
-		parentkey := ""
-		if box != nil {
-			if box.parent != nil do parentkey = box.parent.key
-			fmt.print(fmt.tprintf("%v [%v] >", box.key, parentkey))
-		}
-		if box != nil {
-			for child := box.first; child != nil; child = child.next {
-				iterate_boxes(child)
-			}
-		}
-	}
-
-	iterate_boxes(state.debug.box)
-	fmt.print('\n')
-
 	// ui_row()
-	// ui_set_size_x(.TEXT_CONTENT, 1)
-	// ui_set_size_y(.TEXT_CONTENT, 1)
+	// ui_size_x(.TEXT_CONTENT, 1)
+	// ui_size_y(.TEXT_CONTENT, 1)
 	// ui_button("File")
 	// ui_button("Edit")
 	// ui_button("View")
@@ -58,57 +41,53 @@ ui_panel_debug :: proc() {
 	state.debug.box = ui_root_box()
 	// ui_panel_menu()
 
-	ui_set_size_x(.TEXT_CONTENT, 1)
-	ui_set_size_y(.TEXT_CONTENT, 1)
+	ui_size_x(.TEXT_CONTENT, 1)
+	ui_size_y(.TEXT_CONTENT, 1)
 	ui_row()
-	ui_button("Test1")
-	ui_button("Test2")
-	ui_button("Test3")
-	ui_button("Test4")
-	ui_end_row()
+		ui_button("Test1")
+		ui_button("Test2")
+		ui_button("Test3")
+		ui_button("Test4")
+	ui_pop()
 	
-
-	ui_set_dir(.VERTICAL)
-	ui_set_size_x(.PERCENT_PARENT, 1)
-	ui_set_size_y(.CHILDREN_SUM, 1)
-	ui_layout()	// row/box that holds multiple columns
-
-		ui_set_dir(.HORIZONTAL)
-		ui_set_size_x(.PERCENT_PARENT, 0.25)
-		ui_set_size_y(.CHILDREN_SUM, 1)
-		ui_layout() // column (1) of buttons
-			ui_set_dir(.VERTICAL)
-			ui_set_size_x(.PERCENT_PARENT, 1)
-			ui_set_size_y(.PIXELS, state.ui.line_space)
+	ui_layout(.Y, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)	// row/box that holds multiple columns
+		ui_layout(.X, .PERCENT_PARENT, 0.3, .CHILDREN_SUM, 1) // column (1) of buttons
+			ui_axis(.Y)
+			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
 			ui_button("WHEE")
 			ui_button("Baz")
 			ui_button("Bop")
 			ui_button("FOo")
-		ui_pop_parent()
+		ui_pop()
 
-		ui_set_dir(.HORIZONTAL)
-		ui_set_size_x(.PERCENT_PARENT, 0.25)
-		ui_set_size_y(.CHILDREN_SUM, 1)
-		ui_layout() // column (2) of buttons
-			ui_set_dir(.VERTICAL)
-			ui_set_size_x(.PERCENT_PARENT, 1)
-			ui_set_size_y(.PIXELS, state.ui.line_space)
+		ui_layout(.X, .PERCENT_PARENT, 0.3, .CHILDREN_SUM, 1) // column (2) of buttons
+			ui_axis(.Y)
+			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
 			ui_button("x")
 			ui_button("y")
 			ui_button("z")
 			ui_button("w")
-		ui_pop_parent()
+		ui_pop()
 
-	ui_pop_parent()
+		ui_layout(.X, .PERCENT_PARENT, 0.4, .CHILDREN_SUM, 1) // column (2) of buttons
+			ui_axis(.Y)
+			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
+			ui_button("xx")
+			ui_button("yx")
+			ui_button("dasf")
+			ui_button("wx")
+		ui_pop()
+
+	ui_pop()
 
 	ui_row()
-	ui_set_size_x(.TEXT_CONTENT, 1)
-	ui_set_size_y(.TEXT_CONTENT, 1)
-	ui_button("Test5")
-	ui_button("Test6")
-	ui_button("Test7")
-	ui_button("Test8")
-	ui_end_row()
+		ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
+		ui_button("Test5")
+		ui_button("Test6")
+		ui_button("Test7")
+		ui_spacer_fill()
+		ui_button("Test8")
+	ui_pop()
 
 
 }

@@ -105,7 +105,7 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4
 		for letter in text do text_width += state.ui.char_data[letter].advance
 
 		if align == .CENTER {
-			left_align -= text_width / 2
+			left_align = (left_align - text_width / 2) + ((quad.r - quad.l) / 2)
 		} else if align == .RIGHT {
 			left_align -= text_width + state.ui.margin
 		}

@@ -25,8 +25,11 @@ Box :: struct {
 	bg_color: v4,
 	border_color: v4,
 	border: f32,
+	text_align: Text_Align,
+
 	size: [XY]UI_Size,
-	direction: Direction,
+	// direction: Direction,
+	axis: Axis,
 	calc_size: v2,
 	offset: v2,		// from parent
 	ctx: Quad,
@@ -48,8 +51,6 @@ Box_Flags :: enum {
 
 	HOTANIMATION,
 	ACTIVEANIMATION,
-
-	DEBUG,
 }
 
 Box_Ops :: struct {
@@ -103,10 +104,12 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}) -> ^Box {
 		box.parent = parent
 
 		box.size = state.ui.ctx.size
-		box.direction = state.ui.ctx.direction
+		// box.direction = state.ui.ctx.direction
+		box.axis = state.ui.ctx.axis
 		box.bg_color = state.ui.ctx.bg_color
 		box.border_color = state.ui.ctx.border_color
 		box.border = state.ui.ctx.border
+		box.text_align = state.ui.ctx.text_align
 
 		// try adding as first child first
 		if parent.first == nil {
@@ -196,21 +199,20 @@ ui_calc_boxes :: proc() {
 			{
 				calc_size^ = 0
 				for child := box.first; child != nil ; child = child.next {
-					if child.direction == box.direction {
+					if child.axis == state.ui.ctx.axis {
 						calc_size^ = child.calc_size[index]
 						break
 					} else {
 						calc_size^ += child.calc_size[index]
 					}
 				}
-				fmt.println(box.key, calc_size^)
 			}
 		}
 	}
 	// RELATIVE POSITION & QUAD ----------------------
 	for _, box in state.ui.boxes {
-		switch box.direction {
-			case .HORIZONTAL:
+		#partial switch box.axis {
+			case .X:
 				if box.prev == nil {
 					box.offset.x = 0
 				} else {
@@ -221,7 +223,7 @@ ui_calc_boxes :: proc() {
 					box.offset.x = new_calc_size
 				}
 				if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
-			case .VERTICAL:
+			case .Y:
 				if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
 				if box.prev == nil {
 					box.offset.y = 0
