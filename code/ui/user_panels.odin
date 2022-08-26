@@ -44,6 +44,12 @@ ui_panel_debug :: proc() {
 	ui_size_x(.TEXT_CONTENT, 1)
 	ui_size_y(.TEXT_CONTENT, 1)
 	ui_row()
+
+		ui_value("Mem Allocs:", &state.ui.box_pool.nodes_used)
+		ui_value("Delta Time:", &state.delta_time)
+	ui_pop()
+
+	ui_row()
 		ui_button("Test1")
 		ui_button("Test2")
 		ui_button("Test3")

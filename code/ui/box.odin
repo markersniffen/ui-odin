@@ -7,6 +7,8 @@ MAX_BOXES :: 4096
 Box :: struct {
 	key: string,
 	name: string,
+	value: any,
+	value_type: typeid,
 
 	parent: ^Box,	// parent
 	first: ^Box,	// first child
@@ -27,6 +29,8 @@ Box :: struct {
 	border: f32,
 	text_align: Text_Align,
 
+	hot_t: f32,
+
 	size: [XY]UI_Size,
 	// direction: Direction,
 	axis: Axis,
@@ -44,6 +48,7 @@ Box_Flags :: enum {
 	VIEWSCROLL,
 
 	DRAWTEXT,
+	DISPLAYVALUE,
 	DRAWBORDER,
 	DRAWBACKGROUND,
 	DRAWGRADIENT,
@@ -93,7 +98,7 @@ ui_generate_box :: proc(key: string) -> ^Box {
 	return box
 }
 
-ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}) -> ^Box {
+ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any) -> ^Box {
 	key := ui_gen_key(_key)
 	box, box_ok := state.ui.boxes[key]
 	parent := state.ui.ctx.box_parent
@@ -102,7 +107,8 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}) -> ^Box {
 	if !box_ok {
 		box = ui_generate_box(_key)
 		box.parent = parent
-
+		box.value = value
+		// box.value_type = T
 		box.size = state.ui.ctx.size
 		// box.direction = state.ui.ctx.direction
 		box.axis = state.ui.ctx.axis
@@ -138,9 +144,11 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}) -> ^Box {
 
 		if .HOVERABLE in box.flags && !box.ops.clicked {
 			box.ops.hovering = true
+			state.ui.ctx.box_hot = box
 		}
 	} else {
 		box.ops.hovering = false
+		box.hot_t = 0
 	}
 
 	box.last_frame_touched = state.ui.frame
@@ -236,6 +244,13 @@ ui_calc_boxes :: proc() {
 				}
 		}
 	}
+	for _, box in state.ui.boxes {
+		if box == state.ui.ctx.box_hot {
+			box.hot_t = clamp(box.hot_t + 0.05, 0, 1)
+		} else {
+			box.hot_t = 0
+		}
+	}
 }
 
 ui_delete_box :: proc(box: ^Box) {
@@ -283,6 +298,7 @@ ui_delete_box :: proc(box: ^Box) {
 			}
 		}
 	}
+	fmt.println("Deleting", box.key)
 	delete_key(&state.ui.boxes, box.key)
 	pool_free(&state.ui.box_pool, box)
 }

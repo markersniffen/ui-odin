@@ -87,7 +87,7 @@ ui_empty :: proc(axis: Axis) -> ^Box {
 		ui_size_y(.CHILDREN_SUM, 1)
 		name = "col"
 	}
-	box := ui_create_box(fmt.tprintf("%v_%v", name, state.ui.box_index), {.DRAWBORDER})
+	box := ui_create_box(fmt.tprintf("%v_%v", name, state.ui.box_index), {.DRAWBORDER}, 0)
 	ui_push_parent(box)
 	ui_axis(axis)
 	state.ui.ctx.size = oldsize
@@ -106,7 +106,7 @@ ui_layout :: proc(
 	ui_size(x, x_value, y, y_value)
 
 	state.ui.box_index += 1 // TODO is this a good idea?
-	box := ui_create_box(fmt.tprintf("layout_%v", state.ui.box_index), {})
+	box := ui_create_box(fmt.tprintf("layout_%v", state.ui.box_index), {}, 0)
 	ui_push_parent(box)
 	return box
 }
@@ -121,12 +121,16 @@ ui_col :: proc() -> ^Box {
 }
 
 
-
 ui_label :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key,{
 		.DRAWTEXT,
-	})
+	}, 0)
 	return box.ops
+}
+
+ui_value :: proc(key: string, value: any) -> Box_Ops {
+	box := ui_create_box(key,{ .DISPLAYVALUE }, value)
+	return box.ops	
 }
 
 ui_button :: proc(key: string) -> Box_Ops {
@@ -137,7 +141,8 @@ ui_button :: proc(key: string) -> Box_Ops {
 		.DRAWBORDER,
 		.DRAWBACKGROUND,
 		.DRAWGRADIENT,
-	})
+		.HOTANIMATION,
+	}, 0)
 	box.text_align = .CENTER
 	return box.ops
 }
@@ -147,7 +152,7 @@ ui_spacer_fill :: proc() -> Box_Ops {
 	oldsize := state.ui.ctx.size[X]
 	ui_size_x(.MIN_SIBLINGS, 1)
 	box := ui_create_box(fmt.tprintf("space_%v", state.ui.box_index), {
-	})
+	}, 0)
 	ui_size_x(oldsize.type, oldsize.value)
 	return box.ops
 }

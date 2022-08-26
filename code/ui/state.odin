@@ -1,8 +1,13 @@
 package ui
 
 import "core:fmt"
+import "core:time"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
+
+when ODIN_OS == .Windows {
+	import win "core:sys/windows"
+}
 
 WIDTH  	:: 1280
 HEIGHT 	:: 720
@@ -24,6 +29,11 @@ State :: struct {
 	uid: Uid,
 	window: glfw.WindowHandle,
 	quit: bool,
+
+	start_time: time.Time,
+	prev_time: time.Time,
+	delta_time: f64,
+
 	render: Gl,
 	ui: Ui,
 	window_size: v2i,
@@ -99,6 +109,8 @@ init :: proc() -> bool {
 	glfw.SetCharCallback(state.window, cast(glfw.CharProc)typing_callback)
 	glfw.SetWindowUserPointer(state.window, state)
 
+	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
+	
 	opengl_init()
 	ui_init()
 
@@ -106,6 +118,9 @@ init :: proc() -> bool {
 }
 
 update :: proc() {
+	state.start_time = time.now()
+	state.delta_time = time.duration_milliseconds(time.diff(state.prev_time, state.start_time))
+
 	state.quit = bool(glfw.WindowShouldClose(state.window))
 	if state.quit do return
 
@@ -119,7 +134,16 @@ update :: proc() {
 	state.mouse.pos = {i32(mouseX), i32(mouseY)}
 	state.mouse.delta = state.mouse.pos - old_mouse
 
-	// fmt.println(state.mouse.left)	
+	ui_update()
+	opengl_render()
+
+	frame_goal : time.Duration = 33330000/2
+	time_so_far := time.diff(state.start_time, time.now())
+	sleep_for:= frame_goal - time_so_far
+
+	time.accurate_sleep(sleep_for)
+
+	state.prev_time = state.start_time
 }
 
 quit :: proc() {

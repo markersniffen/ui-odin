@@ -54,6 +54,8 @@ pool_free_all :: proc(pool: ^Pool)
 
 pool_alloc :: proc(pool: ^Pool) -> rawptr
 {
+	if pool.nodes_used >= pool.chunk_count-1 do fmt.println("TOO MUCH MEMORY USED IN POOL", pool.name)
+	assert(pool.nodes_used < pool.chunk_count)
 	// fmt.println("allocing memory >>", pool.name)
 	new_alloc := pool.head
 	if new_alloc != nil
@@ -87,7 +89,7 @@ pool_free :: proc(pool: ^Pool, ptr: rawptr) -> bool
 	node = cast(^Node)ptr
 	node.next = pool.head
 	pool.head = node
-
+	
 	pool.nodes_used -= 1
 	return true
 }

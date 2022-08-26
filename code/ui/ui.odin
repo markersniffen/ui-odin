@@ -37,6 +37,7 @@ UI_Context :: struct {
 	panel: ^Panel,
 	box_parent: ^Box,
 	box: ^Box,
+	box_hot: ^Box,
 	font_color: v4,
 	bg_color: v4,
 	border_color: v4,
@@ -116,24 +117,6 @@ ui_update :: proc() {
 	if read_key(&state.keys.left) do state.debug.temp -= 1
 	if read_key(&state.keys.right) do state.debug.temp += 1
 
-	// TODO temp change panel type (breaks ui_delete_box)
-	// if state.ui.panel_active != nil {
-	// 	num := int(state.ui.panel_active.type)
-	// 	if state.mouse.scroll > 0 {
-	// 		num = clamp(num + 1, 1, 4)
-	// 		fmt.println(Panel_Type(num))	
-	// 	}
-
-	// 	if state.mouse.scroll < 0 {
-	// 		num = clamp(num - 1, 1, 4)
-	// 		fmt.println(Panel_Type(num))	
-	// 	}
-	// 	state.mouse.scroll = 0
-	// 	state.ui.panel_active.type = Panel_Type(num)
-
-	// 	// ui_delete_panel_boxes(state.ui.panel_active.box)
-	// }
-
 	// calculate panels, includes box-builder code ------------------------------
 	ui_calc_panel(state.ui.panel_root, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
 
@@ -180,7 +163,7 @@ ui_update :: proc() {
 			}
 
 			if .HOVERABLE in box.flags {
-				if box.ops.hovering do push_quad_solid(box.ctx, state.ui.col.hot)
+				// if box.ops.hovering do push_quad_solid(box.ctx, state.ui.col.hot)
 			}
 			if .CLICKABLE in box.flags {
 				if box.ops.clicked do push_quad_gradient_v(box.ctx, state.ui.col.active, state.ui.col.hot)
@@ -193,10 +176,22 @@ ui_update :: proc() {
 				draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
 			}
 
+			if .DISPLAYVALUE in box.flags {
+				fmt.println(box.value)
+				text := fmt.tprintf("%v %v", box.name, box.value)
+				draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
+			}
+
+			if .HOTANIMATION in box.flags {
+				push_quad_gradient_v(box.ctx, {1,1,1,0.6 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
+			}
+
 			iterate_boxes(box.first)
 			iterate_boxes(box.next)
 		}
 		iterate_boxes(root_box)
 	}
+
+	// state.ui.ctx.box_hot = nil
 }
 
