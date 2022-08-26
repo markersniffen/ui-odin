@@ -44,16 +44,13 @@ ui_panel_debug :: proc() {
 	ui_size_x(.TEXT_CONTENT, 1)
 	ui_size_y(.TEXT_CONTENT, 1)
 	ui_row()
-
-		ui_value("Mem Allocs:", &state.ui.box_pool.nodes_used)
-		ui_value("Delta Time:", &state.delta_time)
+		// ui_value("Mem Allocs:", state.ui.box_pool.nodes_used)
+		// ui_value("Delta Time:", state.delta_time)
+		ui_value("Active Box:", state.ui.ctx.box_active)
 	ui_pop()
 
 	ui_row()
-		ui_button("Test1")
-		ui_button("Test2")
-		ui_button("Test3")
-		ui_button("Test4")
+		if ui_button_value("Test:", state.debug.swtch).clicked do state.debug.swtch = !state.debug.swtch
 	ui_pop()
 	
 	ui_layout(.Y, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)	// row/box that holds multiple columns

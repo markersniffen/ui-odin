@@ -8,7 +8,7 @@ Box :: struct {
 	key: string,
 	name: string,
 	value: any,
-	value_type: typeid,
+	// value_type: Value_Type,
 
 	parent: ^Box,	// parent
 	first: ^Box,	// first child
@@ -30,6 +30,7 @@ Box :: struct {
 	text_align: Text_Align,
 
 	hot_t: f32,
+	active_t: f32,
 
 	size: [XY]UI_Size,
 	// direction: Direction,
@@ -38,6 +39,14 @@ Box :: struct {
 	offset: v2,		// from parent
 	ctx: Quad,
 }
+
+Value_Type :: enum {
+	F32,
+	INT,
+	STRING,
+}
+
+
 
 Box_Flags :: enum {
 	ROOT,
@@ -98,7 +107,7 @@ ui_generate_box :: proc(key: string) -> ^Box {
 	return box
 }
 
-ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any) -> ^Box {
+ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -> ^Box {
 	key := ui_gen_key(_key)
 	box, box_ok := state.ui.boxes[key]
 	parent := state.ui.ctx.box_parent
@@ -108,7 +117,7 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any) -> 
 		box = ui_generate_box(_key)
 		box.parent = parent
 		box.value = value
-		// box.value_type = T
+		// box.value_type = type
 		box.size = state.ui.ctx.size
 		// box.direction = state.ui.ctx.direction
 		box.axis = state.ui.ctx.axis
@@ -137,18 +146,40 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any) -> 
 	box.flags = flags
 
 	// PROCESS OPS ------------------------------
-	if mouse_in_quad(box.ctx) {
-		if .CLICKABLE in box.flags {
-			box.ops.clicked = read_mouse(&state.mouse.left, .RELEASE)
-		}
+	if !box.ops.pressed {
+		if mouse_in_quad(box.ctx) {
+			if .CLICKABLE in box.flags {
+				box.ops.pressed = read_mouse(&state.mouse.left, .CLICK)
+				box.ops.clicked = read_mouse(&state.mouse.left, .RELEASE)
 
-		if .HOVERABLE in box.flags && !box.ops.clicked {
-			box.ops.hovering = true
-			state.ui.ctx.box_hot = box
+				if box.ops.clicked do box.ops.pressed = false
+				if box.ops.pressed && !box.ops.clicked {
+					state.ui.ctx.box_active = box
+				} else {
+					if state.ui.ctx.box_active == box do state.ui.ctx.box_active = nil	
+				}
+			}
+
+			if .HOVERABLE in box.flags && !box.ops.clicked {
+				box.ops.hovering = true
+				state.ui.ctx.box_hot = box
+			}
+		} else {
+			box.ops.hovering = false
+			if state.ui.ctx.box_hot == box do state.ui.ctx.box_hot = nil
 		}
-	} else {
-		box.ops.hovering = false
-		box.hot_t = 0
+	} if .CLICKABLE in box.flags {
+		if mouse_in_quad(box.ctx) {
+			box.ops.pressed = read_mouse(&state.mouse.left, .CLICK)
+		}
+		box.ops.clicked = read_mouse(&state.mouse.left, .RELEASE)
+
+		if box.ops.clicked do box.ops.pressed = false
+		if box.ops.pressed && !box.ops.clicked {
+			state.ui.ctx.box_active = box
+		} else {
+			if state.ui.ctx.box_active == box do state.ui.ctx.box_active = nil	
+		}
 	}
 
 	box.last_frame_touched = state.ui.frame
@@ -167,6 +198,7 @@ ui_calc_boxes :: proc() {
 				case .TEXT_CONTENT:
 				if index == X {
 					calc_size^ = ui_text_size(X, box.name) + (state.ui.margin*2)
+					if .DISPLAYVALUE in box.flags do calc_size^ += ui_text_size(X, fmt.tprintf("%v", box.value))
 				} else if index == Y {
 					calc_size^ = ui_text_size(Y, box.name)
 				}
@@ -245,10 +277,20 @@ ui_calc_boxes :: proc() {
 		}
 	}
 	for _, box in state.ui.boxes {
-		if box == state.ui.ctx.box_hot {
-			box.hot_t = clamp(box.hot_t + 0.05, 0, 1)
-		} else {
-			box.hot_t = 0
+		if .HOTANIMATION in box.flags {
+			if box == state.ui.ctx.box_hot {
+				box.hot_t = clamp(box.hot_t + 0.12, 0, 1)
+			} else {
+				box.hot_t = clamp(box.hot_t - 0.12, 0, 1)
+			}
+		}
+
+		if .ACTIVEANIMATION in box.flags {
+			if box == state.ui.ctx.box_active {
+				box.active_t = clamp(box.active_t + 0.12, 0, 1)
+			} else {
+				box.active_t = clamp(box.active_t - 0.12, 0, 1)
+			}
 		}
 	}
 }
