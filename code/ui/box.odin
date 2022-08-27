@@ -77,7 +77,6 @@ ui_split_key :: proc(key: string) -> string {
 			break
 		}
 	}
-	fmt.println("KEYGEN", a, b)
 	return a
 }
 
@@ -298,7 +297,6 @@ ui_delete_box :: proc(box: ^Box) {
 			}
 		}
 	}
-	fmt.println("Deleting", box.key)
 	delete_key(&state.ui.boxes, box.key)
 	pool_free(&state.ui.box_pool, box)
 }

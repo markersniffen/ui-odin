@@ -177,7 +177,6 @@ ui_update :: proc() {
 			}
 
 			if .DISPLAYVALUE in box.flags {
-				fmt.println(box.value)
 				text := fmt.tprintf("%v %v", box.name, box.value)
 				draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
 			}

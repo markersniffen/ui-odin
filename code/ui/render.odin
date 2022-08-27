@@ -30,6 +30,7 @@ Quad :: struct {
 
 opengl_init :: proc() {
 	gl.load_up_to(3, 3, glfw.gl_set_proc_address)
+	fmt.println(gl.GetString(gl.VERSION))
 	gl.Enable(gl.BLEND)
 	gl.Enable(gl.SCISSOR_TEST)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -52,7 +53,7 @@ opengl_init :: proc() {
 
 opengl_load_texture :: proc(texture: u32, image: rawptr, size:i32) -> bool {
 	gl.BindTexture(gl.TEXTURE_2D, texture)
-  	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, size,size, 0, gl.ALPHA, gl.UNSIGNED_BYTE, image)
+  	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, size,size, 0, gl.RED, gl.UNSIGNED_BYTE, image)
   	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
   	if gl.GetError() != 0 do return false
   	return true
@@ -221,17 +222,14 @@ uniform sampler2D tex;
 
 void main()
 {
-	vec4 Mul = vec4((vertex_color.xyz * vertex_color.aaa), vertex_color.a);
-
-	// vec4 texs = texture(tex, uv_coords);
-	// FragColor = vec4((vertex_color.rgb * texture_mix) + texs.rgb, texs.a);
+	vec4 Mul = vec4((vertex_color.xyz * vertex_color.rrr), vertex_color.r);
 
 	if (texture_mix == 0)
 	{
 		FragColor = vertex_color;
 	} else {
 		vec4 texs = texture(tex, uv_coords);
-		FragColor = vec4(vertex_color.rgb, texs.a);
+		FragColor = vec4(vertex_color.rgb, texs.r);
 	}
 }
 `

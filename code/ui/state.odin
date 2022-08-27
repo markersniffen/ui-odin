@@ -94,6 +94,13 @@ init :: proc() -> bool {
 		return false
 	}
 	
+	if ODIN_OS == .Darwin {
+		glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 4)
+		glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 1)
+		glfw.WindowHint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+		glfw.WindowHint(glfw.OPENGL_FORWARD_COMPAT, i32(1))
+	}
+
 	state.window = glfw.CreateWindow(WIDTH, HEIGHT, TITLE, nil, nil)
 
 	if state.window == nil
