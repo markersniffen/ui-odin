@@ -15,6 +15,8 @@ Gl :: struct {
 	vertex_buffer: u32,
 	vertex_index: int,
 
+	vao: u32,
+
 	indices: []u32,
 	index_buffer: u32,
 	index_index: int,
@@ -48,6 +50,13 @@ opengl_init :: proc() {
 	gl.BindTexture(gl.TEXTURE_2D, state.render.font_texture)
 	gl.GenerateMipmap(gl.TEXTURE_2D)
 
+	gl.GenVertexArrays(1, &state.render.vao)
+	
+	gl.EnableVertexAttribArray(0)
+	gl.EnableVertexAttribArray(1)
+	gl.EnableVertexAttribArray(2)
+	gl.EnableVertexAttribArray(3)
+
 	state.render.font_texture_size = 512 // size of font bitmap
 }
 
@@ -72,13 +81,9 @@ opengl_render :: proc() {
 	gl.BufferData(gl.ARRAY_BUFFER, state.render.vertex_index * size_of(f32), &state.render.vertices[0], gl.STATIC_DRAW)
 	
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 0 * size_of(f32))
-	gl.EnableVertexAttribArray(0)
 	gl.VertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 3 * size_of(f32))
-	gl.EnableVertexAttribArray(1)
 	gl.VertexAttribPointer(2, 4, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 5 * size_of(f32))
-	gl.EnableVertexAttribArray(2)
 	gl.VertexAttribPointer(3, 1, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 9 * size_of(f32))
-	gl.EnableVertexAttribArray(3)
 
 	window_res := gl.GetUniformLocation(state.render.shader, "window_res")
 	gl.Uniform2f(window_res, f32(state.window_size.x)/2, f32(state.window_size.y)/2)
