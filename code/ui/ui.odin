@@ -38,6 +38,7 @@ UI_Context :: struct {
 	box_parent: ^Box,
 	box: ^Box,
 	box_hot: ^Box,
+	box_active: ^Box,
 	font_color: v4,
 	bg_color: v4,
 	border_color: v4,
@@ -165,11 +166,11 @@ ui_update :: proc() {
 			if .HOVERABLE in box.flags {
 				// if box.ops.hovering do push_quad_solid(box.ctx, state.ui.col.hot)
 			}
-			if .CLICKABLE in box.flags {
-				if box.ops.clicked do push_quad_gradient_v(box.ctx, state.ui.col.active, state.ui.col.hot)
-			}
 			if .DRAWGRADIENT in box.flags {
 				push_quad_gradient_v(box.ctx, {1,1,1,0.1}, {0,0,0,0})
+			}
+			if .CLICKABLE in box.flags {
+				// if box.ops.pressed do push_quad_gradient_v(box.ctx, {1,1,1, clamp(1 * box.active_t, 0, 1)}, state.ui.col.hot)
 			}
 
 			if .DRAWTEXT in box.flags {
@@ -182,7 +183,11 @@ ui_update :: proc() {
 			}
 
 			if .HOTANIMATION in box.flags {
-				push_quad_gradient_v(box.ctx, {1,1,1,0.6 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
+				push_quad_gradient_v(box.ctx, {1,1,1,0.4 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
+			}
+
+			if .ACTIVEANIMATION in box.flags {
+				push_quad_gradient_v(box.ctx, {1,0,0,0.4 * box.active_t}, {1,0,0,0.2 * box.active_t})	
 			}
 
 			iterate_boxes(box.first)
