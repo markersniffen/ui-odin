@@ -135,8 +135,9 @@ update :: proc() {
 	glfw.PollEvents()
 
 	width, height := glfw.GetWindowSize(state.window)
-	framebuffer_width, framebuffer_height := glfw.GetFramebufferSize(state.window)
 	state.window_size = {width, height}
+	
+	framebuffer_width, framebuffer_height := glfw.GetFramebufferSize(state.window)
 	state.framebuffer_res = {framebuffer_width, framebuffer_height}
 	
 	mouseX, mouseY := glfw.GetCursorPos(state.window)

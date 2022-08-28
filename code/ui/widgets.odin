@@ -28,6 +28,7 @@ ui_root_box :: proc() -> ^Box {
 	box.hash_next = nil
 	state.ui.ctx.box = box
 	ui_push_parent(box)
+	ui_size(.PERCENT_PARENT, 1, .PERCENT_PARENT, 1)
 	return box
 }	
 

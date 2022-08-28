@@ -73,7 +73,7 @@ opengl_render :: proc() {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 	gl.ClearColor(0, 0, 0, 1)
 	gl.Viewport(0, 0, i32(state.framebuffer_res.x), i32(state.framebuffer_res.y))
-	// gl.Scissor(0, 0, i32(state.window_size.x), i32(state.window_size.y))
+	gl.Scissor(0, 0, i32(state.framebuffer_res.x), i32(state.framebuffer_res.y))
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(state.render.shader)

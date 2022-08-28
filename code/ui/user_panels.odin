@@ -41,18 +41,17 @@ ui_panel_debug :: proc() {
 	state.debug.box = ui_root_box()
 	// ui_panel_menu()
 
-	ui_size_x(.TEXT_CONTENT, 1)
-	ui_size_y(.TEXT_CONTENT, 1)
-	ui_row()
-		// ui_value("Mem Allocs:", state.ui.box_pool.nodes_used)
-		// ui_value("Delta Time:", state.delta_time)
-		ui_value("Active Box:", state.ui.ctx.box_active)
+	ui_layout(.Y, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)
+		ui_layout(.X, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)
+			ui_axis(.Y)
+			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
+			ui_button("test")
+			ui_button("test2")
+			ui_value("Mouse:", state.mouse.pos)
+			ui_value("window size:", state.window_size)
+			ui_value("fb size:", state.framebuffer_res)
+		ui_pop()
 	ui_pop()
-
-	ui_row()
-		if ui_button_value("Test:", state.debug.swtch).clicked do state.debug.swtch = !state.debug.swtch
-	ui_pop()
-	
 	ui_layout(.Y, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)	// row/box that holds multiple columns
 		ui_layout(.X, .PERCENT_PARENT, 0.3, .CHILDREN_SUM, 1) // column (1) of buttons
 			ui_axis(.Y)
@@ -80,17 +79,16 @@ ui_panel_debug :: proc() {
 			ui_button("dasf")
 			ui_button("wx")
 		ui_pop()
-
 	ui_pop()
 
-	ui_row()
-		ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
-		ui_button("Test5")
-		ui_button("Test6")
-		ui_button("Test7")
-		ui_spacer_fill()
-		ui_button("Test8")
-	ui_pop()
+	// ui_row()
+	// 	ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
+	// 	ui_button("Test5")
+	// 	ui_button("Test6")
+	// 	ui_button("Test7")
+	// 	ui_spacer_fill()
+	// 	ui_button("Test8")
+	// ui_pop()
 
 
 }
