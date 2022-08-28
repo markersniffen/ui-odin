@@ -1,3 +1,5 @@
 *.exe
 *.bin
 *.pdb
+*.plist
+.DS_Store
