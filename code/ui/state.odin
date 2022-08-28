@@ -37,6 +37,7 @@ State :: struct {
 	render: Gl,
 	ui: Ui,
 	window_size: v2i,
+	framebuffer_res: v2i,
 	mouse: Mouse,
 	keys: Keys,
 	mode: Mode,
@@ -134,7 +135,9 @@ update :: proc() {
 	glfw.PollEvents()
 
 	width, height := glfw.GetWindowSize(state.window)
+	framebuffer_width, framebuffer_height := glfw.GetFramebufferSize(state.window)
 	state.window_size = {width, height}
+	state.framebuffer_res = {framebuffer_width, framebuffer_height}
 	
 	mouseX, mouseY := glfw.GetCursorPos(state.window)
 	old_mouse := state.mouse.pos

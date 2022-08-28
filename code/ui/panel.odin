@@ -150,7 +150,7 @@ ui_calc_panel :: proc(panel: ^Panel, ctx: Quad) {
 			// NOTE - TEMP? - CODE FOR SIZING PANELS //
 			if panel.scaleable {
 				if pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, bar) {
-					if read_mouse(&state.mouse.left, .DRAG) do state.ui.panel_active = panel
+					if read_mouse(&state.mouse.left, .CLICK) do state.ui.panel_active = panel
 					color = state.ui.col.highlight
 				}
 				if state.mouse.left == .UP do state.ui.panel_active = nil

@@ -51,6 +51,7 @@ opengl_init :: proc() {
 	gl.GenerateMipmap(gl.TEXTURE_2D)
 
 	gl.GenVertexArrays(1, &state.render.vao)
+	gl.BindVertexArray(state.render.vao)
 	
 	gl.EnableVertexAttribArray(0)
 	gl.EnableVertexAttribArray(1)
@@ -71,8 +72,8 @@ opengl_load_texture :: proc(texture: u32, image: rawptr, size:i32) -> bool {
 opengl_render :: proc() {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 	gl.ClearColor(0, 0, 0, 1)
-	gl.Viewport(0, 0, i32(state.window_size.x), i32(state.window_size.y))
-	gl.Scissor(0, 0, i32(state.window_size.x), i32(state.window_size.y))
+	gl.Viewport(0, 0, i32(state.framebuffer_res.x), i32(state.framebuffer_res.y))
+	// gl.Scissor(0, 0, i32(state.window_size.x), i32(state.window_size.y))
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(state.render.shader)
@@ -85,18 +86,23 @@ opengl_render :: proc() {
 	gl.VertexAttribPointer(2, 4, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 5 * size_of(f32))
 	gl.VertexAttribPointer(3, 1, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 9 * size_of(f32))
 
-	window_res := gl.GetUniformLocation(state.render.shader, "window_res")
-	gl.Uniform2f(window_res, f32(state.window_size.x)/2, f32(state.window_size.y)/2)
+	framebuffer_res := gl.GetUniformLocation(state.render.shader, "framebuffer_res")
+	gl.Uniform2f(framebuffer_res, f32(state.framebuffer_res.x)/2, f32(state.framebuffer_res.y)/2)
 
+	multiplier := gl.GetUniformLocation(state.render.shader, "multiplier")
+	gl.Uniform2f(multiplier, f32(state.framebuffer_res.x / state.window_size.x), f32(state.framebuffer_res.y / state.window_size.y))
+ 	
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.render.index_buffer)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, state.render.index_index * size_of(u32), &state.render.indices[0], gl.STATIC_DRAW)
 
 	gl.DrawElements(gl.TRIANGLES, i32(state.render.index_index), gl.UNSIGNED_INT, nil)
+
 	glfw.SwapBuffers(state.window)
 
 	state.render.vertex_index = 0
 	state.render.index_index = 0
 	state.render.quad_index = 0
+
 }
 
 push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1}, cD:v4={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	mix:f32=0) {
@@ -199,7 +205,8 @@ layout(location = 1) in vec2 uv;
 layout(location = 2) in vec4 color;
 layout(location = 3) in float mix_texture;
 
-uniform vec2 window_res;
+uniform vec2 framebuffer_res;
+uniform vec2 multiplier;
 
 out vec4 vertex_color;
 out vec2 uv_coords;
@@ -207,10 +214,14 @@ out float texture_mix;
 
 void main()
 {
+	float x = ((pos.x * multiplier.x) - framebuffer_res.x) / framebuffer_res.x;
+	float y = ((pos.y * multiplier.y) - framebuffer_res.y) / -framebuffer_res.y;
 	uv_coords = uv;
 	vertex_color = color;
 	texture_mix = mix_texture;
-	gl_Position.xyzw = vec4((pos.x-window_res.x)/window_res.x, (pos.y - window_res.y)/(-window_res.y), pos.z, 1);
+	gl_Position.xyzw = vec4(x, y, pos.z, 1);
+
+	// gl_Position.xyzw = vec4((pos.x-window_res.x)/window_res.x, (pos.y - window_res.y)/(-window_res.y), pos.z, 1);
 }
 `
 
