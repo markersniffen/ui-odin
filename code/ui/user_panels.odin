@@ -42,7 +42,7 @@ ui_panel_debug :: proc() {
 	// ui_panel_menu()
 
 	ui_layout(.Y, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)
-		ui_layout(.X, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)
+		ui_layout(.X, .PERCENT_PARENT, .5, .CHILDREN_SUM, 1)
 			ui_axis(.Y)
 			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
 			ui_button("test")
@@ -57,29 +57,29 @@ ui_panel_debug :: proc() {
 			ui_axis(.Y)
 			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
 			ui_button("WHEE")
-			ui_button("Baz")
-			ui_button("Bop")
-			ui_button("FOo")
+	// 		ui_button("Baz")
+	// 		ui_button("Bop")
+	// 		ui_button("FOo")
 		ui_pop()
 
-		ui_layout(.X, .PERCENT_PARENT, 0.3, .CHILDREN_SUM, 1) // column (2) of buttons
-			ui_axis(.Y)
-			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
-			ui_button("x")
-			ui_button("y")
-			ui_button("z")
-			ui_button("w")
-		ui_pop()
+	// 	ui_layout(.X, .PERCENT_PARENT, 0.3, .CHILDREN_SUM, 1) // column (2) of buttons
+	// 		ui_axis(.Y)
+	// 		ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
+	// 		ui_button("x")
+	// 		ui_button("y")
+	// 		ui_button("z")
+	// 		ui_button("w")
+	// 	ui_pop()
 
-		ui_layout(.X, .PERCENT_PARENT, 0.4, .CHILDREN_SUM, 1) // column (2) of buttons
-			ui_axis(.Y)
-			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
-			ui_button("xx")
-			ui_button("yx")
-			ui_button("dasf")
-			ui_button("wx")
-		ui_pop()
-	ui_pop()
+	// 	ui_layout(.X, .PERCENT_PARENT, 0.4, .CHILDREN_SUM, 1) // column (2) of buttons
+	// 		ui_axis(.Y)
+	// 		ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
+	// 		ui_button("xx")
+	// 		ui_button("yx")
+	// 		ui_button("dasf")
+	// 		ui_button("wx")
+	// 	ui_pop()
+	// ui_pop()
 
 	// ui_row()
 	// 	ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
@@ -88,7 +88,7 @@ ui_panel_debug :: proc() {
 	// 	ui_button("Test7")
 	// 	ui_spacer_fill()
 	// 	ui_button("Test8")
-	// ui_pop()
+	ui_pop()
 
 
 }

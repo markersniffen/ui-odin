@@ -1,4 +1,4 @@
-package ui
+	package ui
 
 import "core:fmt"
 
@@ -110,15 +110,15 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	key := ui_gen_key(_key)
 	box, box_ok := state.ui.boxes[key]
 	parent := state.ui.ctx.box_parent
+	fmt.println("adding first", _key, state.ui.ctx.box_parent.key)
+
 	
 	// if box doesn't exist, create it
 	if !box_ok {
 		box = ui_generate_box(_key)
 		box.parent = parent
 		box.value = value
-		// box.value_type = type
 		box.size = state.ui.ctx.size
-		// box.direction = state.ui.ctx.direction
 		box.axis = state.ui.ctx.axis
 		box.bg_color = state.ui.ctx.bg_color
 		box.border_color = state.ui.ctx.border_color
@@ -186,7 +186,7 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 }
 
 ui_calc_boxes :: proc() {
-	// PIXEL SIZE ------------------------------
+	// PIXEL SIZE / TEXT CONTENT SIZE ------------------------------
 	for _, box in state.ui.boxes {
 		// for each axis (x/y) ------------------------------
 		for size, index in box.size {
@@ -204,98 +204,125 @@ ui_calc_boxes :: proc() {
 			}
 		}
 	}	
+
 	// PARENT SIZE ------------------------------
-	for _, box in state.ui.boxes {
-		// for each axis (x/y) ------------------------------
-		for size, index in box.size {
-			calc_size := &box.calc_size[index]
+	for _, panel in state.ui.panels {
+	  if panel.child_a == nil && panel.box != nil {
+
+			last: ^Box = nil
+
+	  	for box := panel.box; box != nil; box = box.hash_next {
+				if box.hash_next == nil do last = box
+
+				for size, index in box.size {
+					calc_size := &box.calc_size[index]
+					if size.type == .PERCENT_PARENT {
+						psize := box.parent.calc_size[index]
+						calc_size^ = psize * size.value
+					}
+				}
+	  	}
 			
-			if size.type == .PERCENT_PARENT {
-				psize := box.parent.calc_size[index]
-				calc_size^ = psize * size.value
-			}
-		}
-	}
-	// RELATIVE TO SIBLINGS ------------------------------
-	for _, box in state.ui.boxes {
-		// for each axis (x/y) ------------------------------
-		for size, index in box.size {
-			calc_size := &box.calc_size[index]
+			assert(last != nil)
+			// RELATIVE TO SIBLINGS ------------------------------
+		  for box := panel.box; box != nil; box = box.hash_next {
+		  	for size, index in box.size {
+					calc_size := &box.calc_size[index]
 
-			if size.type == .MIN_SIBLINGS
-			{
-				calc_size^ = 0
-				for prev:= box.prev; prev != nil; prev = prev.prev {
-					calc_size^ += prev.calc_size[index]
-				}
+					if size.type == .MIN_SIBLINGS
+					{
+						calc_size^ = 0
+						for prev:= box.prev; prev != nil; prev = prev.prev {
+							calc_size^ += prev.calc_size[index]
+						}
 
-				for next:= box.next; next != nil; next = next.next {
-					calc_size^ += next.calc_size[index]
+						for next:= box.next; next != nil; next = next.next {
+							calc_size^ += next.calc_size[index]
+						}
+						calc_size^ = box.parent.calc_size[index] - calc_size^
+					}
 				}
-				calc_size^ = box.parent.calc_size[index] - calc_size^
 			}
-			else if size.type == .CHILDREN_SUM
-			{
-				calc_size^ = 0
-				for child := box.first; child != nil ; child = child.next {
-					if child.axis == state.ui.ctx.axis {
-						calc_size^ = child.calc_size[index]
-						break
+
+			for box := last; box != nil; box = box.hash_prev {
+		  	for size, index in box.size {
+					calc_size := &box.calc_size[index]
+
+					if size.type == .CHILDREN_SUM
+					{
+						calc_size^ = 0
+						for child := box.first; child != nil ; child = child.next {
+							if child.axis == state.ui.ctx.axis {
+								calc_size^ = child.calc_size[index]
+								break
+							} else {
+								calc_size^ += child.calc_size[index]
+							}
+						}
+					}
+				}
+		  }
+
+			// RELATIVE POSITION & QUAD ----------------------
+		  // fmt.println("beginning ............", panel.uid)
+			for box := panel.box; box != nil; box = box.hash_next {
+				#partial switch box.axis {
+					case .X:
+						if box.prev == nil {
+							box.offset.x = 0
+						} else {
+							new_calc_size : f32
+							// for prev := box.prev; prev != nil; prev = prev.prev {
+							// 	new_calc_size += prev.calc_size.x
+							// } 
+							box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
+							// box.offset.x = new_calc_size
+						}
+						if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
+					case .Y:
+						if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
+						if box.prev == nil {
+							box.offset.y = 0
+						} else {
+							new_calc_size: f32
+							// for prev := box.prev; prev != nil; prev = prev.prev {
+							// 	new_calc_size += prev.calc_size.y
+							// }
+							box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
+							// box.offset.y = new_calc_size
+						}
+				}
+				if box.prev != nil {
+					// fmt.println("OFFSET Y", box.key, box.offset.y, box.prev.offset.y, box.prev.calc_size[Y])	
+				} else {
+					// fmt.println("OFFSET Y", box.key, box.offset.y)
+				}
+			}
+
+			// for _, box in state.ui.boxes {
+			for box := panel.box; box != nil; box = box.hash_next {
+				if .HOTANIMATION in box.flags {
+					if box == state.ui.ctx.box_hot {
+						box.hot_t = clamp(box.hot_t + 0.12, 0, 1)
 					} else {
-						calc_size^ += child.calc_size[index]
+						box.hot_t = clamp(box.hot_t - 0.12, 0, 1)
 					}
 				}
-			}
-		}
-	}
-	// RELATIVE POSITION & QUAD ----------------------
-	for _, box in state.ui.boxes {
-		#partial switch box.axis {
-			case .X:
-				if box.prev == nil {
-					box.offset.x = 0
-				} else {
-					new_calc_size : f32
-					for prev := box.prev; prev != nil; prev = prev.prev {
-						new_calc_size += prev.calc_size.x
-					} 
-					box.offset.x = new_calc_size
-				}
-				if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
-			case .Y:
-				if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
-				if box.prev == nil {
-					box.offset.y = 0
-				} else {
-					new_calc_size: f32
-					for prev := box.prev; prev != nil; prev = prev.prev {
-						new_calc_size += prev.calc_size.y
-					}
-					box.offset.y = new_calc_size
-				}
-		}
-	}
-	for _, box in state.ui.boxes {
-		if .HOTANIMATION in box.flags {
-			if box == state.ui.ctx.box_hot {
-				box.hot_t = clamp(box.hot_t + 0.12, 0, 1)
-			} else {
-				box.hot_t = clamp(box.hot_t - 0.12, 0, 1)
-			}
-		}
 
-		if .ACTIVEANIMATION in box.flags {
-			if box == state.ui.ctx.box_active {
-				box.active_t = clamp(box.active_t + 0.12, 0, 1)
-			} else {
-				box.active_t = clamp(box.active_t - 0.12, 0, 1)
+				if .ACTIVEANIMATION in box.flags {
+					if box == state.ui.ctx.box_active {
+						box.active_t = clamp(box.active_t + 0.12, 0, 1)
+					} else {
+						box.active_t = clamp(box.active_t - 0.12, 0, 1)
+					}
+				}
 			}
 		}
 	}
 }
 
 ui_delete_box :: proc(box: ^Box) {
-	// TODO figure out how to delete all the boxes at once?
+	//  figure out how to delete all the boxes at once?
 	if box.parent != nil {
 		if box.parent.first == box && box.parent.last == box {
 			box.parent.first = nil
