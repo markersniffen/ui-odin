@@ -110,9 +110,7 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	key := ui_gen_key(_key)
 	box, box_ok := state.ui.boxes[key]
 	parent := state.ui.ctx.box_parent
-	fmt.println("adding first", _key, state.ui.ctx.box_parent.key)
 
-	
 	// if box doesn't exist, create it
 	if !box_ok {
 		box = ui_generate_box(_key)
@@ -251,8 +249,10 @@ ui_calc_boxes :: proc() {
 					if size.type == .CHILDREN_SUM
 					{
 						calc_size^ = 0
+						numchildren := 0
 						for child := box.first; child != nil ; child = child.next {
-							if child.axis == state.ui.ctx.axis {
+							numchildren += 1
+							if child.axis == box.axis {
 								calc_size^ = child.calc_size[index]
 								break
 							} else {
@@ -264,7 +264,6 @@ ui_calc_boxes :: proc() {
 		  }
 
 			// RELATIVE POSITION & QUAD ----------------------
-		  // fmt.println("beginning ............", panel.uid)
 			for box := panel.box; box != nil; box = box.hash_next {
 				#partial switch box.axis {
 					case .X:
@@ -291,11 +290,6 @@ ui_calc_boxes :: proc() {
 							box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
 							// box.offset.y = new_calc_size
 						}
-				}
-				if box.prev != nil {
-					// fmt.println("OFFSET Y", box.key, box.offset.y, box.prev.offset.y, box.prev.calc_size[Y])	
-				} else {
-					// fmt.println("OFFSET Y", box.key, box.offset.y)
 				}
 			}
 

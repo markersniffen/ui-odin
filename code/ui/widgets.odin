@@ -113,12 +113,18 @@ ui_layout :: proc(
 }
 
 
-ui_row :: proc() -> ^Box {
-	return ui_empty(.X)
+ui_row :: proc() {
+	ui_layout(.Y, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)
+	ui_axis(.X)
+	ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
+	// return ui_empty(.X)
 }
 
-ui_col :: proc() -> ^Box {
-	return ui_empty(.Y)
+ui_col :: proc(x: UI_Size_Type=.PERCENT_PARENT, x_value:f32=1) {
+	ui_layout(.X, x, x_value, .CHILDREN_SUM, 1)
+	ui_axis(.Y)
+	ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
+	// return ui_empty(.Y)
 }
 
 
