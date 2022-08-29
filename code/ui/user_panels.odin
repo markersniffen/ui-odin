@@ -42,11 +42,11 @@ ui_panel_debug :: proc() {
 		ui_layout(.X, .PERCENT_PARENT, .5, .CHILDREN_SUM, 1)
 			ui_axis(.Y)
 			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
-			ui_button("test")
-			ui_button("test2")
-			ui_value("Mouse:", state.mouse.pos)
-			ui_value("window size:", state.window_size)
-			ui_value("fb size:", state.framebuffer_res)
+			if ui_dropdown("Debug State").selected {
+				ui_value("Mouse pos", state.mouse.pos)
+				ui_value("window size:", state.window_size)
+				ui_value("fb size:", state.framebuffer_res)
+			}
 		ui_pop()
 	ui_pop()
 	ui_layout(.Y, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)	// row/box that holds multiple columns

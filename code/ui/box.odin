@@ -73,6 +73,7 @@ Box_Ops :: struct {
   right_clicked: bool,
   pressed: bool,
   released: bool,
+  selected: bool,
   dragging: bool,
   hovering: bool,
 }
@@ -123,18 +124,18 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 		box.border = state.ui.ctx.border
 		box.text_align = state.ui.ctx.text_align
 
-		// try adding as first child first
-		if parent.first == nil {
-			parent.first = box
-			box.prev = nil
-		} else if parent.first != nil {
-			assert(parent.last != nil)
-			parent.last.next = box
-			box.prev = parent.last
-		}
-		parent.last = box
-		box.next = nil
 	}
+	// try adding as first child first
+	if state.ui.ctx.box == parent { //parent.first == nil {
+		parent.first = box
+		box.prev = nil
+	} else if parent.first != nil {
+		assert(parent.last != nil)
+		parent.last.next = box
+		box.prev = parent.last
+	}
+	parent.last = box
+	box.next = nil
 
 	// ADD BOX TO LINKED LIST ------------------------------
 	box.hash_prev = state.ui.ctx.box
@@ -145,6 +146,11 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	// PROCESS OPS ------------------------------
 	if !box.ops.pressed {
 		if mouse_in_quad(box.ctx) {
+			if .HOVERABLE in box.flags && !box.ops.clicked {
+				box.ops.hovering = true
+				state.ui.ctx.box_hot = box
+			}
+			
 			if .CLICKABLE in box.flags {
 				box.ops.pressed = read_mouse(&state.mouse.left, .CLICK)
 				box.ops.clicked = read_mouse(&state.mouse.left, .RELEASE)
@@ -155,12 +161,20 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 				} else {
 					if state.ui.ctx.box_active == box do state.ui.ctx.box_active = nil	
 				}
+			} 
+
+			if .SELECTABLE in box.flags {
+				sel := read_mouse(&state.mouse.left, .CLICK)
+				if sel {
+					box.ops.selected = !box.ops.selected
+					if box.ops.selected {
+						state.ui.ctx.box_active=box
+					} else {
+						state.ui.ctx.box_active = nil
+					}
+				}
 			}
 
-			if .HOVERABLE in box.flags && !box.ops.clicked {
-				box.ops.hovering = true
-				state.ui.ctx.box_hot = box
-			}
 		} else {
 			box.ops.hovering = false
 			if state.ui.ctx.box_hot == box do state.ui.ctx.box_hot = nil

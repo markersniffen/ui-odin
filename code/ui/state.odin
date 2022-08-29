@@ -232,7 +232,12 @@ scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64) {
 
 read_mouse :: proc(button: ^Button, type: Button) -> bool {
 	result := false
-	if button^ == type do result = true
+	if button^ == type {
+		result = true
+		if type == .CLICK do button^ = .DRAG
+
+	}
+
 	// if button^ == .CLICK do button^ = .DRAG
 	if button^ == .RELEASE do button^ = .UP
 	return result
