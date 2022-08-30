@@ -26,9 +26,37 @@ ui_panel_file_edit_view :: proc() {
 	ui_layout(.Y, .PERCENT_PARENT, 1, .PIXELS, state.ui.line_space)
 		ui_axis(.X)
 		ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
-		ui_button("File")
-		ui_button("Edit")
-		ui_button("View")
+		if ui_dropdown("File").selected {
+			ui_axis(.Y)
+			ui_menu()
+				ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
+				ui_button("menu button 1")
+				ui_button("menu button 2")
+				ui_button("menu button 3")
+				ui_button("menu button 4")
+				ui_button("menu button 5")
+			ui_pop()
+		}
+		if ui_dropdown("Edit").selected {
+			ui_menu()
+				ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
+				ui_button("menu buttonx 1")
+				ui_button("menu buttonx 2")
+				ui_button("menu buttonx 3")
+				ui_button("menu buttonx 4")
+				ui_button("menu buttonx 5")
+			ui_pop()
+		}
+		if ui_dropdown("View").selected {
+			ui_menu()
+				ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
+				ui_button("menu buttony 1")
+				ui_button("menu buttony 2")
+				ui_button("menu buttony 3")
+				ui_button("menu buttony 4")
+				ui_button("menu buttony 5")
+			ui_pop()
+		}
 		ui_spacer_fill()
 		ui_button(" - ")
 	ui_pop()
@@ -42,9 +70,16 @@ ui_panel_debug :: proc() {
 		ui_layout(.X, .PERCENT_PARENT, .5, .CHILDREN_SUM, 1)
 			ui_axis(.Y)
 			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
-			if ui_menu("MENU").selected {
-				ui_size(.MAX_SIBLING, 1, .TEXT_CONTENT, 1)
-				ui_button("menu button 1")
+
+			if ui_dropdown("Random").selected {
+				ui_menu()
+					ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
+					ui_button("menu button 1")
+					ui_button("menu button 2")
+					ui_button("menu button 3")
+					ui_button("menu button 4")
+					ui_button("menu button 5")
+				ui_pop()
 			}
 
 			if ui_dropdown("Debug State").selected {

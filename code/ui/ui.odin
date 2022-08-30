@@ -148,55 +148,58 @@ ui_update :: proc() {
 				case .FILE_MENU:		ui_panel_file_edit_view()
 			}
 		}
-		iterate_boxes :: proc(box: ^Box) {
-			if box == nil do return
-			if box.parent != nil {
-				box.ctx.l = box.parent.ctx.l + box.offset.x
-				box.ctx.t = box.parent.ctx.t + box.offset.y
-				box.ctx.r = box.ctx.l + box.calc_size.x
-				box.ctx.b = box.ctx.t + box.calc_size.y
-			}
 
-			if .DRAWBACKGROUND in box.flags {
-				push_quad_gradient_v(box.ctx, state.ui.col.bg, state.ui.col.bg_light)
-			}
-			if .DRAWBORDER in box.flags {
-				push_quad_border(box.ctx, state.ui.col.border, box.border)
-			}
-
-			if .HOVERABLE in box.flags {
-				// if box.ops.hovering do push_quad_solid(box.ctx, state.ui.col.hot)
-			}
-			if .DRAWGRADIENT in box.flags {
-				push_quad_gradient_v(box.ctx, {1,1,1,0.1}, {0,0,0,0})
-			}
-			if .CLICKABLE in box.flags {
-				// if box.ops.pressed do push_quad_gradient_v(box.ctx, {1,1,1, clamp(1 * box.active_t, 0, 1)}, state.ui.col.hot)
-			}
-
-			if .DRAWTEXT in box.flags {
-				draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
-			}
-
-			if .DISPLAYVALUE in box.flags {
-				text := fmt.tprintf("%v %v", box.name, box.value)
-				draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
-			}
-
-			if .HOTANIMATION in box.flags {
-				push_quad_gradient_v(box.ctx, {1,1,1,0.4 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
-			}
-
-			if .ACTIVEANIMATION in box.flags {
-				push_quad_gradient_v(box.ctx, {1,0,0,0.4 * box.active_t}, {1,0,0,0.2 * box.active_t})	
-			}
-
-			iterate_boxes(box.first)
-			iterate_boxes(box.next)
-		}
-		iterate_boxes(root_box)
+		draw_boxes(root_box)
+		draw_boxes(panel.menu_box)
 	}
-
 	// state.ui.ctx.box_hot = nil
 }
 
+draw_boxes :: proc(box: ^Box) {
+	if box == nil do return
+	if box.parent != nil {
+		box.ctx.l = box.parent.ctx.l + box.offset.x
+		box.ctx.t = box.parent.ctx.t + box.offset.y
+		box.ctx.r = box.ctx.l + box.calc_size.x
+		box.ctx.b = box.ctx.t + box.calc_size.y
+	}
+
+	if .DRAWBACKGROUND in box.flags {
+		push_quad_gradient_v(box.ctx, state.ui.col.bg, state.ui.col.bg_light)
+	}
+	if .DRAWBORDER in box.flags {
+		push_quad_border(box.ctx, state.ui.col.border, box.border)
+	}
+
+	if .HOVERABLE in box.flags {
+		// if box.ops.hovering do push_quad_solid(box.ctx, state.ui.col.hot)
+	}
+	if .DRAWGRADIENT in box.flags {
+		push_quad_gradient_v(box.ctx, {1,1,1,0.1}, {0,0,0,0})
+	}
+	if .CLICKABLE in box.flags {
+		// if box.ops.pressed do push_quad_gradient_v(box.ctx, {1,1,1, clamp(1 * box.active_t, 0, 1)}, state.ui.col.hot)
+	}
+
+	if .DRAWTEXT in box.flags {
+		draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
+	}
+
+	if .DISPLAYVALUE in box.flags {
+		text := fmt.tprintf("%v %v", box.name, box.value)
+		draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
+	}
+
+	if .HOTANIMATION in box.flags {
+		push_quad_gradient_v(box.ctx, {1,1,1,0.4 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
+	}
+
+	if .ACTIVEANIMATION in box.flags {
+		push_quad_gradient_v(box.ctx, {1,0,0,0.4 * box.active_t}, {1,0,0,0.2 * box.active_t})	
+	}
+
+	if !(.MENU in box.flags) {
+		draw_boxes(box.next)
+	}
+	draw_boxes(box.first)
+}

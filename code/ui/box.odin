@@ -46,10 +46,9 @@ Value_Type :: enum {
 	STRING,
 }
 
-
-
 Box_Flags :: enum {
 	ROOT,
+	MENU,
 
 	CLICKABLE,
 	HOVERABLE,
@@ -123,7 +122,6 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 		box.border_color = state.ui.ctx.border_color
 		box.border = state.ui.ctx.border
 		box.text_align = state.ui.ctx.text_align
-
 	}
 	// try adding as first child first
 	if state.ui.ctx.box == parent { //parent.first == nil {
@@ -174,7 +172,6 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 					}
 				}
 			}
-
 		} else {
 			box.ops.hovering = false
 			if state.ui.ctx.box_hot == box do state.ui.ctx.box_hot = nil
@@ -192,7 +189,6 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 			if state.ui.ctx.box_active == box do state.ui.ctx.box_active = nil	
 		}
 	}
-
 	box.last_frame_touched = state.ui.frame
 	return(box)
 }
@@ -235,12 +231,12 @@ ui_calc_boxes :: proc() {
 				}
 	  	}
 			
-			assert(last != nil)
-			// RELATIVE TO SIBLINGS ------------------------------
-		  for box := panel.box; box != nil; box = box.hash_next {
-		  	for size, index in box.size {
+		assert(last != nil)
+		// RELATIVE TO SIBLINGS ------------------------------
+		for box := panel.box; box != nil; box = box.hash_next {
+		  	for size, index in box.size
+			  	{
 					calc_size := &box.calc_size[index]
-
 					if size.type == .MIN_SIBLINGS
 					{
 						calc_size^ = 0
@@ -278,34 +274,50 @@ ui_calc_boxes :: proc() {
 		  }
 
 			// RELATIVE POSITION & QUAD ----------------------
-			for box := panel.box; box != nil; box = box.hash_next {
-				#partial switch box.axis {
-					case .X:
-						if box.prev == nil {
-							box.offset.x = 0
-						} else {
-							new_calc_size : f32
-							// for prev := box.prev; prev != nil; prev = prev.prev {
-							// 	new_calc_size += prev.calc_size.x
-							// } 
-							box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
-							// box.offset.x = new_calc_size
-						}
-						if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
-					case .Y:
-						if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
-						if box.prev == nil {
-							box.offset.y = 0
-						} else {
-							new_calc_size: f32
-							// for prev := box.prev; prev != nil; prev = prev.prev {
-							// 	new_calc_size += prev.calc_size.y
-							// }
-							box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
-							// box.offset.y = new_calc_size
-						}
+			boxes : [2]^Box = { panel.box, panel.menu_box }
+			for bx, index in boxes
+			{
+				for box := bx; box != nil; box = box.hash_next
+				{
+					#partial switch box.axis
+					{
+						case .X:
+							if box.prev == nil {
+								box.offset[0] = 0
+							} else {
+								box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
+							}
+							if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
+						case .Y:
+							if box.prev == nil {
+								box.offset.y = 0
+							} else {
+								box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
+							}
+							if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
+					}
 				}
 			}
+
+			// // MENU - RELATIVE POSITION & QUAD ----------------------
+			// for box := panel.menu_box; box != nil; box = box.next {
+			// 	#partial switch box.axis {
+			// 		case .X:
+			// 			if box.prev == nil {
+			// 				box.offset[0] = 0
+			// 			} else {
+			// 				box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
+			// 			}
+			// 			if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
+			// 		case .Y:
+			// 			if box.prev == nil {
+			// 				box.offset.y = 0
+			// 			} else {
+			// 				box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
+			// 			}
+			// 			if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
+			// 	}
+			// }
 
 			// for _, box in state.ui.boxes {
 			for box := panel.box; box != nil; box = box.hash_next {

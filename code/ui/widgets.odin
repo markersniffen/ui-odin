@@ -184,18 +184,11 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 	return box.ops
 }
 
-ui_menu :: proc(key: string) -> Box_Ops {
-	box := ui_create_box(key, {
-		.HOVERABLE,
-		.SELECTABLE,
-		.DRAWTEXT,
-		.DRAWBORDER,
-		.DRAWBACKGROUND,
-		.DRAWGRADIENT,
-		.HOTANIMATION,
-		.ACTIVEANIMATION,
-	})
-	box.text_align = .CENTER
+ui_menu :: proc() -> Box_Ops {
+	ui_size(.PIXELS, 0, .PIXELS, 0)
+	box := ui_create_box(fmt.tprintf("%v Menu", state.ui.ctx.box_parent.name), { .MENU })
+	state.ui.ctx.panel.menu_box = box
+	ui_push_parent(box)
 	return box.ops
 }
 
