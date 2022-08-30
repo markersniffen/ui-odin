@@ -42,6 +42,11 @@ ui_panel_debug :: proc() {
 		ui_layout(.X, .PERCENT_PARENT, .5, .CHILDREN_SUM, 1)
 			ui_axis(.Y)
 			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
+			if ui_menu("MENU").selected {
+				ui_size(.MAX_SIBLING, 1, .TEXT_CONTENT, 1)
+				ui_button("menu button 1")
+			}
+
 			if ui_dropdown("Debug State").selected {
 				ui_value("Mouse pos", state.mouse.pos)
 				ui_value("window size:", state.window_size)

@@ -80,6 +80,7 @@ UI_Size_Type :: enum {
   PERCENT_PARENT,
   CHILDREN_SUM,
   MIN_SIBLINGS,
+  MAX_SIBLING,
 }
 
 Direction :: enum {

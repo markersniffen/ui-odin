@@ -184,6 +184,21 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 	return box.ops
 }
 
+ui_menu :: proc(key: string) -> Box_Ops {
+	box := ui_create_box(key, {
+		.HOVERABLE,
+		.SELECTABLE,
+		.DRAWTEXT,
+		.DRAWBORDER,
+		.DRAWBACKGROUND,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+		.ACTIVEANIMATION,
+	})
+	box.text_align = .CENTER
+	return box.ops
+}
+
 ui_spacer_fill :: proc() -> Box_Ops {
 	state.ui.box_index += 1 // TODO is this a good idea?
 	oldsize := state.ui.ctx.size[X]
