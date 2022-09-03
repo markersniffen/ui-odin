@@ -145,6 +145,7 @@ update :: proc() {
 	state.mouse.pos = {i32(mouseX), i32(mouseY)}
 	state.mouse.delta = state.mouse.pos - old_mouse
 
+
 	ui_update()
 	opengl_render()
 
@@ -154,6 +155,10 @@ update :: proc() {
 
 	time.accurate_sleep(sleep_for)
 
+	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }
+	for mouse_button, index in mouse_buttons {
+		if mouse_button^ == .CLICK do mouse_button^ = .DRAG
+	}
 	state.prev_time = state.start_time
 }
 
@@ -232,14 +237,13 @@ scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64) {
 
 read_mouse :: proc(button: ^Button, type: Button) -> bool {
 	result := false
+	if button^ == .RELEASE do fmt.println(type, "string")	
 	if button^ == type {
 		result = true
-		if type == .CLICK do button^ = .DRAG
-
+		// if type == .CLICK do button^ = .DRAG
 	}
 
-	// if button^ == .CLICK do button^ = .DRAG
-	if button^ == .RELEASE do button^ = .UP
+	// if button^ == .RELEASE do button^ = .UP
 	return result
 }
 
@@ -249,10 +253,15 @@ mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods
 	{
 		if button == index {
 			if action == int(glfw.PRESS) {
-					mouse_button^ = .CLICK
+				if mouse_button^ == .CLICK {
+						mouse_button^ = .DRAG
+					} else {
+						mouse_button^ = .CLICK
+					}
 				} else if action == int(glfw.RELEASE) {
 					mouse_button^ = .RELEASE
-				}
+			}
+			fmt.println("mouse", mouse_button^)	
 		}
 	}
 }

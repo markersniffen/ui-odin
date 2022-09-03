@@ -27,10 +27,11 @@ ui_panel_file_edit_view :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
 		if ui_dropdown("File").selected {
-			ui_axis(.Y)
 			ui_menu()
 				ui_size(.TEXT_CONTENT, 1, .TEXT_CONTENT, 1)
-				ui_button("menu button 1")
+				if ui_button("menu button 1").clicked {
+					ui_button("EXTRA TIME")
+				}
 				ui_button("menu button 2")
 				ui_button("menu button 3")
 				ui_button("menu button 4")
@@ -93,10 +94,11 @@ ui_panel_debug :: proc() {
 		ui_layout(.X, .PERCENT_PARENT, 0.3, .CHILDREN_SUM, 1) // column (1) of buttons
 			ui_axis(.Y)
 			ui_size(.PERCENT_PARENT, 1, .TEXT_CONTENT, 1)
-			ui_button("WHEE")
-			ui_button("Baz")
-			ui_button("Bop")
-			ui_button("FOo")
+			if ui_dropdown("WHEE").selected {
+				ui_button("Baz")
+				ui_button("Bop")
+				ui_button("FOo")
+			}
 		ui_pop()
 
 		ui_layout(.X, .PERCENT_PARENT, 0.3, .CHILDREN_SUM, 1) // column (2) of buttons

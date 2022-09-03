@@ -142,53 +142,90 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	box.flags = flags
 
 	// PROCESS OPS ------------------------------
-	if !box.ops.pressed {
-		if mouse_in_quad(box.ctx) {
-			if .HOVERABLE in box.flags && !box.ops.clicked {
-				box.ops.hovering = true
-				state.ui.ctx.box_hot = box
-			}
-			
-			if .CLICKABLE in box.flags {
-				box.ops.pressed = read_mouse(&state.mouse.left, .CLICK)
-				box.ops.clicked = read_mouse(&state.mouse.left, .RELEASE)
+	// hovering
+	mouse_over := mouse_in_quad(box.ctx)
+	click := (state.mouse.left == .CLICK)
+	drag := (state.mouse.left == .DRAG)
+	released := (state.mouse.left == .RELEASE)
 
-				if box.ops.clicked do box.ops.pressed = false
-				if box.ops.pressed && !box.ops.clicked {
-					state.ui.ctx.box_active = box
-				} else {
-					if state.ui.ctx.box_active == box do state.ui.ctx.box_active = nil	
-				}
-			} 
+	box.ops.clicked = false
 
-			if .SELECTABLE in box.flags {
-				sel := read_mouse(&state.mouse.left, .CLICK)
-				if sel {
-					box.ops.selected = !box.ops.selected
-					if box.ops.selected {
-						state.ui.ctx.box_active=box
-					} else {
-						state.ui.ctx.box_active = nil
-					}
-				}
-			}
+	if .HOVERABLE in box.flags {
+		if mouse_over && !drag {
+			box.ops.hovering = true
+			state.ui.ctx.box_hot = box
 		} else {
 			box.ops.hovering = false
 			if state.ui.ctx.box_hot == box do state.ui.ctx.box_hot = nil
 		}
-	} if .CLICKABLE in box.flags {
-		if mouse_in_quad(box.ctx) {
-			box.ops.pressed = read_mouse(&state.mouse.left, .CLICK)
-		}
-		box.ops.clicked = read_mouse(&state.mouse.left, .RELEASE)
+	}
 
-		if box.ops.clicked do box.ops.pressed = false
-		if box.ops.pressed && !box.ops.clicked {
-			state.ui.ctx.box_active = box
-		} else {
-			if state.ui.ctx.box_active == box do state.ui.ctx.box_active = nil	
+	if .CLICKABLE in box.flags {
+		if mouse_over {
+			if click {
+				box.ops.pressed = true
+			}
+		}
+		if released {
+				if box.ops.pressed && mouse_over {
+					if .SELECTABLE in box.flags {
+						box.ops.selected = !box.ops.selected
+					}
+					box.ops.clicked = true
+				}
+				box.ops.pressed = false
 		}
 	}
+
+
+
+	// if !box.ops.pressed {
+	// 	if mouse_in_quad(box.ctx) {
+	// 		if .HOVERABLE in box.flags {
+	// 			box.ops.hovering = true
+	// 			state.ui.ctx.box_hot = box
+	// 		}
+			
+	// 		if .CLICKABLE in box.flags {
+	// 			box.ops.pressed = read_mouse(&state.mouse.left, .CLICK)
+	// 			box.ops.clicked = read_mouse(&state.mouse.left, .RELEASE)
+
+	// 			if box.ops.clicked do box.ops.pressed = false
+	// 			if box.ops.pressed && !box.ops.clicked {
+	// 				state.ui.ctx.box_active = box
+	// 			} else {
+	// 				if state.ui.ctx.box_active == box do state.ui.ctx.box_active = nil	
+	// 			}
+	// 		} 
+
+	// 		if .SELECTABLE in box.flags {
+	// 			sel := read_mouse(&state.mouse.left, .CLICK)
+	// 			if sel {
+	// 				box.ops.selected = !box.ops.selected
+	// 				if box.ops.selected {
+	// 					state.ui.ctx.box_active=box
+	// 				} else {
+	// 					state.ui.ctx.box_active = nil
+	// 				}
+	// 			}
+	// 		}
+	// 	} else {
+	// 		box.ops.hovering = false
+	// 		if state.ui.ctx.box_hot == box do state.ui.ctx.box_hot = nil
+	// 	}
+	// } if .CLICKABLE in box.flags {
+	// 	if mouse_in_quad(box.ctx) {
+	// 		box.ops.pressed = read_mouse(&state.mouse.left, .CLICK)
+	// 	}
+	// 	box.ops.clicked = read_mouse(&state.mouse.left, .RELEASE)
+
+	// 	if box.ops.clicked do box.ops.pressed = false
+	// 	if box.ops.pressed && !box.ops.clicked {
+	// 		state.ui.ctx.box_active = box
+	// 	} else {
+	// 		if state.ui.ctx.box_active == box do state.ui.ctx.box_active = nil	
+	// 	}
+	// }
 	box.last_frame_touched = state.ui.frame
 	return(box)
 }
@@ -215,26 +252,26 @@ ui_calc_boxes :: proc() {
 
 	// PARENT SIZE ------------------------------
 	for _, panel in state.ui.panels {
-	  if panel.child_a == nil && panel.box != nil {
+		if panel.child_a == nil && panel.box != nil {
 
-			last: ^Box = nil
+		last: ^Box = nil
 
-	  	for box := panel.box; box != nil; box = box.hash_next {
-				if box.hash_next == nil do last = box
+		  	for box := panel.box; box != nil; box = box.hash_next {
+					if box.hash_next == nil do last = box
 
-				for size, index in box.size {
-					calc_size := &box.calc_size[index]
-					if size.type == .PERCENT_PARENT {
-						psize := box.parent.calc_size[index]
-						calc_size^ = psize * size.value
+					for size, index in box.size {
+						calc_size := &box.calc_size[index]
+						if size.type == .PERCENT_PARENT {
+							psize := box.parent.calc_size[index]
+							calc_size^ = psize * size.value
+						}
 					}
-				}
-	  	}
-			
-		assert(last != nil)
-		// RELATIVE TO SIBLINGS ------------------------------
-		for box := panel.box; box != nil; box = box.hash_next {
-		  	for size, index in box.size
+		  	}
+				
+			assert(last != nil)
+			// RELATIVE TO SIBLINGS ------------------------------
+			for box := panel.box; box != nil; box = box.hash_next {
+			  	for size, index in box.size
 			  	{
 					calc_size := &box.calc_size[index]
 					if size.type == .MIN_SIBLINGS
@@ -253,7 +290,7 @@ ui_calc_boxes :: proc() {
 			}
 
 			for box := last; box != nil; box = box.hash_prev {
-		  	for size, index in box.size {
+			  	for size, index in box.size {
 					calc_size := &box.calc_size[index]
 
 					if size.type == .CHILDREN_SUM
@@ -271,7 +308,7 @@ ui_calc_boxes :: proc() {
 						}
 					}
 				}
-		  }
+			}
 
 			// RELATIVE POSITION & QUAD ----------------------
 			boxes : [2]^Box = { panel.box, panel.menu_box }
@@ -322,7 +359,7 @@ ui_calc_boxes :: proc() {
 			// for _, box in state.ui.boxes {
 			for box := panel.box; box != nil; box = box.hash_next {
 				if .HOTANIMATION in box.flags {
-					if box == state.ui.ctx.box_hot {
+					if box.ops.hovering {
 						box.hot_t = clamp(box.hot_t + 0.12, 0, 1)
 					} else {
 						box.hot_t = clamp(box.hot_t - 0.12, 0, 1)
@@ -330,7 +367,7 @@ ui_calc_boxes :: proc() {
 				}
 
 				if .ACTIVEANIMATION in box.flags {
-					if box == state.ui.ctx.box_active {
+					if box.ops.pressed {
 						box.active_t = clamp(box.active_t + 0.12, 0, 1)
 					} else {
 						box.active_t = clamp(box.active_t - 0.12, 0, 1)

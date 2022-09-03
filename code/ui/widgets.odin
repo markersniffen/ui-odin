@@ -172,6 +172,7 @@ ui_button :: proc(key: string) -> Box_Ops {
 ui_dropdown :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key, {
 		.HOVERABLE,
+		.CLICKABLE,
 		.SELECTABLE,
 		.DRAWTEXT,
 		.DRAWBORDER,
