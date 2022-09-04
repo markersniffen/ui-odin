@@ -122,10 +122,25 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 	return box.ops
 }
 
+ui_menu_button :: proc(key:string) -> Box_Ops {
+	box := ui_create_box(key, { 
+		.MENUSELECT,
+		.HOVERABLE,
+		.DRAWTEXT,
+		.DRAWBORDER,
+		.DRAWBACKGROUND,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+		.ACTIVEANIMATION,
+		})
+	
+	return box.ops
+}
+
 ui_menu :: proc() -> Box_Ops {
 	ui_push_parent(state.ui.ctx.box)
 	ui_size(.PIXELS, 0, .PIXELS, 0)
-	box := ui_create_box(fmt.tprintf("%v Menu", state.ui.ctx.box_parent.name), { .HOVERSELECT, .MENU })
+	box := ui_create_box(fmt.tprintf("%v Menu", state.ui.ctx.box_parent.name), { .MENUSELECT, .MENU })
 	ui_push_parent(box)
 	ui_set_render_layer(1)
 	return box.ops
