@@ -11,15 +11,19 @@ Gl :: struct {
 	font_texture: u32,
 	font_texture_size: i32,
 
-	vertices: []f32,
-	vertex_buffer: u32,
-	vertex_index: int,
+	layers: [2]Layer,
+	layer_index: int,
 
 	vao: u32,
-
-	indices: []u32,
+	vertex_buffer: u32,
 	index_buffer: u32,
-	index_index: int,
+}
+
+Layer :: struct {
+	vertices: []f32,
+	v_index: int,
+	indices: []u32,
+	i_index: int,
 	quad_index: int,
 }
 
@@ -38,9 +42,12 @@ opengl_init :: proc() {
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
 	gl.GenBuffers(1, &state.render.vertex_buffer)
-	state.render.vertices = make_slice([]f32, mem.Megabyte * 2)
 	gl.GenBuffers(1, &state.render.index_buffer)
-	state.render.indices = make([]u32, mem.Megabyte * 2)
+
+	for layer, i in state.render.layers {
+		state.render.layers[i].vertices = make_slice([]f32, mem.Megabyte * 2)
+		state.render.layers[i].indices = make([]u32, mem.Megabyte * 2)
+	}
 
 	shader_success : bool
 	state.render.shader, shader_success = gl.load_shaders_source(UIMAIN_VS, UIMAIN_FRAG)
@@ -78,31 +85,40 @@ opengl_render :: proc() {
 
 	gl.UseProgram(state.render.shader)
 
-	gl.BindBuffer(gl.ARRAY_BUFFER, state.render.vertex_buffer)
-	gl.BufferData(gl.ARRAY_BUFFER, state.render.vertex_index * size_of(f32), &state.render.vertices[0], gl.STATIC_DRAW)
-	
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 0 * size_of(f32))
-	gl.VertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 3 * size_of(f32))
-	gl.VertexAttribPointer(2, 4, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 5 * size_of(f32))
-	gl.VertexAttribPointer(3, 1, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 9 * size_of(f32))
+ 	for index in 0..=1 {
+ 		layer := &state.render.layers[index]
 
-	framebuffer_res := gl.GetUniformLocation(state.render.shader, "framebuffer_res")
-	gl.Uniform2f(framebuffer_res, f32(state.framebuffer_res.x)/2, f32(state.framebuffer_res.y)/2)
+		gl.BindBuffer(gl.ARRAY_BUFFER, state.render.vertex_buffer)
+		gl.BufferData(gl.ARRAY_BUFFER, layer.v_index * size_of(f32), &layer.vertices[0], gl.STATIC_DRAW)
+		
+		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 0 * size_of(f32))
+		gl.VertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 3 * size_of(f32))
+		gl.VertexAttribPointer(2, 4, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 5 * size_of(f32))
+		gl.VertexAttribPointer(3, 1, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 9 * size_of(f32))
 
-	multiplier := gl.GetUniformLocation(state.render.shader, "multiplier")
-	gl.Uniform2f(multiplier, f32(state.framebuffer_res.x / state.window_size.x), f32(state.framebuffer_res.y / state.window_size.y))
+		framebuffer_res := gl.GetUniformLocation(state.render.shader, "framebuffer_res")
+		gl.Uniform2f(framebuffer_res, f32(state.framebuffer_res.x)/2, f32(state.framebuffer_res.y)/2)
+
+		multiplier := gl.GetUniformLocation(state.render.shader, "multiplier")
+		gl.Uniform2f(multiplier, f32(state.framebuffer_res.x / state.window_size.x), f32(state.framebuffer_res.y / state.window_size.y))
  	
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.render.index_buffer)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, state.render.index_index * size_of(u32), &state.render.indices[0], gl.STATIC_DRAW)
+		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.render.index_buffer)
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, layer.i_index * size_of(u32), &layer.indices[0], gl.STATIC_DRAW)
+		gl.DrawElements(gl.TRIANGLES, i32(layer.i_index), gl.UNSIGNED_INT, nil)
+ 	}
 
-	gl.DrawElements(gl.TRIANGLES, i32(state.render.index_index), gl.UNSIGNED_INT, nil)
 
 	glfw.SwapBuffers(state.window)
 
-	state.render.vertex_index = 0
-	state.render.index_index = 0
-	state.render.quad_index = 0
+	for i in 0..=1 {
+		state.render.layers[i].v_index = 0
+		state.render.layers[i].i_index = 0
+		state.render.layers[i].quad_index = 0
+	}
+}
 
+set_render_layer :: proc(layer: int) {
+	state.render.layer_index = layer
 }
 
 push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1}, cD:v4={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	mix:f32=0) {
@@ -131,16 +147,17 @@ push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1},
 	for vertex_array, i in &vertex_arrays
 	{
 		if border == 0 && i > 0 do break
+	   layer := &state.render.layers[state.render.layer_index]
 
-		quad_index := u32(state.render.quad_index * 4)
+		quad_index := u32(layer.quad_index * 4)
 		indices :[6]u32 = {0+quad_index, 1+quad_index, 3+quad_index, 1+quad_index, 2+quad_index, 3+quad_index}
 		
-		copy(state.render.vertices[state.render.vertex_index:state.render.vertex_index+40], vertex_array[:])
-		state.render.vertex_index += 40
+		copy(layer.vertices[layer.v_index:layer.v_index+40], vertex_array[:])
+		layer.v_index += 40
 		
-		copy(state.render.indices[state.render.index_index:state.render.index_index+6], indices[:])
-		state.render.index_index += 6
-		state.render.quad_index += 1
+		copy(layer.indices[layer.i_index:layer.i_index+6], indices[:])
+		layer.i_index += 6
+		layer.quad_index += 1
 	}
 }
 

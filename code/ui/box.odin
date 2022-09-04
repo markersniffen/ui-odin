@@ -38,6 +38,7 @@ Box :: struct {
 	calc_size: v2,
 	offset: v2,		// from parent
 	ctx: Quad,
+	render_layer: int,
 }
 
 Value_Type :: enum {
@@ -51,8 +52,9 @@ Box_Flags :: enum {
 	MENU,
 
 	CLICKABLE,
-	HOVERABLE,
+	HOVERABLE,		
 	SELECTABLE,
+	HOVERSELECT,
 	VIEWSCROLL,
 
 	DRAWTEXT,
@@ -122,6 +124,7 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 		box.border_color = state.ui.ctx.border_color
 		box.border = state.ui.ctx.border
 		box.text_align = state.ui.ctx.text_align
+		box.render_layer = state.ui.ctx.render_layer
 	}
 	// try adding as first child first
 	if state.ui.ctx.box == parent { //parent.first == nil {
@@ -147,6 +150,7 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	click := (state.mouse.left == .CLICK)
 	drag := (state.mouse.left == .DRAG)
 	released := (state.mouse.left == .RELEASE)
+	up := (state.mouse.left == .UP)
 
 	box.ops.clicked = false
 
@@ -165,15 +169,30 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 			if click {
 				box.ops.pressed = true
 			}
-		}
-		if released {
-				if box.ops.pressed && mouse_over {
+			if released {
+				if box.ops.pressed {
 					if .SELECTABLE in box.flags {
 						box.ops.selected = !box.ops.selected
 					}
 					box.ops.clicked = true
 				}
 				box.ops.pressed = false
+			}
+			// if up {
+			// 	if state.ui.menu_box != nil {
+			// 		box.ops.pressed = true
+			// 		state.ui.menu_box.ops.selected = false
+			// 		box.ops.selected = true
+			// 	}
+			// }
+		} else {
+			// if not mouseover
+		}
+	}
+
+	if .HOVERSELECT in box.flags {
+		if mouse_in_quad(box.parent.ctx) {
+
 		}
 	}
 
@@ -311,50 +330,26 @@ ui_calc_boxes :: proc() {
 			}
 
 			// RELATIVE POSITION & QUAD ----------------------
-			boxes : [2]^Box = { panel.box, panel.menu_box }
-			for bx, index in boxes
+			for box := panel.box; box != nil; box = box.hash_next
 			{
-				for box := bx; box != nil; box = box.hash_next
+				#partial switch box.axis
 				{
-					#partial switch box.axis
-					{
-						case .X:
-							if box.prev == nil {
-								box.offset[0] = 0
-							} else {
-								box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
-							}
-							if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
-						case .Y:
-							if box.prev == nil {
-								box.offset.y = 0
-							} else {
-								box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
-							}
-							if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
-					}
+					case .X:
+						if box.prev == nil {
+							box.offset[0] = 0
+						} else {
+							box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
+						}
+						if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
+					case .Y:
+						if box.prev == nil {
+							box.offset.y = 0
+						} else {
+							box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
+						}
+						if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
 				}
 			}
-
-			// // MENU - RELATIVE POSITION & QUAD ----------------------
-			// for box := panel.menu_box; box != nil; box = box.next {
-			// 	#partial switch box.axis {
-			// 		case .X:
-			// 			if box.prev == nil {
-			// 				box.offset[0] = 0
-			// 			} else {
-			// 				box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
-			// 			}
-			// 			if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
-			// 		case .Y:
-			// 			if box.prev == nil {
-			// 				box.offset.y = 0
-			// 			} else {
-			// 				box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
-			// 			}
-			// 			if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
-			// 	}
-			// }
 
 			// for _, box in state.ui.boxes {
 			for box := panel.box; box != nil; box = box.hash_next {

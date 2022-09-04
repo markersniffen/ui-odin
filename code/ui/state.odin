@@ -158,6 +158,7 @@ update :: proc() {
 	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }
 	for mouse_button, index in mouse_buttons {
 		if mouse_button^ == .CLICK do mouse_button^ = .DRAG
+		if mouse_button^ == .RELEASE do mouse_button^ = .UP
 	}
 	state.prev_time = state.start_time
 }

@@ -17,14 +17,12 @@ Ui :: struct {
 	box_pool: Pool,
 	box_parent: ^Box,
 	box_index: u64,
-	menu_box: ^Box,
 
 	frame: u64,
 
 	col: Ui_Colors,
 	ctx: UI_Context,
 
-	// "GLOBAL" FONT INFO
 	char_data: map[rune]Char_Data,
 	font_size: f32,					// NOTE pixels tall
 	font_offset_y: f32,
@@ -45,6 +43,7 @@ UI_Context :: struct {
 	text_align: Text_Align,
 	size: [XY]UI_Size,
 	axis: Axis,
+	render_layer: int,
 }
 
 Ui_Colors :: struct {
@@ -148,10 +147,6 @@ ui_update :: proc() {
 		}
 
 		draw_boxes(root_box)
-		if panel.menu_box != nil do state.ui.menu_box = panel.menu_box
-	}
-	if state.ui.menu_box != nil {
-		draw_boxes(state.ui.menu_box.first)
 	}
 }
 
@@ -163,6 +158,8 @@ draw_boxes :: proc(box: ^Box) {
 		box.ctx.r = box.ctx.l + box.calc_size.x
 		box.ctx.b = box.ctx.t + box.calc_size.y
 	}
+
+	set_render_layer(box.render_layer)
 
 	if .DRAWBACKGROUND in box.flags {
 		push_quad_gradient_v(box.ctx, state.ui.col.bg, state.ui.col.bg_light)
@@ -193,7 +190,5 @@ draw_boxes :: proc(box: ^Box) {
 		push_quad_gradient_v(box.ctx, {1,0,0,0.4 * box.active_t}, {0.5,0,0,0.2 * box.active_t})	
 	}
 	draw_boxes(box.next)
-	if !(.MENU in box.flags) {
-		draw_boxes(box.first)
-	}
+	draw_boxes(box.first)
 }

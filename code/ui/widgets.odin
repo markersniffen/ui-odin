@@ -41,8 +41,6 @@ ui_pop_parent :: proc() {
 }
 
 ui_pop :: proc() { ui_pop_parent() }
-ui_end_row :: proc() { ui_pop_parent() }
-ui_end_col :: proc() { ui_pop_parent() }
 
 ui_size :: proc (x_type: UI_Size_Type, x_value: f32, y_type: UI_Size_Type, y_value: f32) {
 	ui_size_x(x_type, x_value)
@@ -63,6 +61,10 @@ ui_axis :: proc(axis: Axis) {
 	state.ui.ctx.axis = axis
 }
 
+ui_set_render_layer :: proc(layer: int) {
+	state.ui.ctx.render_layer = layer
+}
+
 ui_set_border_color :: proc(color: v4) {
 	state.ui.ctx.border_color = color
 }
@@ -71,29 +73,7 @@ ui_set_border_thickness :: proc(value: f32) {
 	state.ui.ctx.border = value
 }
 
-//______ WDIGETS ______//
-
-ui_empty :: proc(axis: Axis) -> ^Box {
-	state.ui.box_index += 1 // TODO is this a good idea?
-	oldsize := state.ui.ctx.size[X]
-	name: string
-	ui_axis(.Y)
-	if axis == .X {
-		ui_size_x(.PERCENT_PARENT, 1)
-		ui_size_y(.PIXELS, state.ui.line_space)
-		name = "row"
-	} else if axis == .X {
-		// ui_axis(.HORIZONTAL)
-		ui_size_x(.CHILDREN_SUM, 1)
-		ui_size_y(.CHILDREN_SUM, 1)
-		name = "col"
-	}
-	box := ui_create_box(fmt.tprintf("%v_%v", name, state.ui.box_index), {.DRAWBORDER})
-	ui_push_parent(box)
-	ui_axis(axis)
-	state.ui.ctx.size = oldsize
-	return box
-}
+//______ WIDGETS ______//
 
 ui_layout :: proc(
 		axis: 		Axis,
@@ -112,7 +92,6 @@ ui_layout :: proc(
 	return box
 }
 
-
 ui_row :: proc() {
 	ui_layout(.Y, .PERCENT_PARENT, 1, .CHILDREN_SUM, 1)
 	ui_axis(.X)
@@ -127,6 +106,33 @@ ui_col :: proc(x: UI_Size_Type=.PERCENT_PARENT, x_value:f32=1) {
 	// return ui_empty(.Y)
 }
 
+ui_dropdown :: proc(key: string) -> Box_Ops {
+	box := ui_create_box(key, {
+		.HOVERABLE,
+		.CLICKABLE,
+		.SELECTABLE,
+		.DRAWTEXT,
+		.DRAWBORDER,
+		.DRAWBACKGROUND,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+		.ACTIVEANIMATION,
+	})
+	box.text_align = .CENTER
+	return box.ops
+}
+
+ui_menu :: proc() -> Box_Ops {
+	ui_size(.PIXELS, 0, .PIXELS, 0)
+	box := ui_create_box(fmt.tprintf("%v Menu", state.ui.ctx.box_parent.name), { .HOVERSELECT, .MENU })
+	ui_push_parent(box)
+	ui_set_render_layer(1)
+	return box.ops
+}
+
+ui_menu_end :: proc() {
+	ui_set_render_layer(0)
+}
 
 ui_label :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key,{
@@ -166,30 +172,6 @@ ui_button :: proc(key: string) -> Box_Ops {
 		.ACTIVEANIMATION,
 	})
 	box.text_align = .CENTER
-	return box.ops
-}
-
-ui_dropdown :: proc(key: string) -> Box_Ops {
-	box := ui_create_box(key, {
-		.HOVERABLE,
-		.CLICKABLE,
-		.SELECTABLE,
-		.DRAWTEXT,
-		.DRAWBORDER,
-		.DRAWBACKGROUND,
-		.DRAWGRADIENT,
-		.HOTANIMATION,
-		.ACTIVEANIMATION,
-	})
-	box.text_align = .CENTER
-	return box.ops
-}
-
-ui_menu :: proc() -> Box_Ops {
-	ui_size(.PIXELS, 0, .PIXELS, 0)
-	box := ui_create_box(fmt.tprintf("%v Menu", state.ui.ctx.box_parent.name), { .MENU })
-	state.ui.ctx.panel.menu_box = box
-	ui_push_parent(box)
 	return box.ops
 }
 

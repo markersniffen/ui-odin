@@ -18,7 +18,6 @@ Panel :: struct {
 	type: Panel_Type,
 	ctx: Quad,
 	box: ^Box,
-	menu_box: ^Box,
 }
 
 ui_create_panel :: proc(active_panel:^Panel, direction:Direction=.HORIZONTAL, type: Panel_Type=.TEMP, size:f32=0.5) -> ^Panel {
