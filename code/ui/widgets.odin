@@ -123,6 +123,7 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 }
 
 ui_menu :: proc() -> Box_Ops {
+	ui_push_parent(state.ui.ctx.box)
 	ui_size(.PIXELS, 0, .PIXELS, 0)
 	box := ui_create_box(fmt.tprintf("%v Menu", state.ui.ctx.box_parent.name), { .HOVERSELECT, .MENU })
 	ui_push_parent(box)
@@ -132,6 +133,8 @@ ui_menu :: proc() -> Box_Ops {
 
 ui_menu_end :: proc() {
 	ui_set_render_layer(0)
+	ui_pop()
+	ui_pop()
 }
 
 ui_label :: proc(key: string) -> Box_Ops {

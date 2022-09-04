@@ -100,7 +100,7 @@ ui_init :: proc() {
 	// Setup panels ------------------------------
 	state.ui.panel_root = ui_create_panel(nil, .VERTICAL, .FILE_MENU)
 	sub_panel := ui_create_panel(state.ui.panel_root, .VERTICAL, .DEBUG, 0.5)
-	ui_create_panel(sub_panel, .HORIZONTAL, .TEMP, 0.7)
+	ui_create_panel(sub_panel, .HORIZONTAL, .DEBUG, 0.7)
 	pool_init(&state.ui.box_pool, size_of(Box), MAX_BOXES, "Boxes")
 
 	// SET DEFAULT COLORS ------------------------------

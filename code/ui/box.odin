@@ -154,6 +154,20 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 
 	box.ops.clicked = false
 
+	// TODO this is for special buttons for menus
+	// TODO drawing the layer 2 boxes is separate
+	if .MENU in box.flags {
+		if state.ui.ctx.box_active != nil {
+			if box != state.ui.ctx.box_active {
+				if mouse_over {
+					state.ui.ctx.box_active.ops.selected = false
+					state.ui.ctx.box_active = box
+					box.ops.selected = true
+				}
+			}
+		}
+	}
+
 	if .HOVERABLE in box.flags {
 		if mouse_over && !drag {
 			box.ops.hovering = true
@@ -174,6 +188,7 @@ ui_create_box :: proc(_key: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 					if .SELECTABLE in box.flags {
 						box.ops.selected = !box.ops.selected
 					}
+					state.ui.ctx.box_active = box
 					box.ops.clicked = true
 				}
 				box.ops.pressed = false
@@ -335,19 +350,27 @@ ui_calc_boxes :: proc() {
 				#partial switch box.axis
 				{
 					case .X:
-						if box.prev == nil {
-							box.offset[0] = 0
-						} else {
-							box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
-						}
-						if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
+					  if .MENU in box.flags {
+							box.offset[X] = box.parent.calc_size[X]
+				  	} else {
+							if box.prev == nil {
+								box.offset[0] = 0
+							} else {
+								box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
+							}
+							if box.parent != nil do box.offset.y = 0 //box.parent.ctx.t
+				  	}
 					case .Y:
-						if box.prev == nil {
-							box.offset.y = 0
+						if .MENU in box.flags {
+							box.offset.y = box.parent.calc_size[Y]
 						} else {
-							box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
+							if box.prev == nil {
+								box.offset.y = 0
+							} else {
+								box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
+							}
+							if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
 						}
-						if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
 				}
 			}
 
