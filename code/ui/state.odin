@@ -27,7 +27,7 @@ state: ^State
 
 State :: struct {
 	uid: Uid,
-	window: glfw.WindowHandle,
+	window: Window,
 	quit: bool,
 
 	start_time: time.Time,
@@ -36,13 +36,21 @@ State :: struct {
 
 	render: Gl,
 	ui: Ui,
-	window_size: v2i,
-	framebuffer_res: v2i,
+	// window_size: v2i,
+	// window_quad: Quad,
+	// framebuffer_res: v2i,
 	mouse: Mouse,
 	keys: Keys,
 	mode: Mode,
 
 	debug: Debug,
+}
+
+Window :: struct {
+	handle: glfw.WindowHandle,
+	size: v2i,
+	framebuffer: v2i,
+	quad: Quad,
 }
 
 Mode :: enum {
@@ -102,20 +110,21 @@ init :: proc() -> bool {
 		glfw.WindowHint(glfw.OPENGL_FORWARD_COMPAT, i32(1))
 	}
 
-	state.window = glfw.CreateWindow(WIDTH, HEIGHT, TITLE, nil, nil)
+	state.window.handle = glfw.CreateWindow(WIDTH, HEIGHT, TITLE, nil, nil)
 
-	if state.window == nil
+	if state.window.handle == nil
 	{
 		fmt.eprintln("GLFW has failed to load the window.")
 		return false
 	}
 
-	glfw.MakeContextCurrent(state.window)
-	glfw.SetKeyCallback(state.window, cast(glfw.KeyProc)keyboard_callback)
-	glfw.SetMouseButtonCallback(state.window, cast(glfw.MouseButtonProc)mouse_callback)
-	glfw.SetScrollCallback(state.window, cast(glfw.ScrollProc)scroll_callback)
-	glfw.SetCharCallback(state.window, cast(glfw.CharProc)typing_callback)
-	glfw.SetWindowUserPointer(state.window, state)
+	glfw.SetWindowPos(state.window.handle, 500,200)
+	glfw.MakeContextCurrent(state.window.handle)
+	glfw.SetKeyCallback(state.window.handle, cast(glfw.KeyProc)keyboard_callback)
+	glfw.SetMouseButtonCallback(state.window.handle, cast(glfw.MouseButtonProc)mouse_callback)
+	glfw.SetScrollCallback(state.window.handle, cast(glfw.ScrollProc)scroll_callback)
+	glfw.SetCharCallback(state.window.handle, cast(glfw.CharProc)typing_callback)
+	glfw.SetWindowUserPointer(state.window.handle, state)
 
 	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
 	
@@ -129,22 +138,22 @@ update :: proc() {
 	state.start_time = time.now()
 	state.delta_time = time.duration_milliseconds(time.diff(state.prev_time, state.start_time))
 
-	state.quit = bool(glfw.WindowShouldClose(state.window))
+	state.quit = bool(glfw.WindowShouldClose(state.window.handle))
 	if state.quit do return
 
 	glfw.PollEvents()
 
-	width, height := glfw.GetWindowSize(state.window)
-	state.window_size = {width, height}
+	width, height := glfw.GetWindowSize(state.window.handle)
+	state.window.size = {width, height}
+	state.window.quad = {0, 0, f32(width), f32(height)}
 	
-	framebuffer_width, framebuffer_height := glfw.GetFramebufferSize(state.window)
-	state.framebuffer_res = {framebuffer_width, framebuffer_height}
+	framebuffer_width, framebuffer_height := glfw.GetFramebufferSize(state.window.handle)
+	state.window.framebuffer = {framebuffer_width, framebuffer_height}
 	
-	mouseX, mouseY := glfw.GetCursorPos(state.window)
+	mouseX, mouseY := glfw.GetCursorPos(state.window.handle)
 	old_mouse := state.mouse.pos
 	state.mouse.pos = {i32(mouseX), i32(mouseY)}
-	state.mouse.delta = state.mouse.pos - old_mouse
-
+	state.mouse.delta = (state.mouse.pos - old_mouse) / 2
 
 	ui_update()
 	opengl_render()
@@ -164,7 +173,7 @@ update :: proc() {
 }
 
 quit :: proc() {
-	glfw.DestroyWindow(state.window)
+	glfw.DestroyWindow(state.window.handle)
 	glfw.Terminate()
 	free(state)
 }
@@ -236,17 +245,15 @@ scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64) {
 	state.mouse.scroll = f32(y/10)
 }
 
-read_mouse :: proc(button: ^Button, type: Button) -> bool {
-	result := false
-	if button^ == .RELEASE do fmt.println(type, "string")	
-	if button^ == type {
-		result = true
-		// if type == .CLICK do button^ = .DRAG
-	}
-
-	// if button^ == .RELEASE do button^ = .UP
-	return result
+mouse_button :: proc(button: Button, type: Button) -> bool {
+	return (button == type)
 }
+
+lmb_click :: proc() -> bool { return mouse_button(state.mouse.left, .CLICK) }
+lmb_drag :: proc() -> bool { return mouse_button(state.mouse.left, .DRAG) }
+lmb_release :: proc() -> bool { return mouse_button(state.mouse.left, .RELEASE) }
+lmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.left, .RELEASE) || mouse_button(state.mouse.left, .UP)) }
+lmb_up :: proc() -> bool { return mouse_button(state.mouse.left, .UP) }
 
 mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods: int) {
 	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }
@@ -254,15 +261,10 @@ mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods
 	{
 		if button == index {
 			if action == int(glfw.PRESS) {
-				if mouse_button^ == .CLICK {
-						mouse_button^ = .DRAG
-					} else {
-						mouse_button^ = .CLICK
-					}
-				} else if action == int(glfw.RELEASE) {
-					mouse_button^ = .RELEASE
+				mouse_button^ = .CLICK 
+			} else if action == int(glfw.RELEASE) {
+				mouse_button^ = .RELEASE
 			}
-			fmt.println("mouse", mouse_button^)	
 		}
 	}
 }

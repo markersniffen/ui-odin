@@ -66,6 +66,7 @@ pool_alloc :: proc(pool: ^Pool) -> rawptr
 		pool.nodes_used += 1
 		return new_alloc
 	}
+	assert(0 != 0)
 	return nil
 }
 
@@ -85,11 +86,13 @@ pool_free :: proc(pool: ^Pool, ptr: rawptr) -> bool
 	if ptr == nil do return false
 	if !(start <= ptr && ptr < end) do return false
 	
+	mem.zero(ptr, pool.chunk_size)
+	
 	// Push free Node
 	node = cast(^Node)ptr
 	node.next = pool.head
 	pool.head = node
-	
+
 	pool.nodes_used -= 1
 	return true
 }

@@ -3,13 +3,12 @@ package ui
 import "core:fmt"
 import "core:mem"
 import "core:os"
+import "core:strings"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
 
 Gl :: struct {
 	shader: u32,
-	font_texture: u32,
-	font_texture_size: i32,
 
 	layers: [2]Layer,
 	layer_index: int,
@@ -44,6 +43,7 @@ opengl_init :: proc() {
 	gl.GenBuffers(1, &state.render.vertex_buffer)
 	gl.GenBuffers(1, &state.render.index_buffer)
 
+	// NOTE create render layers
 	for layer, i in state.render.layers {
 		state.render.layers[i].vertices = make_slice([]f32, mem.Megabyte * 2)
 		state.render.layers[i].indices = make([]u32, mem.Megabyte * 2)
@@ -52,10 +52,22 @@ opengl_init :: proc() {
 	shader_success : bool
 	state.render.shader, shader_success = gl.load_shaders_source(UIMAIN_VS, UIMAIN_FRAG)
 	if !shader_success do fmt.println("UI shader did not compile!")
+	gl.UseProgram(state.render.shader)
 
-	gl.GenTextures(1, &state.render.font_texture)
-	gl.BindTexture(gl.TEXTURE_2D, state.render.font_texture)
-	gl.GenerateMipmap(gl.TEXTURE_2D)
+	state.ui.font.name = "Roboto-Regular"
+	state.ui.font.label = "font_texture"
+	state.ui.font.texture_size = 512 // size of font bitmap
+	state.ui.font.texture_unit = 0
+	gl.GenTextures(1, &state.ui.font.texture)
+
+	state.ui.icons.name = "ui_icons"
+	state.ui.icons.label = "icon_texture"
+	state.ui.icons.texture_size = 512
+	state.ui.icons.texture_unit = 2
+	gl.GenTextures(1, &state.ui.icons.texture)
+
+	fmt.println(state.ui.font)
+	fmt.println(state.ui.icons)
 
 	gl.GenVertexArrays(1, &state.render.vao)
 	gl.BindVertexArray(state.render.vao)
@@ -64,14 +76,15 @@ opengl_init :: proc() {
 	gl.EnableVertexAttribArray(1)
 	gl.EnableVertexAttribArray(2)
 	gl.EnableVertexAttribArray(3)
-
-	state.render.font_texture_size = 512 // size of font bitmap
 }
 
-opengl_load_texture :: proc(texture: u32, image: rawptr, size:i32) -> bool {
-	gl.BindTexture(gl.TEXTURE_2D, texture)
-  	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, size,size, 0, gl.RED, gl.UNSIGNED_BYTE, image)
+opengl_load_texture :: proc(font: ^Font, image: rawptr) -> bool {
+	gl.ActiveTexture(gl.TEXTURE0 + font.texture_unit)
+	gl.BindTexture(gl.TEXTURE_2D, font.texture)
+  	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, font.texture_size,font.texture_size, 0, gl.RED, gl.UNSIGNED_BYTE, image)
   	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  	uni := gl.GetUniformLocation(state.render.shader, strings.clone_to_cstring(font.label))
+	gl.Uniform1i(uni, i32(font.texture_unit))
   	if gl.GetError() != 0 do return false
   	return true
 }
@@ -79,8 +92,8 @@ opengl_load_texture :: proc(texture: u32, image: rawptr, size:i32) -> bool {
 opengl_render :: proc() {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 	gl.ClearColor(0, 0, 0, 1)
-	gl.Viewport(0, 0, i32(state.framebuffer_res.x), i32(state.framebuffer_res.y))
-	gl.Scissor(0, 0, i32(state.framebuffer_res.x), i32(state.framebuffer_res.y))
+	gl.Viewport(0, 0, i32(state.window.framebuffer.x), i32(state.window.framebuffer.y))
+	gl.Scissor(0, 0, i32(state.window.framebuffer.x), i32(state.window.framebuffer.y))
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(state.render.shader)
@@ -97,18 +110,17 @@ opengl_render :: proc() {
 		gl.VertexAttribPointer(3, 1, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 9 * size_of(f32))
 
 		framebuffer_res := gl.GetUniformLocation(state.render.shader, "framebuffer_res")
-		gl.Uniform2f(framebuffer_res, f32(state.framebuffer_res.x)/2, f32(state.framebuffer_res.y)/2)
+		gl.Uniform2f(framebuffer_res, f32(state.window.framebuffer.x)/2, f32(state.window.framebuffer.y)/2)
 
 		multiplier := gl.GetUniformLocation(state.render.shader, "multiplier")
-		gl.Uniform2f(multiplier, f32(state.framebuffer_res.x / state.window_size.x), f32(state.framebuffer_res.y / state.window_size.y))
+		gl.Uniform2f(multiplier, f32(state.window.framebuffer.x / state.window.size.x), f32(state.window.framebuffer.y / state.window.size.y))
  	
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.render.index_buffer)
 		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, layer.i_index * size_of(u32), &layer.indices[0], gl.STATIC_DRAW)
 		gl.DrawElements(gl.TRIANGLES, i32(layer.i_index), gl.UNSIGNED_INT, nil)
  	}
 
-
-	glfw.SwapBuffers(state.window)
+	glfw.SwapBuffers(state.window.handle)
 
 	for i in 0..=1 {
 		state.render.layers[i].v_index = 0
@@ -177,8 +189,8 @@ push_quad_border :: proc(quad: Quad, color:v4, border: f32=2) {
 	push_quad(quad,	color, color, color, color, border, {0,0,0,0}, 0)
 }
 
-push_quad_font :: proc(quad: Quad, color:v4, uv:Quad) {
-	push_quad(quad,	color, color, color, color, 0, uv, 1)
+push_quad_font :: proc(quad: Quad, color:v4, uv:Quad, font_icon:f32) {
+	push_quad(quad,	color, color, color, color, 0, uv, font_icon)
 }
 
 pt_in_quad 	:: proc(pt: v2, quad: Quad) -> bool {
@@ -216,7 +228,7 @@ pt_offset_quad :: proc(pt: v2, quad: Quad) -> Quad {
 
 UIMAIN_VS ::
 `
-#version 330 core
+#version 420 core
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec2 uv;
 layout(location = 2) in vec4 color;
@@ -244,14 +256,15 @@ void main()
 
 UIMAIN_FRAG ::
 `
-#version 330 core
+#version 420 core
 in vec4 vertex_color;
 in vec2 uv_coords;
 in float texture_mix;
 
 out vec4 FragColor;
 
-uniform sampler2D tex;
+uniform sampler2D font_texture;
+uniform sampler2D icon_texture;
 
 void main()
 {
@@ -260,9 +273,10 @@ void main()
 	if (texture_mix == 0)
 	{
 		FragColor = vertex_color;
-	} else {
-		vec4 texs = texture(tex, uv_coords);
-		FragColor = vec4(vertex_color.rgb, texs.r);
+	} else if (texture_mix == 1) {
+		FragColor = vec4(vertex_color.rgb, texture(font_texture, uv_coords).r);
+	} else if (texture_mix == 2) {
+		FragColor = vec4(vertex_color.rgb, texture(icon_texture, uv_coords).r);
 	}
 }
 `

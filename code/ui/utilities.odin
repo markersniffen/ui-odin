@@ -10,3 +10,7 @@ new_uid :: proc() -> Uid
 mouse_in_quad :: proc(quad: Quad) -> bool {
 	return pt_in_quad({f32(state.mouse.pos.x), f32(state.mouse.pos.y)}, quad)
 }
+
+v2_f32 :: proc(value: v2i) -> v2 {
+	return {f32(value.x), f32(value.y)}
+}

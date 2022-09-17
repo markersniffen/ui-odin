@@ -8,81 +8,70 @@ Y  :: 1
 XY :: 2
 
 Ui :: struct {
-	panels: map[Uid]^Panel,
-	panel_pool: Pool,
-	panel_root: ^Panel,
-	panel_active: ^Panel,
-
-	boxes: map[string]^Box,
-	box_pool: Pool,
-	box_parent: ^Box,
-	box_index: u64,
-
 	frame: u64,
+	panels: UI_Panels,
+	boxes: UI_Boxes,
+	index: int,
 
-	col: Ui_Colors,
+	col: UI_Colors,
 	ctx: UI_Context,
 
-	char_data: map[rune]Char_Data,
+	font: Font,
+	icons: Font,
+	// char_data: map[rune]Char_Data,
+	
 	font_size: f32,					// NOTE pixels tall
 	font_offset_y: f32,
 	margin: f32,
 	line_space: f32,
 }
 
+UI_Panels :: struct {
+	pool: Pool,
+	all: map[Uid]^Panel,
+	root: ^Panel,
+	floating: ^Panel,
+	active: ^Panel,
+	hot: ^Panel,
+}
+
+UI_Boxes :: struct {
+	pool: Pool,
+	all: map[Key]^Box,
+	to_delete: [MAX_BOXES]rawptr,
+	root: ^Box,
+	active: ^Box,
+	hot: ^Box,
+}
+
 UI_Context :: struct {
 	panel: ^Panel,
-	box_parent: ^Box,
+
 	box: ^Box,
-	box_hot: ^Box,
-	box_active: ^Box,
+	parent: ^Box,
+
+	render_layer: int,
+	axis: Axis,
+	size: [XY]Box_Size,
+
 	font_color: v4,
 	bg_color: v4,
 	border_color: v4,
 	border: f32,
 	text_align: Text_Align,
-	size: [XY]UI_Size,
-	axis: Axis,
-	render_layer: int,
 }
 
-Ui_Colors :: struct {
+UI_Colors :: struct {
 	base: v4,
-
 	bg: v4,
 	bg_light: v4,
-
 	border: v4,
 	border_light: v4,
-
 	font: v4,
 	font_hot: v4,
-	
 	hot: v4,
 	active: v4,	
-
 	highlight: v4,
-}
-
-UI_Size :: struct {
-	type: UI_Size_Type,
-	value: f32,
-	// strictness: ??
-}
-
-UI_Size_Type :: enum {
-  NIL,
-  PIXELS,
-  TEXT_CONTENT,
-  PERCENT_PARENT,
-  CHILDREN_SUM,
-  MIN_SIBLINGS,
-  MAX_SIBLING,
-}
-
-Direction :: enum {
-	HORIZONTAL,
-	VERTICAL,
 }
 
 Axis :: enum {
@@ -94,14 +83,14 @@ Axis :: enum {
 //______ INITIALIZATION ______ //
 ui_init :: proc() {
 	ui_init_font()
+	
+	pool_init(&state.ui.panels.pool, size_of(Panel), MAX_PANELS, "Panels")
+	pool_init(&state.ui.boxes.pool, size_of(Box), MAX_BOXES, "Boxes")
 
-	pool_init(&state.ui.panel_pool, size_of(Panel), MAX_PANELS, "Panels")
-
-	// Setup panels ------------------------------
-	state.ui.panel_root = ui_create_panel(nil, .VERTICAL, .FILE_MENU)
-	sub_panel := ui_create_panel(state.ui.panel_root, .VERTICAL, .DEBUG, 0.5)
-	ui_create_panel(sub_panel, .HORIZONTAL, .DEBUG, 0.7)
-	pool_init(&state.ui.box_pool, size_of(Box), MAX_BOXES, "Boxes")
+	ui_create_panel(.Y, .STATIC, .FILE_MENU, 0.3)
+	ui_create_panel(.Y, .DYNAMIC, .DEBUG, 0.1)
+	ui_create_panel(.X, .DYNAMIC, .BOXLIST, 0.5)
+	ui_create_panel(.X, .DYNAMIC, .PROPERTIES, 0.3)
 
 	// SET DEFAULT COLORS ------------------------------
 	state.ui.ctx.font_color = {1,1,1,1}
@@ -112,83 +101,132 @@ ui_init :: proc() {
 
 //______ UI UPDATE ______//
 ui_update :: proc() {
-	// temp input for testing ------------------------------ 
-	if read_key(&state.keys.left) do state.debug.temp -= 1
-	if read_key(&state.keys.right) do state.debug.temp += 1
+	ui_calc_panel(state.ui.panels.root, state.window.quad)
+	ui_calc_panel(state.ui.panels.floating, state.ui.panels.floating.quad)
 
-	// calculate panels, includes box-builder code ------------------------------
-	ui_calc_panel(state.ui.panel_root, {0, 0, f32(state.window_size.x), f32(state.window_size.y)})
-
-  // prune nodes that aren't used ------------------------------
-	for _, box in state.ui.boxes {
-		if state.ui.frame > box.last_frame_touched {
-			ui_delete_box(box)
+	// NOTE build boxes
+	for _, panel in state.ui.panels.all {
+		state.ui.ctx.panel = panel
+		if panel.type == .NULL {
+			push_quad_solid(panel.bar, {0.3,0.3,0.3,1})
+		} else {
+			build_panel_content(panel.content)
 		}
 	}
 
-	// calculate size of boxes ------------------------------
-	ui_calc_boxes()
+  // prune boxes that aren't used ------------------------------
+	box_index := 0
+	for _, box in state.ui.boxes.all {
+		if state.ui.frame > box.last_frame_touched {
+			if box.key.len == 0 {
+				assert(0 != 0)
+			} 
+			// fmt.println("!!! Deleting !!!", box.panel, box.key, "Lastbox:", lastbox.key)
+			state.ui.boxes.to_delete[box_index] = box
+			box_index += 1
+		}
+	}
+
+	if box_index > 0 {
+		for i in 0..<box_index {
+				box := cast(^Box)state.ui.boxes.to_delete[i]
+				fmt.println("About to prune box:")
+				if box != nil do fmt.println(box.key)
+				ui_delete_box(box)
+				state.ui.boxes.to_delete[i] = nil
+		}
+	}
+	
+	// calculate size/position of boxes ------------------------------
+	for _, panel in state.ui.panels.all {
+		if panel.box != nil do ui_calc_boxes(panel.box)
+	}
 
 	// advance frame / reset box index for keys ------------------------------
 	state.ui.frame += 1
-	state.ui.box_index = 0
+	state.ui.index = 0
 
 	// queue panels/boxes for rendering ------------------------------
-	for _, panel in state.ui.panels {
-		state.ui.ctx.panel = panel
-		root_box := panel.box
-		if panel.child_a == nil {
-			#partial switch panel.type {
-				case .DEBUG: 			ui_panel_debug()
-				case .PANEL_LIST: 	ui_panel_panel_list()
-				case .TEMP: 			ui_panel_temp()
-				case .FILE_MENU:		ui_panel_file_edit_view()
+	if state.ui.panels.hot != nil {
+		if state.ui.panels.hot.type == .NULL {
+			if state.ui.panels.hot.child_a != nil {
+				if state.ui.panels.hot.child_a.type != .STATIC {
+					push_quad_solid(state.ui.panels.hot.bar, state.ui.col.hot)		
+				}
 			}
 		}
+	}
 
-		draw_boxes(root_box)
+	if state.ui.panels.active != nil {
+		if state.ui.panels.active.type == .NULL {
+			push_quad_solid(state.ui.panels.active.bar, state.ui.col.active)		
+		} else if state.ui.panels.active.type == .FLOATING {
+			// push_quad_solid(state.ui.panels.active.quad, {1,0,1,1})
+		} else {
+			// push_quad_solid(state.ui.panels.active.quad, {1,0,0,1})
+		}
+	}
+
+	for _, panel in state.ui.panels.all {
+		if panel.type != .FLOATING {
+			ui_draw_boxes(panel.box)
+		}
+	}
+
+	if state.ui.panels.floating != nil {
+		// fmt.println("drawing the floater")
+		ui_draw_boxes(state.ui.panels.floating.box)
 	}
 }
 
-draw_boxes :: proc(box: ^Box) {
+ui_draw_boxes :: proc(box: ^Box) {
 	if box == nil do return
 	if box.parent != nil {
-		box.ctx.l = box.parent.ctx.l + box.offset.x
-		box.ctx.t = box.parent.ctx.t + box.offset.y
-		box.ctx.r = box.ctx.l + box.calc_size.x
-		box.ctx.b = box.ctx.t + box.calc_size.y
+		box.quad.l = box.parent.quad.l + box.offset.x
+		box.quad.t = box.parent.quad.t + box.offset.y
+		box.quad.r = box.quad.l + box.calc_size.x
+		box.quad.b = box.quad.t + box.calc_size.y
 	}
 
 	set_render_layer(box.render_layer)
-
+	if .ROOT in box.flags {
+		// push_quad_solid(box.quad, {0,0,0,1})
+		push_quad_border(box.quad, {0.1,0.1,0.1,1}, 1)
+	}
 	if .DRAWBACKGROUND in box.flags {
-		push_quad_gradient_v(box.ctx, state.ui.col.bg, state.ui.col.bg_light)
+		push_quad_gradient_v(box.quad, state.ui.col.bg, state.ui.col.bg_light)
 	}
 	if .DRAWBORDER in box.flags {
-		push_quad_border(box.ctx, state.ui.col.border, box.border)
+		push_quad_border(box.quad, state.ui.col.border, box.border)
 	}
 	if .HOVERABLE in box.flags {
-		// if box.ops.hovering do push_quad_solid(box.ctx, state.ui.col.hot)
+		// if box.ops.hovering do push_quad_solid(box.quad, state.ui.col.hot)
 	}
 	if .DRAWGRADIENT in box.flags {
-		push_quad_gradient_v(box.ctx, {1,1,1,0.1}, {0,0,0,0})
+		push_quad_gradient_v(box.quad, {1,1,1,0.1}, {0,0,0,0})
 	}
 	if .CLICKABLE in box.flags {
-		// if box.ops.pressed do push_quad_gradient_v(box.ctx, {1,1,1, clamp(1 * box.active_t, 0, 1)}, state.ui.col.hot)
+		// if box.ops.pressed do push_quad_gradient_v(box.quad, {1,1,1, clamp(1 * box.active_t, 0, 1)}, state.ui.col.hot)
 	}
 	if .DRAWTEXT in box.flags {
-		draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
+		draw_text(short_to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, box.quad), box.text_align)
 	}
 	if .DISPLAYVALUE in box.flags {
-		text := fmt.tprintf("%v %v", box.name, box.value)
-		draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, box.ctx), box.text_align)
+		text := fmt.tprintf("%v %v", short_to_string(&box.name), box.value)
+		draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, box.quad), box.text_align)
 	}
 	if .HOTANIMATION in box.flags {
-		push_quad_gradient_v(box.ctx, {1,1,1,0.4 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
+		push_quad_gradient_v(box.quad, {1,1,1,0.4 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
 	}
 	if .ACTIVEANIMATION in box.flags {
-		push_quad_gradient_v(box.ctx, {1,0,0,0.4 * box.active_t}, {0.5,0,0,0.2 * box.active_t})	
+		push_quad_gradient_v(box.quad, {1,0,0,0.4 * box.active_t}, {0.5,0,0,0.2 * box.active_t})	
 	}
-	draw_boxes(box.next)
-	draw_boxes(box.first)
+
+	if .DEBUG in box.flags {
+		push_quad_border(box.quad, {1,0,1,1}, 1)
+		// draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, box.quad), box.text_align, {1,0,1,1})
+	}
+
+	ui_draw_boxes(box.next)
+	ui_draw_boxes(box.first)
 }
