@@ -99,7 +99,7 @@ Box_Ops :: struct {
 }
 
 ui_gen_key :: proc(name: string) -> Key {
-	text := fmt.tprintf("%v_%v", name, state.ui.ctx.panel.uid)
+	text := fmt.tprintf("%v_%v_%v", name, state.ui.boxes.index, state.ui.ctx.panel.uid)
 	key := string_to_key(text)
 	return key
 }
@@ -183,7 +183,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 
 	if .CLICKABLE in box.flags {
 		if mouse_over {
-			if lmb_click() || lmb_drag() {
+			if lmb_click() {
 				box.ops.pressed = true
 			}
 			if lmb_release() {
@@ -208,6 +208,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	}
 
 	box.last_frame_touched = state.ui.frame
+	state.ui.boxes.index += 1
 	return(box)
 }
 

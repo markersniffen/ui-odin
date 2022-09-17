@@ -34,15 +34,12 @@ ui_begin_floating :: proc() -> ^Panel {
 }
 
 ui_end :: proc() {
+	state.ui.boxes.index = 0
 }
 
-ui_push_parent :: proc(box: ^Box) {
-	state.ui.ctx.parent = box
-}
+ui_push_parent :: proc(box: ^Box) {	state.ui.ctx.parent = box }
 
-ui_pop_parent :: proc() {
-	state.ui.ctx.parent = state.ui.ctx.parent.parent
-}
+ui_pop_parent :: proc() { state.ui.ctx.parent = state.ui.ctx.parent.parent }
 
 ui_pop :: proc() { ui_pop_parent() }
 
@@ -61,68 +58,35 @@ ui_size_y :: proc(type: Box_Size_Type, value: f32) {
 	state.ui.ctx.size.y.value = value
 }
 
-ui_axis :: proc(axis: Axis) {
-	state.ui.ctx.axis = axis
-}
+ui_axis 				:: proc(axis: Axis) 	{ state.ui.ctx.axis = axis }
 
-ui_set_render_layer :: proc(layer: int) {
-	state.ui.ctx.render_layer = layer
-}
+ui_set_render_layer 	:: proc(layer: int) 	{ state.ui.ctx.render_layer = layer }
 
-ui_set_border_color :: proc(color: v4) {
-	state.ui.ctx.border_color = color
-}
+ui_set_border_color 	:: proc(color: v4) 		{ state.ui.ctx.border_color = color }
 
-ui_set_border_thickness :: proc(value: f32) {
-	state.ui.ctx.border = value
-}
-
-ui_panel :: proc(key: string, axis: Axis) -> (Box_Ops, Box_Ops) {
-	ui_axis(axis)
-	if axis == .X {
-		ui_size(.PCT_PARENT, .5, .PCT_PARENT, 1)
-	} else {
-		ui_size(.PCT_PARENT, 1, .PCT_PARENT, .5)
-	}
-	a := ui_create_box("A", {
-		.PANEL,
-		.DRAWBORDER,
-		.DRAWBACKGROUND,
-	})
-	b := ui_create_box("B", {
-		.PANEL,
-		.DRAWBORDER,
-		.DRAWBACKGROUND,
-	})
-	return a.ops, b.ops
-}
-
-// //______ WIDGETS ______//
-
-ui_empty :: proc() -> ^Box {
-	state.ui.index += 1
-	box := ui_create_box(fmt.tprintf("empty_%v", state.ui.index), { })
-	ui_push_parent(box)
-	return box
-}
+ui_set_border_thickness :: proc(value: f32)		{ state.ui.ctx.border = value }
 
 ui_dragbar :: proc() -> ^Box {
-	state.ui.index += 1
-	box := ui_create_box(fmt.tprintf("dragbar_%v", state.ui.index), {
+	box := ui_create_box("dragbar", {
 		.CLICKABLE,
 		.SELECTABLE,
 		.HOVERABLE,
 		.DRAGGABLE,
 		.DRAWBACKGROUND,
-		.DEBUG,
 	})
 	return box
 }
 
+//______ WIDGETS ______//
+
+ui_empty :: proc() -> ^Box {
+	box := ui_create_box("empty", { })
+	ui_push_parent(box)
+	return box
+}
+
 ui_label :: proc(key: string) -> Box_Ops {
-	box := ui_create_box(key,{
-		.DRAWTEXT,
-	})
+	box := ui_create_box(key, { .DRAWTEXT, })
 	return box.ops
 }
 
@@ -147,20 +111,20 @@ ui_button :: proc(key: string) -> Box_Ops {
 }
 
 ui_spacer_fill :: proc() -> Box_Ops {
-	state.ui.index += 1 // TODO is this a good idea?
+	// state.ui.index += 1 // TODO is this a good idea?
 	oldsize := state.ui.ctx.size[X]
 	ui_size_x(.MIN_SIBLINGS, 1)
-	box := ui_create_box(fmt.tprintf("space_%v", state.ui.index), {
+	box := ui_create_box("spacer_fill", {
 	})
 	ui_size_x(oldsize.type, oldsize.value)
 	return box.ops
 }
 
 ui_spacer_pixels :: proc(pixels: f32) -> Box_Ops {
-	state.ui.index += 1 // TODO is this a good idea?
+	// state.ui.index += 1 // TODO is this a good idea?
 	oldsize := state.ui.ctx.size.x
 	ui_size_x(.PIXELS, pixels)
-	box := ui_create_box(fmt.tprintf("space_%v", state.ui.index), {
+	box := ui_create_box("spacer_pixels", {
 	})
 	ui_size_x(oldsize.type, oldsize.value)
 	return box.ops

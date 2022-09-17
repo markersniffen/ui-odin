@@ -34,11 +34,11 @@ ui_panel_file_menu :: proc() {
 	ui_button("View")
 	ui_spacer_fill()
 	ui_value("boxes:", state.ui.boxes.pool.nodes_used)
-	ui_value("of", state.ui.boxes.pool.chunk_count)
-	ui_spacer_pixels(6)
+	ui_value("/", state.ui.boxes.pool.chunk_count)
+	ui_label("|")
 	ui_value("panels:", state.ui.panels.pool.nodes_used)
-	ui_value("of ", state.ui.panels.pool.chunk_count)
-	ui_spacer_pixels(6)
+	ui_value("/", state.ui.panels.pool.chunk_count)
+	ui_label("|")
 	ui_value("fps:", state.delta_time)
 	ui_spacer_pixels(6)
 	ui_end()
@@ -46,6 +46,15 @@ ui_panel_file_menu :: proc() {
 
 ui_panel_boxlist :: proc() {
 	ui_begin()
+	ui_axis(.Y)
+	ui_size(.PCT_PARENT, 1, .TEXT, 1)
+	ui_empty()
+		ui_axis(.X)
+		ui_size(.TEXT, 1, .TEXT, 1)
+		if ui_button("###p").clicked {
+			ui_create_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+		}
+	ui_pop()
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
 	ui_value("box length", len(state.ui.boxes.all))

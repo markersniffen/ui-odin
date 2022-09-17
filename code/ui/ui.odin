@@ -11,7 +11,6 @@ Ui :: struct {
 	frame: u64,
 	panels: UI_Panels,
 	boxes: UI_Boxes,
-	index: int,
 
 	col: UI_Colors,
 	ctx: UI_Context,
@@ -42,6 +41,7 @@ UI_Boxes :: struct {
 	root: ^Box,
 	active: ^Box,
 	hot: ^Box,
+	index: int,
 }
 
 UI_Context :: struct {
@@ -121,12 +121,11 @@ ui_update :: proc() {
 			if box.key.len == 0 {
 				assert(0 != 0)
 			} 
-			// fmt.println("!!! Deleting !!!", box.panel, box.key, "Lastbox:", lastbox.key)
+			fmt.println("!!! Deleting !!!", box.name)
 			state.ui.boxes.to_delete[box_index] = box
 			box_index += 1
 		}
 	}
-
 	if box_index > 0 {
 		for i in 0..<box_index {
 				box := cast(^Box)state.ui.boxes.to_delete[i]
@@ -144,7 +143,6 @@ ui_update :: proc() {
 
 	// advance frame / reset box index for keys ------------------------------
 	state.ui.frame += 1
-	state.ui.index = 0
 
 	// queue panels/boxes for rendering ------------------------------
 	if state.ui.panels.hot != nil {
