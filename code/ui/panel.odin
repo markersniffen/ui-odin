@@ -120,10 +120,19 @@ ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
 			//NOTE - CODE FOR SIZING PANELS
 			if panel.child_a.type != .STATIC  {
 				if state.ui.panels.active == panel {
+					cb := panel.child_b
 					if panel.axis == .X {
 						panel.size = (f32(state.mouse.pos.x) - quad.l) * (1 / (quad.r - quad.l))
+						if panel.axis == cb.axis {
+							old_child_bar_center := cb.bar.l + ((cb.bar.r - cb.bar.l) / 2)
+							panel.child_b.size = (old_child_bar_center - b.l) * (1 / (b.r - b.l))
+						}
 					} else {
 						panel.size = (f32(state.mouse.pos.y) - quad.t) * (1 / (quad.b - quad.t))
+						if panel.axis == cb.axis {
+							old_child_bar_center := cb.bar.t + ((cb.bar.b - cb.bar.t) / 2)
+							panel.child_b.size = (old_child_bar_center - b.t) * (1 / (b.b - b.t))
+						}
 					}
 				}
 			} else if panel.child_a.type == .STATIC {

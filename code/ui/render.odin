@@ -211,6 +211,24 @@ quad_full_in_quad	:: proc(quad_a, quad_b: Quad) -> bool {
 	return result
 }
 
+quad_clamp_or_reject :: proc (quad_a, quad_b: Quad) -> (Quad, bool) {
+	quad : Quad = quad_a
+	ok := false
+	a := pt_in_quad({quad_a.l,quad_a.t}, quad_b)
+	b := pt_in_quad({quad_a.r, quad_a.b}, quad_b)
+
+	if a && b {
+		ok = true
+	} else if !a && !b {
+		ok = false
+	} else {
+		ok = true
+		quad = quad_clamp_to_quad(quad_a, quad_b)
+	}
+
+	return quad, ok
+}
+
 quad_clamp_to_quad :: proc (quad, quad_b: Quad) -> Quad {
 	result: Quad = quad
 	result.l = clamp(quad.l, quad_b.l, quad_b.r)

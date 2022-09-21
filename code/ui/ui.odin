@@ -90,7 +90,7 @@ ui_init :: proc() {
 	ui_create_panel(.Y, .STATIC, .FILE_MENU, 0.3)
 	ui_create_panel(.Y, .DYNAMIC, .DEBUG, 0.1)
 	ui_create_panel(.X, .DYNAMIC, .BOXLIST, 0.5)
-	ui_create_panel(.X, .DYNAMIC, .PROPERTIES, 0.3)
+	ui_create_panel(.Y, .DYNAMIC, .PROPERTIES, 0.3)
 
 	// SET DEFAULT COLORS ------------------------------
 	state.ui.ctx.font_color = {1,1,1,1}
@@ -121,7 +121,7 @@ ui_update :: proc() {
 			if box.key.len == 0 {
 				assert(0 != 0)
 			} 
-			fmt.println("!!! Deleting !!!", box.name)
+			// fmt.println("!!! Deleting !!!", box.name)
 			state.ui.boxes.to_delete[box_index] = box
 			box_index += 1
 		}
@@ -129,8 +129,7 @@ ui_update :: proc() {
 	if box_index > 0 {
 		for i in 0..<box_index {
 				box := cast(^Box)state.ui.boxes.to_delete[i]
-				fmt.println("About to prune box:")
-				if box != nil do fmt.println(box.key)
+				// fmt.println("About to prune box:")
 				ui_delete_box(box)
 				state.ui.boxes.to_delete[i] = nil
 		}
@@ -179,50 +178,56 @@ ui_update :: proc() {
 
 ui_draw_boxes :: proc(box: ^Box) {
 	if box == nil do return
-	if box.parent != nil {
-		box.quad.l = box.parent.quad.l + box.offset.x
-		box.quad.t = box.parent.quad.t + box.offset.y
-		box.quad.r = box.quad.l + box.calc_size.x
-		box.quad.b = box.quad.t + box.calc_size.y
-	}
-
 	set_render_layer(box.render_layer)
+	
+	quad := box.quad
+	ok := true
+
 	if .ROOT in box.flags {
-		// push_quad_solid(box.quad, {0,0,0,1})
-		push_quad_border(box.quad, {0.1,0.1,0.1,1}, 1)
+		// push_quad_solid(quad, {0,0,0,1})
+		push_quad_border(quad, {0.1,0.1,0.1,1}, 1)
 	}
-	if .DRAWBACKGROUND in box.flags {
-		push_quad_gradient_v(box.quad, state.ui.col.bg, state.ui.col.bg_light)
-	}
-	if .DRAWBORDER in box.flags {
-		push_quad_border(box.quad, state.ui.col.border, box.border)
-	}
-	if .HOVERABLE in box.flags {
-		// if box.ops.hovering do push_quad_solid(box.quad, state.ui.col.hot)
-	}
-	if .DRAWGRADIENT in box.flags {
-		push_quad_gradient_v(box.quad, {1,1,1,0.1}, {0,0,0,0})
-	}
-	if .CLICKABLE in box.flags {
-		// if box.ops.pressed do push_quad_gradient_v(box.quad, {1,1,1, clamp(1 * box.active_t, 0, 1)}, state.ui.col.hot)
-	}
-	if .DRAWTEXT in box.flags {
-		draw_text(short_to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, box.quad), box.text_align)
-	}
-	if .DISPLAYVALUE in box.flags {
-		text := fmt.tprintf("%v %v", short_to_string(&box.name), box.value)
-		draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, box.quad), box.text_align)
-	}
-	if .HOTANIMATION in box.flags {
-		push_quad_gradient_v(box.quad, {1,1,1,0.4 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
-	}
-	if .ACTIVEANIMATION in box.flags {
-		push_quad_gradient_v(box.quad, {1,0,0,0.4 * box.active_t}, {0.5,0,0,0.2 * box.active_t})	
+	
+	if box.parent != nil {
+		if .CLIP in box.parent.flags {
+			quad, ok = quad_clamp_or_reject(box.quad, box.parent.quad)
+		}
 	}
 
-	if .DEBUG in box.flags {
-		push_quad_border(box.quad, {1,0,1,1}, 1)
-		// draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, box.quad), box.text_align, {1,0,1,1})
+	if ok {
+		if .DRAWBACKGROUND in box.flags {
+			push_quad_gradient_v(quad, state.ui.col.bg, state.ui.col.bg_light)
+		}
+		if .DRAWBORDER in box.flags {
+			push_quad_border(quad, state.ui.col.border, box.border)
+		}
+		if .HOVERABLE in box.flags {
+			// if box.ops.hovering do push_quad_solid(quad, state.ui.col.hot)
+		}
+		if .DRAWGRADIENT in box.flags {
+			push_quad_gradient_v(quad, {1,1,1,0.1}, {0,0,0,0})
+		}
+		if .CLICKABLE in box.flags {
+			// if box.ops.pressed do push_quad_gradient_v(quad, {1,1,1, clamp(1 * box.active_t, 0, 1)}, state.ui.col.hot)
+		}
+		if .DRAWTEXT in box.flags {
+			draw_text(short_to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align)
+		}
+		if .DISPLAYVALUE in box.flags {
+			text := fmt.tprintf("%v %v", short_to_string(&box.name), box.value)
+			draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align)
+		}
+		if .HOTANIMATION in box.flags {
+			push_quad_gradient_v(quad, {1,1,1,0.4 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
+		}
+		if .ACTIVEANIMATION in box.flags {
+			push_quad_gradient_v(quad, {1,0,0,0.4 * box.active_t}, {0.5,0,0,0.2 * box.active_t})	
+		}
+
+		if .DEBUG in box.flags {
+			push_quad_border(quad, {1,0,1,1}, 1)
+			// draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, {1,0,1,1})
+		}
 	}
 
 	ui_draw_boxes(box.next)

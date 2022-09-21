@@ -37,6 +37,7 @@ Box :: struct {
 	axis: Axis,
 	calc_size: v2,
 	offset: v2,		// from parent
+	scroll: v2,
 	quad: Quad,
 	render_layer: int,
 }
@@ -121,7 +122,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	if !box_ok {
 		box = ui_generate_box(key)
 		if .FLOATING in flags do box.offset = v2_f32(state.mouse.pos)
-		fmt.println("generating box", name, string(key.mem[:key.len]), " | ", flags)
+		// fmt.println("generating box", name, string(key.mem[:key.len]), " | ", flags)
 	}
 
 	assert(box != nil)
@@ -136,10 +137,10 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	box.border = state.ui.ctx.border
 	box.text_align = state.ui.ctx.text_align
 	box.render_layer = state.ui.ctx.render_layer
+	box.panel = state.ui.ctx.panel
 
 	if .ROOT in flags {
 		parent = nil
-		box.panel = state.ui.ctx.panel
 		box.border = 1
 		box.border_color = {1,0,1,1}
 	} else {
@@ -225,7 +226,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 					calc_size^ = ui_text_size(X, &box.name) + (state.ui.margin*2)
 					if .DISPLAYVALUE in box.flags do calc_size^ += ui_text_string_size(X, fmt.tprintf("%v", box.value))
 				} else if axis == Y {
-					calc_size^ = ui_text_size(Y, &box.name)
+					calc_size^ = ui_text_size(Y, &box.name) * size.value
 				}
 			}
 		}
@@ -275,11 +276,11 @@ ui_calc_boxes :: proc(root: ^Box) {
 			if size.type == .SUM_CHILDREN {
 				calc_size^ = 0
 				for child := box.first; child != nil ; child = child.next {
-					if child.axis == box.axis {
-						calc_size^ = max(calc_size^, child.calc_size[axis])
-					} else {
-						calc_size^ += child.calc_size[axis]
-					}
+					calc_size^ += child.calc_size[axis]
+					// if child.axis == box.axis {
+					// 	calc_size^ = max(calc_size^, child.calc_size[axis])
+					// } else {
+					// }
 				}
 			} else if size.type == .MAX_CHILD {
 				calc_size^ = 0
@@ -295,35 +296,37 @@ ui_calc_boxes :: proc(root: ^Box) {
 		if .DRAGGABLE in box.flags {
 			if box.ops.dragging {
 				box.parent.offset += v2_f32(state.mouse.delta)
-				fmt.println(box.parent.offset, state.mouse.delta)
 			}
-		} else {
-			#partial switch box.axis {
-			case .X:
-				 if .ROOT in box.flags {
-					// box.offset.x = box.panel.quad.l
-				} else {
-					if box.prev == nil {
-						box.offset.x = 0
+		} else if !(.ROOT in box.flags) {
+			if box.prev == nil {
+				if box.parent != nil {
+					if .VIEWSCROLL in box.parent.flags {
+						if mouse_in_quad(box.parent.quad) {
+							box.scroll.y = clamp((box.scroll + (state.mouse.scroll*10)).y, -box.parent.calc_size.y, 0)
+							box.scroll.x = clamp((box.scroll + (state.mouse.scroll*10)).x, -box.parent.calc_size.x, 0)
+						}
+						if box.scroll != box.offset {
+							to_go := (box.scroll - box.offset)/2
+							box.offset.y = box.offset.y + to_go.y
+							box.offset.x = box.offset.x + to_go.x
+							fmt.println(box.parent.calc_size.y)
+						}
 					} else {
-						box.offset.x = box.prev.offset.x + box.prev.calc_size[X]
+						box.scroll = {0,0}
 					}
 				}
-				if box.parent != nil do box.offset.y = 0
-			case .Y:
-				if .ROOT in box.flags {
-					// box.offset.y = box.panel.quad.t
-				} else {
-					if box.prev == nil {
-						box.offset.y = 0
-					} else {
-						box.offset.y = box.prev.offset.y + box.prev.calc_size[Y]
-					}
-					if box.parent != nil do box.offset.x = 0 //box.parent.ctx.l
-				}
+			} else {
+				box.offset[box.axis] = box.prev.offset[box.axis] + box.prev.calc_size[box.axis]
 			}
 		}
-		box.quad = {box.offset.x, box.offset.y, box.offset.x + box.calc_size.x, box.offset.y + box.calc_size.y}
+		if box.parent == nil {
+			box.quad = {box.offset.x, box.offset.y, box.offset.x + box.calc_size.x, box.offset.y + box.calc_size.y}
+		} else {
+			box.quad.l = box.parent.quad.l + box.offset.x
+			box.quad.t = box.parent.quad.t + box.offset.y
+			box.quad.r = box.quad.l + box.calc_size.x
+			box.quad.b = box.quad.t + box.calc_size.y
+		}
 	}
 
 	for box := root; box != nil; box = box.hash_next	{

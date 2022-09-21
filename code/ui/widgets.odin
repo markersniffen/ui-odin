@@ -11,7 +11,7 @@ ui_begin :: proc() -> ^Panel {
 	state.ui.ctx.parent = nil
 	quad := state.ui.ctx.panel.quad
 	ui_size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
-	box := ui_create_box("root", { .ROOT })
+	box := ui_create_box("root", { .ROOT, .CLIP })
 	box.offset = {quad.l, quad.t}
 	state.ui.ctx.panel.box = box
 	ui_push_parent(box)
@@ -80,10 +80,17 @@ ui_dragbar :: proc() -> ^Box {
 //______ WIDGETS ______//
 
 ui_empty :: proc() -> ^Box {
-	box := ui_create_box("empty", { })
+	box := ui_create_box("empty", { .CLIP })
 	ui_push_parent(box)
 	return box
 }
+
+ui_scrollbox :: proc() -> ^Box {
+	box := ui_create_box("empty", { .DEBUG, .VIEWSCROLL, .CLIP })
+	ui_push_parent(box)
+	return box
+}
+
 
 ui_label :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key, { .DRAWTEXT, })

@@ -10,6 +10,7 @@ Panel_Content :: enum {
 	DEBUG,
 	PROPERTIES,
 	BOXLIST,
+	TESTLIST,
 }
 
 build_panel_content :: proc(content: Panel_Content) {
@@ -22,6 +23,7 @@ build_panel_content :: proc(content: Panel_Content) {
 		// PANELS AFTER THIS ARE SWAPPABLE //
 		case .PROPERTIES: 	ui_panel_properties()
 		case .BOXLIST: 		ui_panel_boxlist()
+		case .TESTLIST: 	ui_panel_testlist()
 	}
 }
 
@@ -44,6 +46,32 @@ ui_panel_file_menu :: proc() {
 	ui_end()
 }
 
+ui_panel_testlist :: proc() {
+	ui_begin()
+	ui_axis(.Y)
+	ui_size(.PCT_PARENT, 1, .TEXT, 1)
+	ui_empty()
+		ui_axis(.X)
+		ui_size(.TEXT, 1, .TEXT, 1)
+		if ui_button("###p").clicked {
+			ui_create_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+		}
+	ui_pop()
+	ui_axis(.Y)
+	ui_size(.PCT_PARENT, 1, .TEXT, 1)
+	ui_label("RANDOM LIST:")
+	ui_size(.PCT_PARENT, 1, .TEXT, 20)
+	ui_empty()
+		ui_scrollbox()
+			ui_size(.PCT_PARENT, 0.5, .TEXT, 1)
+			for index in 0..=250 {
+				ui_button(fmt.tprintf("Index | %v", index))
+			}
+		ui_pop()
+	ui_pop())
+	ui_end()
+}
+
 ui_panel_boxlist :: proc() {
 	ui_begin()
 	ui_axis(.Y)
@@ -58,13 +86,18 @@ ui_panel_boxlist :: proc() {
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
 	ui_value("box length", len(state.ui.boxes.all))
-	for key, panel in state.ui.panels.all {
-		if panel.box != nil {
-			ui_label(fmt.tprintf("%v | %v ###d %v", panel.uid, panel.content, panel.box.key.len))
-		} else {
-			ui_label(fmt.tprintf("%v | %v", panel.uid, panel.content))
+	ui_size(.PCT_PARENT, 1, .TEXT, 4)
+	ui_scrollbox()
+		ui_size(.PCT_PARENT, 1, .TEXT, 1)
+		ui_label("Panel List:")
+		for key, panel in state.ui.panels.all {
+			if panel.box != nil {
+				ui_button(fmt.tprintf("%v | %v ###d %v", panel.uid, panel.content, panel.box.key.len))
+			} else {
+				ui_button(fmt.tprintf("%v | %v", panel.uid, panel.content))
+			}
 		}
-	}
+	ui_pop()
 	ui_end()
 }
 
@@ -125,7 +158,7 @@ ui_panel_properties :: proc() {
 ui_panel_pick_panel :: proc() {
 	panel := ui_begin_floating()
 	ui_axis(.Y)
-	ui_size(.SUM_CHILDREN, 1, .MAX_CHILD, 1)
+	ui_size(.SUM_CHILDREN, 1, .TEXT, 1)
 	ui_empty()
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
@@ -135,7 +168,7 @@ ui_panel_pick_panel :: proc() {
 	ui_pop()
 
 	ui_axis(.Y)
-	ui_size(.MAX_SIBLING, 1, .SUM_CHILDREN, 1)
+	ui_size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
 	ui_empty()
 		ui_size(.PCT_PARENT, 1, .TEXT, 1)
 		for p, i in Panel_Content {

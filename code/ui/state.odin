@@ -64,7 +64,7 @@ Mouse :: struct {
 	left: Button,
 	right: Button,
 	middle: Button,
-	scroll: f32,
+	scroll: v2,
 }
 
 Button :: enum { 
@@ -158,7 +158,7 @@ update :: proc() {
 	ui_update()
 	opengl_render()
 
-	frame_goal : time.Duration = 33330000/2
+	frame_goal : time.Duration = 33330000
 	time_so_far := time.diff(state.start_time, time.now())
 	sleep_for:= frame_goal - time_so_far
 
@@ -169,6 +169,7 @@ update :: proc() {
 		if mouse_button^ == .CLICK do mouse_button^ = .DRAG
 		if mouse_button^ == .RELEASE do mouse_button^ = .UP
 	}
+	state.mouse.scroll = {0,0}
 	state.prev_time = state.start_time
 }
 
@@ -242,7 +243,7 @@ typing_callback :: proc(window: glfw.WindowHandle, codepoint: u32) {
 }
 
 scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64) {
-	state.mouse.scroll = f32(y/10)
+	state.mouse.scroll = {f32(x),f32(y)}
 }
 
 mouse_button :: proc(button: Button, type: Button) -> bool {
