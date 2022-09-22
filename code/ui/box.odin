@@ -34,11 +34,13 @@ Box :: struct {
 	active_t: f32,
 
 	size: [XY]Box_Size,
+	sum_children: v2,
 	axis: Axis,
 	calc_size: v2,
 	offset: v2,		// from parent
 	scroll: v2,
 	quad: Quad,
+	bar: Quad,
 	render_layer: int,
 }
 
@@ -196,10 +198,10 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 					box.ops.clicked = true
 				}
 			}
+		} else {
 			if lmb_release_up() {
 				box.ops.pressed = false
 			}
-		} else {
 			// if not mouseover
 		}
 	}
@@ -273,14 +275,14 @@ ui_calc_boxes :: proc(root: ^Box) {
 	for box := last; box != nil; box = box.hash_prev	{
   	for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
-			if size.type == .SUM_CHILDREN {
-				calc_size^ = 0
+			if .VIEWSCROLL in box.flags || size.type == .SUM_CHILDREN {
+				if size.type == .SUM_CHILDREN do calc_size^ = 0
+				box.sum_children = 0
 				for child := box.first; child != nil ; child = child.next {
-					calc_size^ += child.calc_size[axis]
-					// if child.axis == box.axis {
-					// 	calc_size^ = max(calc_size^, child.calc_size[axis])
-					// } else {
-					// }
+					if size.type == .SUM_CHILDREN {
+						calc_size^ += child.calc_size[axis]
+					}
+					box.sum_children[axis] += child.calc_size[axis]
 				}
 			} else if size.type == .MAX_CHILD {
 				calc_size^ = 0
@@ -302,14 +304,14 @@ ui_calc_boxes :: proc(root: ^Box) {
 				if box.parent != nil {
 					if .VIEWSCROLL in box.parent.flags {
 						if mouse_in_quad(box.parent.quad) {
-							box.scroll.y = clamp((box.scroll + (state.mouse.scroll*10)).y, -box.parent.calc_size.y, 0)
-							box.scroll.x = clamp((box.scroll + (state.mouse.scroll*10)).x, -box.parent.calc_size.x, 0)
+							box.scroll.y = (box.scroll + (state.mouse.scroll*10)).y
+							// box.scroll.x = clamp((box.scroll + (state.mouse.scroll*10)).x, -box.parent.sum_children.x, 0)
 						}
+						box.scroll.y = clamp(box.scroll.y, -box.parent.sum_children.y + box.parent.calc_size.y, 0)
 						if box.scroll != box.offset {
 							to_go := (box.scroll - box.offset)/2
 							box.offset.y = box.offset.y + to_go.y
 							box.offset.x = box.offset.x + to_go.x
-							fmt.println(box.parent.calc_size.y)
 						}
 					} else {
 						box.scroll = {0,0}

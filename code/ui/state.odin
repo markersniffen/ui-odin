@@ -252,6 +252,7 @@ mouse_button :: proc(button: Button, type: Button) -> bool {
 
 lmb_click :: proc() -> bool { return mouse_button(state.mouse.left, .CLICK) }
 lmb_drag :: proc() -> bool { return mouse_button(state.mouse.left, .DRAG) }
+lmb_click_drag :: proc() -> bool { return lmb_click() || lmb_drag() }
 lmb_release :: proc() -> bool { return mouse_button(state.mouse.left, .RELEASE) }
 lmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.left, .RELEASE) || mouse_button(state.mouse.left, .UP)) }
 lmb_up :: proc() -> bool { return mouse_button(state.mouse.left, .UP) }

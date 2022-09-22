@@ -38,3 +38,7 @@ string_to_short :: proc(text: string) -> Short_String {
 short_to_string :: proc(short: ^Short_String) -> string {
 	return string(short.mem[:short.len])
 }
+
+key_to_string :: proc(key: ^Key) -> string {
+	return string(key.mem[:key.len])
+}

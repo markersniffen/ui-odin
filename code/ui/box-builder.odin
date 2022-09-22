@@ -64,11 +64,13 @@ ui_panel_testlist :: proc() {
 	ui_empty()
 		ui_scrollbox()
 			ui_size(.PCT_PARENT, 0.5, .TEXT, 1)
-			for index in 0..=250 {
+			for index in 0..=50 {
 				ui_button(fmt.tprintf("Index | %v", index))
 			}
 		ui_pop()
-	ui_pop())
+		ui_scrollbar()
+		ui_pop()
+	ui_pop()
 	ui_end()
 }
 
@@ -87,7 +89,9 @@ ui_panel_boxlist :: proc() {
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
 	ui_value("box length", len(state.ui.boxes.all))
 	ui_size(.PCT_PARENT, 1, .TEXT, 4)
+	ui_empty()
 	ui_scrollbox()
+		ui_axis(.Y)
 		ui_size(.PCT_PARENT, 1, .TEXT, 1)
 		ui_label("Panel List:")
 		for key, panel in state.ui.panels.all {
@@ -97,6 +101,9 @@ ui_panel_boxlist :: proc() {
 				ui_button(fmt.tprintf("%v | %v", panel.uid, panel.content))
 			}
 		}
+		ui_pop()
+		ui_scrollbar()
+		ui_pop()
 	ui_pop()
 	ui_end()
 }

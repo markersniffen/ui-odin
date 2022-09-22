@@ -223,7 +223,6 @@ ui_draw_boxes :: proc(box: ^Box) {
 		if .ACTIVEANIMATION in box.flags {
 			push_quad_gradient_v(quad, {1,0,0,0.4 * box.active_t}, {0.5,0,0,0.2 * box.active_t})	
 		}
-
 		if .DEBUG in box.flags {
 			push_quad_border(quad, {1,0,1,1}, 1)
 			// draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, {1,0,1,1})
