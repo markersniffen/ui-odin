@@ -79,46 +79,67 @@ ui_dragbar :: proc() -> ^Box {
 
 //______ WIDGETS ______//
 
-ui_empty :: proc() -> ^Box {
-	box := ui_create_box("empty", { .CLIP })
+ui_empty :: proc(_name:string="") -> ^Box {
+	name := "empty"
+	if _name != "" do name = _name
+	box := ui_create_box(name, { })
 	ui_push_parent(box)
 	return box
 }
 
 ui_scrollbox :: proc() -> ^Box {
-	empty := ui_create_box("empty", {})
+	empty := ui_create_box("scrollbox", { .DRAWBORDER })
 	ui_push_parent(empty)
 	ui_axis(.X)
 	ui_size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
-	viewport := ui_create_box("viewport", { .DEBUG, .VIEWSCROLL, .CLIP })
+	viewport := ui_create_box("viewport", { .VIEWSCROLL, .CLIP })
 	ui_push_parent(viewport)
 	ui_axis(.Y)
 	return viewport
 }
 
 ui_scrollbar :: proc() -> ^Box {
-	ui_axis(.X)
-	ui_size(.PIXELS, 20, .PCT_PARENT, 1)
-	dragbar := ui_create_box("scrollbar", { .DRAWBORDER } )
-	viewport := dragbar.prev
 
-	spacer_height := (viewport.calc_size.y / viewport.sum_children.y) * viewport.calc_size.y
-	offset := viewport.first.offset.y / (viewport.sum_children.y - viewport.calc_size.y)
-	new_height := offset * (viewport.calc_size.y - spacer_height)
+	viewport := state.ui.ctx.parent.first
+	dragbar_height := ((viewport.calc_size.y + viewport.expand.y) / viewport.sum_children.y) * (viewport.calc_size.y + viewport.expand.y)
+
+	if viewport.calc_size.y > dragbar_height {
+		ui_size(.PIXELS, 12, .PCT_PARENT, 1)
+	} else {
+		ui_size(.PIXELS, 0, .PCT_PARENT, 1)
+	}
 	
-
+	dragbar := ui_create_box("scrollbar", { .DRAWBORDER, .CLIP } )
 	ui_push_parent(dragbar)
 	ui_axis(.Y)
-	ui_size(.PCT_PARENT, 1, .PIXELS, spacer_height)
-	handle := ui_create_box("handle", { .DRAWBACKGROUND, .HOTANIMATION, .CLICKABLE } )
-	handle.offset.y = -new_height
+	ui_size(.PCT_PARENT, 1, .PIXELS, min(dragbar_height, viewport.calc_size.y))
+	handle := ui_create_box("handle", { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+
+	dragbar_range := (viewport.calc_size.y + viewport.expand.y) - dragbar_height
+	scroll_range := viewport.sum_children.y - (viewport.calc_size.y + viewport.expand.y)
+	scroll_value := viewport.first.offset.y
+	multiplier := scroll_value / scroll_range
+	dragbar_value := dragbar_range * multiplier
+	handle.offset.y = -dragbar_value
+
+	handle.bg_color = state.ui.col.highlight
 	if handle.ops.pressed {
-		viewport.first.scroll.y = viewport.first.offset.y - f32(state.mouse.delta.y * 4)
+		if handle.ops.clicked {
+			state.mouse.delta_temp.y = (f32(state.mouse.pos.y) * 2) + viewport.first.offset.y
+		}
+		viewport.first.scroll.y = ((f32(state.mouse.pos.y) * 2) - state.mouse.delta_temp.y) * -1
 	}
-	if handle.ops.hovering do fmt.println("WHEE")
-
-
 	return dragbar
+}
+
+ui_sizebar_y :: proc() -> ^Box {
+	ui_axis(.Y)
+	ui_size(.PCT_PARENT, 1, .PIXELS, 4)
+	box := ui_create_box("sizebar_y", { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
+	if box.ops.pressed {
+		box.parent.expand.y += f32(state.mouse.delta.y)
+	}
+	return box
 }
 
 ui_label :: proc(key: string) -> Box_Ops {

@@ -34,6 +34,7 @@ Box :: struct {
 	active_t: f32,
 
 	size: [XY]Box_Size,
+	expand: v2,
 	sum_children: v2,
 	axis: Axis,
 	calc_size: v2,
@@ -124,7 +125,6 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	if !box_ok {
 		box = ui_generate_box(key)
 		if .FLOATING in flags do box.offset = v2_f32(state.mouse.pos)
-		// fmt.println("generating box", name, string(key.mem[:key.len]), " | ", flags)
 	}
 
 	assert(box != nil)
@@ -150,14 +150,22 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 
 		// try adding as first child first
 		if parent != nil {
-			if state.ui.ctx.box == parent {
+			if parent.first == nil || parent.first == box {
 				parent.first = box
 				box.prev = nil
-			} else if parent.first != nil {
+			} else {
 				assert(parent.last != nil)
 				parent.last.next = box
 				box.prev = parent.last
 			}
+			// if state.ui.ctx.box == parent {
+			// 	parent.first = box
+			// 	box.prev = nil
+			// } else if parent.first != nil {
+			// 	assert(parent.last != nil)
+			// 	parent.last.next = box
+			// 	box.prev = parent.last
+			// }
 			parent.last = box
 			box.next = nil
 		}
@@ -173,6 +181,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	// PROCESS OPS ------------------------------
 	mouse_over := mouse_in_quad(box.quad)
 	box.ops.clicked = false
+	box.ops.released = false
 
 	if .HOVERABLE in box.flags {
 		if mouse_over && !lmb_drag() {
@@ -188,21 +197,26 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 		if mouse_over {
 			if lmb_click() {
 				box.ops.pressed = true
+				box.ops.clicked = true
+				state.ui.boxes.active = box
+			} else {
+				box.ops.clicked = false				
 			}
 			if lmb_release() {
 				if box.ops.pressed {
 					if .SELECTABLE in box.flags {
 						box.ops.selected = !box.ops.selected
 					}
-					state.ui.boxes.active = box
-					box.ops.clicked = true
+					box.ops.released = true
 				}
+			}
+			if lmb_up() {
+				box.ops.pressed = false
 			}
 		} else {
 			if lmb_release_up() {
 				box.ops.pressed = false
 			}
-			// if not mouseover
 		}
 	}
 
@@ -222,7 +236,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 		for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
 			if size.type == .PIXELS {
-				calc_size^ = size.value
+				calc_size^ = box.expand[axis] + size.value
 			} else if size.type == .TEXT || size.type == .MAX_SIBLING {
 				if axis == X {
 					calc_size^ = ui_text_size(X, &box.name) + (state.ui.margin*2)
@@ -305,7 +319,6 @@ ui_calc_boxes :: proc(root: ^Box) {
 					if .VIEWSCROLL in box.parent.flags {
 						if mouse_in_quad(box.parent.quad) {
 							box.scroll.y = (box.scroll + (state.mouse.scroll*10)).y
-							// box.scroll.x = clamp((box.scroll + (state.mouse.scroll*10)).x, -box.parent.sum_children.x, 0)
 						}
 						box.scroll.y = clamp(box.scroll.y, -box.parent.sum_children.y + box.parent.calc_size.y, 0)
 						if box.scroll != box.offset {
@@ -333,7 +346,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 
 	for box := root; box != nil; box = box.hash_next	{
 		if .HOTANIMATION in box.flags {
-			if box.ops.hovering {
+			if box.ops.hovering && box == state.ui.boxes.hot {
 				box.hot_t = clamp(box.hot_t + 0.12, 0, 1)
 			} else {
 				box.hot_t = clamp(box.hot_t - 0.12, 0, 1)
@@ -341,7 +354,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 		}
 
 		if .ACTIVEANIMATION in box.flags {
-			if box.ops.pressed {
+			if box.ops.pressed && box == state.ui.boxes.active {
 				box.active_t = clamp(box.active_t + 0.12, 0, 1)
 			} else {
 				box.active_t = clamp(box.active_t - 0.12, 0, 1)

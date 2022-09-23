@@ -61,6 +61,7 @@ Mode :: enum {
 Mouse :: struct {
 	pos: v2i,
 	delta: v2i,
+	delta_temp: v2,
 	left: Button,
 	right: Button,
 	middle: Button,

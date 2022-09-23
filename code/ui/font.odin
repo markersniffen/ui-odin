@@ -188,8 +188,11 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4
 				char_quad.t = top_left.y + letter_data.offset.y
 				char_quad.r = char_quad.l + letter_data.width
 				char_quad.b = char_quad.t + letter_data.height
-				if pt_in_quad({char_quad.r, char_quad.b}, quad) {
-					push_quad_font(char_quad, color, letter_data.uv, f32(skip))
+				clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
+
+				// if pt_in_quad({char_quad.r, char_quad.b}, quad) {
+				if ok  {
+					push_quad_font(clamped_quad, color, letter_data.uv, f32(skip))
 				}
 			}
 			top_left.x += letter_data.advance

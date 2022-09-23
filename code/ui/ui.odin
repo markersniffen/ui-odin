@@ -88,8 +88,8 @@ ui_init :: proc() {
 	pool_init(&state.ui.boxes.pool, size_of(Box), MAX_BOXES, "Boxes")
 
 	ui_create_panel(.Y, .STATIC, .FILE_MENU, 0.3)
-	ui_create_panel(.Y, .DYNAMIC, .DEBUG, 0.1)
-	ui_create_panel(.X, .DYNAMIC, .BOXLIST, 0.5)
+	ui_create_panel(.Y, .DYNAMIC, .TESTLIST, 0.1)
+	ui_create_panel(.X, .DYNAMIC, .DEBUG, 0.5)
 	ui_create_panel(.Y, .DYNAMIC, .PROPERTIES, 0.3)
 
 	// SET DEFAULT COLORS ------------------------------
@@ -108,7 +108,7 @@ ui_update :: proc() {
 	for _, panel in state.ui.panels.all {
 		state.ui.ctx.panel = panel
 		if panel.type == .NULL {
-			push_quad_solid(panel.bar, {0.3,0.3,0.3,1})
+			// push_quad_solid(panel.bar, {0.3,0.3,0.3,1})
 		} else {
 			build_panel_content(panel.content)
 		}
@@ -171,32 +171,37 @@ ui_update :: proc() {
 	}
 
 	if state.ui.panels.floating != nil {
+		if state.ui.panels.floating.box.first != nil {
+			ui_draw_boxes(state.ui.panels.floating.box)
+		}
 		// fmt.println("drawing the floater")
-		ui_draw_boxes(state.ui.panels.floating.box)
 	}
 }
 
-ui_draw_boxes :: proc(box: ^Box) {
+ui_draw_boxes :: proc(box: ^Box, clip_to:Quad={0,0,0,0}) {
 	if box == nil do return
 	set_render_layer(box.render_layer)
 	
 	quad := box.quad
-	ok := true
+	clip_ok := true
 
 	if .ROOT in box.flags {
 		// push_quad_solid(quad, {0,0,0,1})
 		push_quad_border(quad, {0.1,0.1,0.1,1}, 1)
 	}
 	
-	if box.parent != nil {
-		if .CLIP in box.parent.flags {
-			quad, ok = quad_clamp_or_reject(box.quad, box.parent.quad)
-		}
-	}
+	if clip_to != {0,0,0,0} {
+		quad, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
+	} 
+	// if box.parent != nil {
+		// else if .CLIP in box.parent.flags {
+		// 	quad, clip_ok = quad_clamp_or_reject(box.quad, box.parent.quad)
+		// }
+	// }
 
-	if ok {
+	if clip_ok {
 		if .DRAWBACKGROUND in box.flags {
-			push_quad_gradient_v(quad, state.ui.col.bg, state.ui.col.bg_light)
+			push_quad_gradient_v(quad, box.bg_color, box.bg_color)
 		}
 		if .DRAWBORDER in box.flags {
 			push_quad_border(quad, state.ui.col.border, box.border)
@@ -229,6 +234,9 @@ ui_draw_boxes :: proc(box: ^Box) {
 		}
 	}
 
-	ui_draw_boxes(box.next)
-	ui_draw_boxes(box.first)
+	clip_quad := clip_to
+	if .CLIP in box.flags && clip_to == {0,0,0,0} do clip_quad = box.quad
+
+	ui_draw_boxes(box.next, clip_quad)
+	if clip_ok do ui_draw_boxes(box.first, clip_quad)
 }
