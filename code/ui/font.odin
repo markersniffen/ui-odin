@@ -81,9 +81,10 @@ ui_load_font :: proc(font: ^Font) {
 	using stb, mem, fmt
 	NUM_CHARS :: 96
 	
+	fmt.println(fmt.tprintf("trying to load fonts/%v.ttf", font.name ))
 	data, data_ok := os.read_entire_file(fmt.tprintf("fonts/%v.ttf", font.name))
 	defer delete(data)
-	if !data_ok do fmt.println("failed to load font file")
+	if !data_ok do fmt.println("failed to load font file:", font.name)
 
 	image:= alloc(int(font.texture_size * font.texture_size))
 	defer free(image)

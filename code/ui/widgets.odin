@@ -7,6 +7,7 @@ import "core:mem"
 //______ BUILDER API ______//
 
 ui_begin :: proc() -> ^Panel {
+	state.ui.ctx.render_layer = 0
 	state.ui.ctx.box = nil
 	state.ui.ctx.parent = nil
 	quad := state.ui.ctx.panel.quad
@@ -20,6 +21,7 @@ ui_begin :: proc() -> ^Panel {
 }
 
 ui_begin_floating :: proc() -> ^Panel {
+	state.ui.ctx.render_layer = 1
 	state.ui.ctx.box = nil
 	state.ui.ctx.parent = nil
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)

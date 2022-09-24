@@ -102,7 +102,9 @@ ui_init :: proc() {
 //______ UI UPDATE ______//
 ui_update :: proc() {
 	ui_calc_panel(state.ui.panels.root, state.window.quad)
-	ui_calc_panel(state.ui.panels.floating, state.ui.panels.floating.quad)
+	if state.ui.panels.floating != nil {
+		ui_calc_panel(state.ui.panels.floating, state.ui.panels.floating.quad)
+	}
 
 	// NOTE build boxes
 	for _, panel in state.ui.panels.all {
@@ -121,7 +123,7 @@ ui_update :: proc() {
 			if box.key.len == 0 {
 				assert(0 != 0)
 			} 
-			// fmt.println("!!! Deleting !!!", box.name)
+			fmt.println("!!! Deleting !!!", short_to_string(&box.name))
 			state.ui.boxes.to_delete[box_index] = box
 			box_index += 1
 		}
@@ -136,6 +138,11 @@ ui_update :: proc() {
 	}
 	
 	// calculate size/position of boxes ------------------------------
+	// for panel := state.ui.panels.root; panel != nil; panel = panel.next {
+	// 	fmt.println(panel)
+	// 	if panel.box != nil do ui_calc_boxes(panel.box)
+	// }
+
 	for _, panel in state.ui.panels.all {
 		if panel.box != nil do ui_calc_boxes(panel.box)
 	}
@@ -166,19 +173,18 @@ ui_update :: proc() {
 
 	for _, panel in state.ui.panels.all {
 		if panel.type != .FLOATING {
-			ui_draw_boxes(panel.box)
+			ui_draw_boxes(panel.box, panel.quad)
 		}
 	}
 
 	if state.ui.panels.floating != nil {
+		ui_draw_boxes(state.ui.panels.floating.box, state.ui.panels.floating.quad)
 		if state.ui.panels.floating.box.first != nil {
-			ui_draw_boxes(state.ui.panels.floating.box)
 		}
-		// fmt.println("drawing the floater")
 	}
 }
 
-ui_draw_boxes :: proc(box: ^Box, clip_to:Quad={0,0,0,0}) {
+ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	if box == nil do return
 	set_render_layer(box.render_layer)
 	
@@ -187,16 +193,14 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad={0,0,0,0}) {
 
 	if .ROOT in box.flags {
 		// push_quad_solid(quad, {0,0,0,1})
-		push_quad_border(quad, {0.1,0.1,0.1,1}, 1)
+		// push_quad_border(quad, {0.1,0.1,0.1,1}, 1)
 	}
 	
-	if clip_to != {0,0,0,0} {
-		quad, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
-	} 
+	quad, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
 	// if box.parent != nil {
-		// else if .CLIP in box.parent.flags {
-		// 	quad, clip_ok = quad_clamp_or_reject(box.quad, box.parent.quad)
-		// }
+	// 	if .CLIP in box.parent.flags {
+	// 		quad, clip_ok = quad_clamp_or_reject(box.quad, box.parent.quad)
+	// 	}
 	// }
 
 	if clip_ok {
@@ -234,9 +238,9 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad={0,0,0,0}) {
 		}
 	}
 
-	clip_quad := clip_to
-	if .CLIP in box.flags && clip_to == {0,0,0,0} do clip_quad = box.quad
+	ui_draw_boxes(box.next, clip_to)
 
-	ui_draw_boxes(box.next, clip_quad)
-	if clip_ok do ui_draw_boxes(box.first, clip_quad)
+	clip_quad := clip_to
+	if .CLIP in box.flags do clip_quad = box.quad
+	ui_draw_boxes(box.first,clip_quad)
 }

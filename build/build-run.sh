@@ -1,1 +1,1 @@
-odin run ../code
+odin build ../code -debug -out:./code.bin

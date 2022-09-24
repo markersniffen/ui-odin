@@ -34,9 +34,20 @@ Panel_Type :: enum {
 
 ui_create_panel :: proc(axis:Axis=.X, type: Panel_Type, content:Panel_Content=.DEBUG, size:f32, quad:Quad={0,0,0,0}) -> ^Panel
 {
+
 	current := state.ui.ctx.panel
 	panel := cast(^Panel)pool_alloc(&state.ui.panels.pool)
 	panel.uid = new_uid()
+		
+
+	if current != nil {
+		panel.next = current.next
+		current.next = panel
+	}
+	fmt.println("Creating panel", panel.uid)
+	fmt.println("current = ", current)
+	fmt.println("new = ", panel)
+
 	state.ui.panels.all[panel.uid] = panel
 
 	panel.axis = axis
@@ -55,7 +66,8 @@ ui_create_panel :: proc(axis:Axis=.X, type: Panel_Type, content:Panel_Content=.D
 				if state.ui.panels.floating.content == content {
 					panel.quad = state.ui.panels.floating.quad
 				}
-				ui_delete_panel(state.ui.panels.floating)
+				// note needed?
+				// ui_delete_panel(state.ui.panels.floating)
 			}
 			panel.parent = current
 			state.ui.panels.floating = panel
