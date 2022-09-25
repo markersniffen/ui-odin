@@ -101,6 +101,8 @@ ui_init :: proc() {
 
 //______ UI UPDATE ______//
 ui_update :: proc() {
+	set_cursor()
+	cursor(.NULL)
 	ui_calc_panel(state.ui.panels.root, state.window.quad)
 	if state.ui.panels.floating != nil {
 		ui_calc_panel(state.ui.panels.floating, state.ui.panels.floating.quad)
@@ -110,7 +112,7 @@ ui_update :: proc() {
 	for _, panel in state.ui.panels.all {
 		state.ui.ctx.panel = panel
 		if panel.type == .NULL {
-			// push_quad_solid(panel.bar, {0.3,0.3,0.3,1})
+			push_quad_solid(panel.bar, {0.3,0.3,0.3,1})
 		} else {
 			build_panel_content(panel.content)
 		}
@@ -163,7 +165,7 @@ ui_update :: proc() {
 
 	if state.ui.panels.active != nil {
 		if state.ui.panels.active.type == .NULL {
-			push_quad_solid(state.ui.panels.active.bar, state.ui.col.active)		
+			push_quad_solid(state.ui.panels.active.bar, state.ui.col.active)
 		} else if state.ui.panels.active.type == .FLOATING {
 			// push_quad_solid(state.ui.panels.active.quad, {1,0,1,1})
 		} else {
@@ -193,7 +195,7 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 
 	if .ROOT in box.flags {
 		// push_quad_solid(quad, {0,0,0,1})
-		// push_quad_border(quad, {0.1,0.1,0.1,1}, 1)
+		push_quad_border(quad, {0.1,0.1,0.1,1}, 1)
 	}
 	
 	quad, clip_ok = quad_clamp_or_reject(box.quad, clip_to)

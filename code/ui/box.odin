@@ -221,6 +221,9 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	}
 
 	if .DRAGGABLE in box.flags {
+		if mouse_over {
+			cursor(.HAND)
+		}
 		box.ops.dragging = box.ops.pressed
 	}
 
@@ -311,18 +314,18 @@ ui_calc_boxes :: proc(root: ^Box) {
 	for box := root; box != nil; box = box.hash_next	{
 		if .DRAGGABLE in box.flags {
 			if box.ops.dragging {
-				box.parent.offset += v2_f32(state.mouse.delta)
+				box.panel.box.offset += v2_f32(state.mouse.delta)
 			}
 		} else if !(.ROOT in box.flags) {
 			if box.prev == nil {
 				if box.parent != nil {
 					if .VIEWSCROLL in box.parent.flags {
-						if mouse_in_quad(box.parent.quad) {
-							box.scroll.y = (box.scroll + (state.mouse.scroll*10)).y
+						if mouse_in_quad(box.parent.parent.quad) {
+							box.scroll.y = (box.scroll + (state.mouse.scroll*20)).y
 						}
 						box.scroll.y = clamp(box.scroll.y, -box.parent.sum_children.y + box.parent.calc_size.y, 0)
 						if box.scroll != box.offset {
-							to_go := (box.scroll - box.offset)/2
+							to_go := (box.scroll - box.offset)/1.5
 							box.offset.y = box.offset.y + to_go.y
 							box.offset.x = box.offset.x + to_go.x
 						}

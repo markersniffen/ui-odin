@@ -191,9 +191,10 @@ ui_panel_pick_panel :: proc() {
 	ui_size(.SUM_CHILDREN, 1, .TEXT, 1)
 	ui_empty()
 		ui_axis(.X)
+		ui_size(.PIXELS, 250, .TEXT, 1)
+		ui_dragbar("Select Panel:")
 		ui_size(.TEXT, 1, .TEXT, 1)
-		ui_label("Panels:")
-		ui_spacer_pixels(120)
+		// ui_spacer_pixels(120)
 		if ui_button("###x").released {
 			if state.ui.panels.floating != nil {
 				ui_delete_panel(state.ui.panels.floating)

@@ -66,6 +66,30 @@ Mouse :: struct {
 	right: Button,
 	middle: Button,
 	scroll: v2,
+	cursor: Cursor,
+	cursor_handle: glfw.CursorHandle,
+}
+
+Cursor :: struct {
+	type: Cursor_Type,
+	active: glfw.CursorHandle,
+	arrow: glfw.CursorHandle,
+	text: glfw.CursorHandle,
+	cross: glfw.CursorHandle,
+	hand: glfw.CursorHandle,
+	x: glfw.CursorHandle,
+	y: glfw.CursorHandle,
+}
+
+Cursor_Type :: enum {
+	NULL,
+	ACTIVE,
+	ARROW,
+	TEXT,
+	HAND,
+	CROSS,
+	X,
+	Y,
 }
 
 Button :: enum { 
@@ -127,6 +151,13 @@ init :: proc() -> bool {
 	glfw.SetCharCallback(state.window.handle, cast(glfw.CharProc)typing_callback)
 	glfw.SetWindowUserPointer(state.window.handle, state)
 
+	state.mouse.cursor.arrow = glfw.CreateStandardCursor(glfw.ARROW_CURSOR)
+	state.mouse.cursor.text = glfw.CreateStandardCursor(glfw.IBEAM_CURSOR)
+	state.mouse.cursor.cross = glfw.CreateStandardCursor(glfw.CROSSHAIR_CURSOR)
+	state.mouse.cursor.hand = glfw.CreateStandardCursor(glfw.HAND_CURSOR)
+	state.mouse.cursor.x = glfw.CreateStandardCursor(glfw.HRESIZE_CURSOR)
+	state.mouse.cursor.y = glfw.CreateStandardCursor(glfw.VRESIZE_CURSOR)
+
 	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
 	
 	opengl_init()
@@ -148,6 +179,7 @@ update :: proc() {
 	state.window.size = {width, height}
 	state.window.quad = {0, 0, f32(width), f32(height)}
 	
+
 	framebuffer_width, framebuffer_height := glfw.GetFramebufferSize(state.window.handle)
 	state.window.framebuffer = {framebuffer_width, framebuffer_height}
 	
@@ -155,7 +187,7 @@ update :: proc() {
 	old_mouse := state.mouse.pos
 	state.mouse.pos = {i32(mouseX), i32(mouseY)}
 	state.mouse.delta = (state.mouse.pos - old_mouse) / 2
-
+	
 	ui_update()
 	opengl_render()
 
@@ -257,6 +289,34 @@ lmb_click_drag :: proc() -> bool { return lmb_click() || lmb_drag() }
 lmb_release :: proc() -> bool { return mouse_button(state.mouse.left, .RELEASE) }
 lmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.left, .RELEASE) || mouse_button(state.mouse.left, .UP)) }
 lmb_up :: proc() -> bool { return mouse_button(state.mouse.left, .UP) }
+
+set_cursor :: proc() {
+	cursor:glfw.CursorHandle
+	#partial switch state.mouse.cursor.type {
+		case .NULL:
+		cursor = nil
+		case .ARROW:
+		cursor = state.mouse.cursor.arrow
+		case .TEXT:
+		cursor = state.mouse.cursor.text
+		case .CROSS:
+		cursor = state.mouse.cursor.cross
+		case .HAND:
+		cursor = state.mouse.cursor.hand
+		case .X:
+		cursor = state.mouse.cursor.x
+		case .Y:
+		cursor = state.mouse.cursor.y
+	}
+	if state.mouse.cursor.active != cursor {
+		glfw.SetCursor(state.window.handle, cursor)
+		state.mouse.cursor.active = cursor
+	}
+}
+
+cursor :: proc(type: Cursor_Type) {
+	state.mouse.cursor.type = type
+}
 
 mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods: int) {
 	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }

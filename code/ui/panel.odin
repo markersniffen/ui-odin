@@ -157,7 +157,16 @@ ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
 		}
 
 		mouse_over : bool = mouse_in_quad(panel.quad)
-		if panel.type == .NULL do mouse_over = mouse_in_quad(panel.bar)
+		if panel.type == .NULL {
+			mouse_over = mouse_in_quad(panel.bar)
+			if mouse_over {
+				if panel.axis == .X {
+					cursor(.X)				
+				} else {
+					cursor(.Y)
+				}
+			}
+		}
 		if mouse_over {
 			state.ui.panels.hot = panel
 

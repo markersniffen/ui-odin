@@ -25,13 +25,13 @@ ui_begin_floating :: proc() -> ^Panel {
 	state.ui.ctx.box = nil
 	state.ui.ctx.parent = nil
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
-	box := ui_create_box("root_floating", { .ROOT, .FLOATING })
+	box := ui_create_box("root_floating", { .ROOT, .DRAWBACKGROUND, .FLOATING })
 	// box.offset = {state.ui.ctx.panel.quad.l, state.ui.ctx.panel.quad.t}
 	// box.offset = v2_f32(state.mouse.pos)
 	state.ui.ctx.panel.box = box
 	ui_push_parent(box)
-	dragbar := ui_dragbar()
-	ui_push_parent(dragbar)
+	// dragbar := ui_dragbar()
+	// ui_push_parent(dragbar)
 	return state.ui.ctx.panel
 }
 
@@ -68,14 +68,26 @@ ui_set_border_color 	:: proc(color: v4) 		{ state.ui.ctx.border_color = color }
 
 ui_set_border_thickness :: proc(value: f32)		{ state.ui.ctx.border = value }
 
-ui_dragbar :: proc() -> ^Box {
-	box := ui_create_box("dragbar", {
-		.CLICKABLE,
-		.SELECTABLE,
-		.HOVERABLE,
-		.DRAGGABLE,
-		.DRAWBACKGROUND,
-	})
+ui_dragbar :: proc(label:string="") -> ^Box {
+	box: ^Box
+	if label == "" {
+		box = ui_create_box("dragbar", {
+			.CLICKABLE,
+			.SELECTABLE,
+			.HOVERABLE,
+			.DRAGGABLE,
+			.DRAWBACKGROUND,
+		})
+	} else {
+		box = ui_create_box(label, {
+			.CLICKABLE,
+			.SELECTABLE,
+			.HOVERABLE,
+			.DRAGGABLE,
+			.DRAWBACKGROUND,
+			.DRAWTEXT,
+		})
+	}
 	return box
 }
 
@@ -127,9 +139,9 @@ ui_scrollbar :: proc() -> ^Box {
 	handle.bg_color = state.ui.col.highlight
 	if handle.ops.pressed {
 		if handle.ops.clicked {
-			state.mouse.delta_temp.y = (f32(state.mouse.pos.y) * 2) + viewport.first.offset.y
+			state.mouse.delta_temp.y = (f32(state.mouse.pos.y) * (scroll_range/dragbar_range)) + viewport.first.offset.y
 		}
-		viewport.first.scroll.y = ((f32(state.mouse.pos.y) * 2) - state.mouse.delta_temp.y) * -1
+		viewport.first.scroll.y = ((f32(state.mouse.pos.y)*(scroll_range/dragbar_range)) - state.mouse.delta_temp.y) * -1
 	}
 	return dragbar
 }
