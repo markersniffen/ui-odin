@@ -60,7 +60,7 @@ ui_panel_testlist :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
 		if ui_button("###p").released {
-			ui_create_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
 	ui_axis(.Y)
@@ -104,7 +104,7 @@ ui_panel_boxlist :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
 		if ui_button("###p").released {
-			ui_create_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+			ui_queue_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
 	ui_axis(.Y)
@@ -139,7 +139,7 @@ ui_panel_debug :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
 		if ui_button("###p").released {
-			ui_create_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+			ui_queue_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
 
@@ -158,7 +158,7 @@ ui_panel_properties :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
 		if ui_button("###p").released {
-			ui_create_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+			ui_queue_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
 
@@ -192,7 +192,7 @@ ui_panel_pick_panel :: proc() {
 	ui_empty()
 		ui_axis(.X)
 		ui_size(.PIXELS, 250, .TEXT, 1)
-		ui_dragbar("Select Panel:")
+		ui_drag_panel("Select Panel:")
 		ui_size(.TEXT, 1, .TEXT, 1)
 		// ui_spacer_pixels(120)
 		if ui_button("###x").released {

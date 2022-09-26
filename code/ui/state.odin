@@ -318,6 +318,14 @@ cursor :: proc(type: Cursor_Type) {
 	state.mouse.cursor.type = type
 }
 
+cursor_size :: proc(axis: Axis) {
+	if axis == .X {
+		state.mouse.cursor.type = .X
+	} else {
+		state.mouse.cursor.type = .Y
+	}
+}
+
 mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods: int) {
 	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }
 	for mouse_button, index in mouse_buttons

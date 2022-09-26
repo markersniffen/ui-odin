@@ -32,18 +32,21 @@ Panel_Type :: enum {
 	FLOATING,
 }
 
-ui_create_panel :: proc(axis:Axis=.X, type: Panel_Type, content:Panel_Content=.DEBUG, size:f32, quad:Quad={0,0,0,0}) -> ^Panel
+ui_queue_panel :: proc(axis:Axis=.X, type: Panel_Type, content:Panel_Content=.DEBUG, size:f32, quad:Quad={0,0,0,0})
 {
+	state.ui.panels.queued.axis = axis
+	state.ui.panels.queued.type = type
+	state.ui.panels.queued.content = content
+	state.ui.panels.queued.size = size
+	state.ui.panels.queued.quad = quad
+}
 
-	current := state.ui.ctx.panel
+ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:Panel_Content=.DEBUG, size:f32, quad:Quad={0,0,0,0}) -> ^Panel
+{
+	// current := state.ui.ctx.panel
 	panel := cast(^Panel)pool_alloc(&state.ui.panels.pool)
 	panel.uid = new_uid()
 		
-
-	if current != nil {
-		panel.next = current.next
-		current.next = panel
-	}
 	fmt.println("Creating panel", panel.uid)
 	fmt.println("current = ", current)
 	fmt.println("new = ", panel)
@@ -160,11 +163,7 @@ ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
 		if panel.type == .NULL {
 			mouse_over = mouse_in_quad(panel.bar)
 			if mouse_over {
-				if panel.axis == .X {
-					cursor(.X)				
-				} else {
-					cursor(.Y)
-				}
+				cursor_size(panel.axis)				
 			}
 		}
 		if mouse_over {

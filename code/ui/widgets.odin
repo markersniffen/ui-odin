@@ -26,12 +26,8 @@ ui_begin_floating :: proc() -> ^Panel {
 	state.ui.ctx.parent = nil
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
 	box := ui_create_box("root_floating", { .ROOT, .DRAWBACKGROUND, .FLOATING })
-	// box.offset = {state.ui.ctx.panel.quad.l, state.ui.ctx.panel.quad.t}
-	// box.offset = v2_f32(state.mouse.pos)
 	state.ui.ctx.panel.box = box
 	ui_push_parent(box)
-	// dragbar := ui_dragbar()
-	// ui_push_parent(dragbar)
 	return state.ui.ctx.panel
 }
 
@@ -68,10 +64,10 @@ ui_set_border_color 	:: proc(color: v4) 		{ state.ui.ctx.border_color = color }
 
 ui_set_border_thickness :: proc(value: f32)		{ state.ui.ctx.border = value }
 
-ui_dragbar :: proc(label:string="") -> ^Box {
+ui_drag_panel :: proc(label:string="") -> ^Box {
 	box: ^Box
 	if label == "" {
-		box = ui_create_box("dragbar", {
+		box = ui_create_box("drag_panel", {
 			.CLICKABLE,
 			.SELECTABLE,
 			.HOVERABLE,
@@ -153,6 +149,7 @@ ui_sizebar_y :: proc() -> ^Box {
 	if box.ops.pressed {
 		box.parent.expand.y += f32(state.mouse.delta.y)
 	}
+	if box.ops.hovering do cursor_size(box.axis)
 	return box
 }
 

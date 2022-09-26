@@ -29,6 +29,7 @@ UI_Panels :: struct {
 	pool: Pool,
 	all: map[Uid]^Panel,
 	root: ^Panel,
+	queued: Panel,
 	floating: ^Panel,
 	active: ^Panel,
 	hot: ^Panel,
@@ -87,15 +88,15 @@ ui_init :: proc() {
 	pool_init(&state.ui.panels.pool, size_of(Panel), MAX_PANELS, "Panels")
 	pool_init(&state.ui.boxes.pool, size_of(Box), MAX_BOXES, "Boxes")
 
-	ui_create_panel(.Y, .STATIC, .FILE_MENU, 0.3)
-	ui_create_panel(.Y, .DYNAMIC, .TESTLIST, 0.1)
-	ui_create_panel(.X, .DYNAMIC, .DEBUG, 0.5)
-	ui_create_panel(.Y, .DYNAMIC, .PROPERTIES, 0.3)
+	ui_create_panel(nil, .Y, .STATIC, .FILE_MENU, 0.3)
+	ui_create_panel(state.ui.ctx.panel, .Y, .DYNAMIC, .TESTLIST, 0.1)
+	ui_create_panel(state.ui.ctx.panel, .X, .DYNAMIC, .DEBUG, 0.5)
+	ui_create_panel(state.ui.ctx.panel, .Y, .DYNAMIC, .PROPERTIES, 0.3)
 
 	// SET DEFAULT COLORS ------------------------------
-	state.ui.ctx.font_color = {1,1,1,1}
+	state.ui.ctx.font_color = { 1, 1, 1, 1 }
 	state.ui.ctx.bg_color = state.ui.col.bg
-	state.ui.ctx.border = 1 
+	state.ui.ctx.border = 1
 	state.ui.ctx.font_color = state.ui.col.border
 }
 
@@ -103,6 +104,15 @@ ui_init :: proc() {
 ui_update :: proc() {
 	set_cursor()
 	cursor(.NULL)
+
+	// create queued panel
+	if state.ui.panels.queued != {} {
+		q := state.ui.panels.queued
+		ui_create_panel(q.axis, q.type, q.content, q.size, q.quad)
+		state.ui.panels.queued = {}
+	}
+
+
 	ui_calc_panel(state.ui.panels.root, state.window.quad)
 	if state.ui.panels.floating != nil {
 		ui_calc_panel(state.ui.panels.floating, state.ui.panels.floating.quad)
@@ -139,14 +149,18 @@ ui_update :: proc() {
 		}
 	}
 	
-	// calculate size/position of boxes ------------------------------
-	// for panel := state.ui.panels.root; panel != nil; panel = panel.next {
-	// 	fmt.println(panel)
-	// 	if panel.box != nil do ui_calc_boxes(panel.box)
-	// }
+	panels : [MAX_PANELS]^Panel
 
+	index:= 0
 	for _, panel in state.ui.panels.all {
-		if panel.box != nil do ui_calc_boxes(panel.box)
+		panels[index] = panel
+		index += 1
+	}
+	
+	for panel in panels {
+		if panel != nil {
+			if panel.box != nil do ui_calc_boxes(panel.box)
+		}
 	}
 
 	// advance frame / reset box index for keys ------------------------------
@@ -157,7 +171,7 @@ ui_update :: proc() {
 		if state.ui.panels.hot.type == .NULL {
 			if state.ui.panels.hot.child_a != nil {
 				if state.ui.panels.hot.child_a.type != .STATIC {
-					push_quad_solid(state.ui.panels.hot.bar, state.ui.col.hot)		
+					push_quad_solid(state.ui.panels.hot.bar, state.ui.col.hot)
 				}
 			}
 		}

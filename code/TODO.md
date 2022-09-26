@@ -1,7 +1,8 @@
 // TODO //
 
-[ ] add mouse cursor changes
 [ ] fix blinking panel on add (use hashing instaed of map?)
+[ ] editable text
+[X] add mouse cursor changes
 [X] fix clipping
 [X] fix scroll bar drag movement
 [ ] avoid making boxes that are cropped?
