@@ -30,6 +30,7 @@ UI_Panels :: struct {
 	all: map[Uid]^Panel,
 	root: ^Panel,
 	queued: Panel,
+	queued_parent: ^Panel,
 	floating: ^Panel,
 	active: ^Panel,
 	hot: ^Panel,
@@ -108,7 +109,7 @@ ui_update :: proc() {
 	// create queued panel
 	if state.ui.panels.queued != {} {
 		q := state.ui.panels.queued
-		ui_create_panel(q.axis, q.type, q.content, q.size, q.quad)
+		ui_create_panel(state.ui.panels.queued_parent, q.axis, q.type, q.content, q.size, q.quad)
 		state.ui.panels.queued = {}
 	}
 
@@ -135,7 +136,6 @@ ui_update :: proc() {
 			if box.key.len == 0 {
 				assert(0 != 0)
 			} 
-			fmt.println("!!! Deleting !!!", short_to_string(&box.name))
 			state.ui.boxes.to_delete[box_index] = box
 			box_index += 1
 		}
@@ -207,17 +207,9 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	quad := box.quad
 	clip_ok := true
 
-	if .ROOT in box.flags {
-		// push_quad_solid(quad, {0,0,0,1})
-		push_quad_border(quad, {0.1,0.1,0.1,1}, 1)
-	}
-	
 	quad, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
-	// if box.parent != nil {
-	// 	if .CLIP in box.parent.flags {
-	// 		quad, clip_ok = quad_clamp_or_reject(box.quad, box.parent.quad)
-	// 	}
-	// }
+
+	if .ROOT in box.flags do push_quad_border(quad, {0.1,0.1,0.1,1}, 1)
 
 	if clip_ok {
 		if .DRAWBACKGROUND in box.flags {
@@ -257,6 +249,6 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	ui_draw_boxes(box.next, clip_to)
 
 	clip_quad := clip_to
-	if .CLIP in box.flags do clip_quad = box.quad
+	if .CLIP in box.flags do clip_quad = quad
 	ui_draw_boxes(box.first,clip_quad)
 }

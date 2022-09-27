@@ -32,13 +32,14 @@ Panel_Type :: enum {
 	FLOATING,
 }
 
-ui_queue_panel :: proc(axis:Axis=.X, type: Panel_Type, content:Panel_Content=.DEBUG, size:f32, quad:Quad={0,0,0,0})
+ui_queue_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:Panel_Content=.DEBUG, size:f32, quad:Quad={0,0,0,0})
 {
 	state.ui.panels.queued.axis = axis
 	state.ui.panels.queued.type = type
 	state.ui.panels.queued.content = content
 	state.ui.panels.queued.size = size
 	state.ui.panels.queued.quad = quad
+	state.ui.panels.queued_parent = current
 }
 
 ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:Panel_Content=.DEBUG, size:f32, quad:Quad={0,0,0,0}) -> ^Panel
@@ -47,10 +48,6 @@ ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, cont
 	panel := cast(^Panel)pool_alloc(&state.ui.panels.pool)
 	panel.uid = new_uid()
 		
-	fmt.println("Creating panel", panel.uid)
-	fmt.println("current = ", current)
-	fmt.println("new = ", panel)
-
 	state.ui.panels.all[panel.uid] = panel
 
 	panel.axis = axis
@@ -184,7 +181,6 @@ ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
 }
 
 ui_delete_panel :: proc(panel: ^Panel) {
-	fmt.println("trying to delete ", panel.uid)
 	if panel != nil
 	{
 		parent := panel.parent

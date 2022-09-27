@@ -18,7 +18,6 @@ build_panel_content :: proc(content: Panel_Content) {
 	{
 		case .DEBUG: 		ui_panel_debug()
 		case .FILE_MENU: 	ui_panel_file_menu()
-		case .FLOATER: 		ui_panel_floater()
 		case .PANEL_LIST: 	ui_panel_pick_panel()
 		// PANELS AFTER THIS ARE SWAPPABLE //
 		case .PROPERTIES: 	ui_panel_properties()
@@ -73,14 +72,18 @@ ui_panel_testlist :: proc() {
 			ui_scrollbox()
 				for index in 0..=50 {
 					ui_axis(.Y)
-					ui_size(.PCT_PARENT, 1, .TEXT, 1)
-					x := ui_empty()
-					for yindex in 0..=3 {
-						ui_axis(.X)
-						ui_size(.PIXELS, 150, .TEXT, 1)
-						ui_button(fmt.tprintf("Fun | %v | %v", index, yindex))
-					}
-					ui_axis(.Y)
+					ui_size(.PCT_PARENT, 1, .PIXELS, 30)
+						ui_empty()
+						ui_size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+						x := ui_empty()
+							for yindex in 0..=3 {
+								ui_axis(.X)
+								ui_size(.PIXELS, 150, .PCT_PARENT, 1)
+								ui_button(fmt.tprintf("Fun | %v | %v", index, yindex))
+							}
+						ui_pop()
+						ui_axis(.Y)
+						ui_sizebar_y()
 					ui_pop()
 				}
 			ui_pop()
@@ -104,7 +107,7 @@ ui_panel_boxlist :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
 		if ui_button("###p").released {
-			ui_queue_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
 	ui_axis(.Y)
@@ -139,7 +142,7 @@ ui_panel_debug :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
 		if ui_button("###p").released {
-			ui_queue_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
 
@@ -158,7 +161,7 @@ ui_panel_properties :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
 		if ui_button("###p").released {
-			ui_queue_panel(.Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
 
