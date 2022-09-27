@@ -8,6 +8,7 @@ Box :: struct {
 	key: Key,
 	name: Short_String,
 	value: any,
+	editable_string: ^Editable_String,
 
 	panel: ^Panel,
 
@@ -79,6 +80,7 @@ Box_Flags :: enum {
 	SELECTABLE,
 	DRAGGABLE,
 	VIEWSCROLL,
+	EDITTEXT,
  
 	DRAWTEXT,
 	DISPLAYVALUE,
@@ -100,6 +102,7 @@ Box_Ops :: struct {
   selected: bool,
   dragging: bool,
   hovering: bool,
+  editing: bool,
 }
 
 ui_gen_key :: proc(name: string) -> Key {
@@ -187,6 +190,9 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 		if mouse_over && !lmb_drag() {
 			box.ops.hovering = true
 			state.ui.boxes.hot = box
+			if .EDITTEXT in box.flags {
+				cursor(.TEXT)
+			}
 		} else {
 			box.ops.hovering = false
 			if state.ui.boxes.hot == box do state.ui.boxes.hot = nil
@@ -204,6 +210,18 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 			}
 			if lmb_release() {
 				if box.ops.pressed {
+					if .EDITTEXT in box.flags {
+						if ctrl() {
+							box.ops.editing = !box.ops.editing
+						} else {
+							// TODO handle dragging to select text
+						}
+						if box.ops.editing {
+							state.ui.boxes.editing = box
+						} else {
+							if state.ui.boxes.editing == box do state.ui.boxes.editing = nil
+						}
+					}
 					if .SELECTABLE in box.flags {
 						box.ops.selected = !box.ops.selected
 					}
@@ -216,6 +234,9 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 		} else {
 			if lmb_release_up() {
 				box.ops.pressed = false
+			}
+			if lmb_click() {
+				box.ops.editing = false
 			}
 		}
 	}
@@ -244,12 +265,13 @@ ui_calc_boxes :: proc(root: ^Box) {
 				if axis == X {
 					calc_size^ = ui_text_size(X, &box.name) + (state.ui.margin*2)
 					if .DISPLAYVALUE in box.flags do calc_size^ += ui_text_string_size(X, fmt.tprintf("%v", box.value))
+					if .EDITTEXT in box.flags do calc_size^ = ui_editable_string_size(X, box.editable_string)
 				} else if axis == Y {
 					calc_size^ = ui_text_size(Y, &box.name) * size.value
 				}
 			}
 		}
-	}	
+	}
 
 	last: ^Box = nil
 	// RELATIVE TO SIBLINGS ------------------------------

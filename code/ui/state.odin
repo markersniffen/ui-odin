@@ -158,6 +158,11 @@ init :: proc() -> bool {
 	state.mouse.cursor.x = glfw.CreateStandardCursor(glfw.HRESIZE_CURSOR)
 	state.mouse.cursor.y = glfw.CreateStandardCursor(glfw.VRESIZE_CURSOR)
 
+	// TODO DEBUG
+	state.debug.text = string_to_editable("Test String That Is Kind of Long!")
+	state.debug.text.start = 8
+	state.debug.text.end = 2
+
 	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
 	
 	opengl_init()
@@ -211,6 +216,10 @@ quit :: proc() {
 	glfw.Terminate()
 	free(state)
 }
+
+shift :: proc() -> bool { return state.keys.shift }
+alt :: proc() -> bool { return state.keys.alt }
+ctrl :: proc() -> bool { return state.keys.ctrl }
 
 read_key :: proc(key: ^bool) -> bool {
 	if key^ {
@@ -271,8 +280,11 @@ keyboard_callback :: proc(Window: glfw.WindowHandle, key: int, scancode: int, ac
 }
 
 typing_callback :: proc(window: glfw.WindowHandle, codepoint: u32) {
-	// fmt.println(rune(codepoint))
-	// State.UILastChar = rune(codepoint);
+	if !state.keys.ctrl && !state.keys.alt {
+		state.ui.last_char = rune(codepoint)
+	} else {
+		state.ui.last_char = -1
+	}
 }
 
 scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64) {

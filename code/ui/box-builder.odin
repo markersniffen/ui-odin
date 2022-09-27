@@ -96,6 +96,10 @@ ui_panel_testlist :: proc() {
 	ui_pop()
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
 	ui_button("whee")
+	if ui_selectable("Select Me").selected {
+		ui_button("first")
+		ui_button("second")
+	}
 	ui_end()
 }
 
@@ -148,6 +152,8 @@ ui_panel_debug :: proc() {
 
 	ui_size(.TEXT,1, .TEXT,1)
 	ui_axis(.Y)
+	ui_label("Editable Text:")
+	ui_edit_text(&state.debug.text)
 	ui_value("len panels", state.ui.panels.pool.nodes_used)
 	ui_value("len boxes", len(state.ui.boxes.all))
 	ui_end()

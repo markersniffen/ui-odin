@@ -130,6 +130,95 @@ ui_set_font_size :: proc(size: f32 = 18) {
 	state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
 }
 
+draw_editable_text :: proc(editing: bool, editable: ^Editable_String, quad: Quad, align: Text_Align = .LEFT, color: v4 = {1,1,1,1}) {
+	using stb
+
+	text := editable_to_string(editable)
+
+	left_align: f32 = quad.l
+	top_align: f32 = quad.t + state.ui.margin
+	text_height: f32 = state.ui.font_size
+	text_width: f32
+	cursor : Quad
+
+	skip: int = 0
+	for letter, i in text {
+		if letter == '#' {
+			if (len(text) - i) > 3 {
+				if text[i:i+3] == "###" {
+					skip = 4
+				}
+			}
+		}
+		if editing {
+			if i == editable.start {
+				cursor = {text_width, quad.t + 6, text_width + 2, quad.b + 2}
+			}
+			if i == editable.end && editable.end > editable.start {
+				cursor.r = text_width
+			}
+		}
+		if skip == 0 {
+			text_width += state.ui.font.char_data[letter].advance
+		} else if skip == 1 {
+			text_width += state.ui.icons.char_data[letter].advance
+		}
+		skip = clamp(skip - 1, 0, 4)
+
+	}
+
+	if align == .CENTER {
+		left_align = (left_align - text_width / 2) + ((quad.r - quad.l) / 2)
+	} else if align == .RIGHT {
+		left_align -= text_width + state.ui.margin
+	}
+
+	if align == .LEFT {
+		left_align += state.ui.margin
+	}
+
+	top_left : v2 = { left_align, top_align }
+
+	cursor.l += left_align
+	cursor.r += left_align
+
+	push_quad_solid(cursor, state.ui.col.active)
+
+	skip = 1
+	for letter, i in text
+	{
+		if letter == '#' {
+			if (len(text) - i) > 3 {
+				if text[i:i+3] == "###" {
+					skip = 5
+				}
+			}
+		}
+		letter_data : Char_Data = state.ui.font.char_data[letter]
+		if skip == 2 do letter_data = state.ui.icons.char_data[letter]
+		if skip > 2 {
+		} else {
+			if letter != ' '
+			{
+				char_quad : Quad
+				char_quad.l = top_left.x + letter_data.offset.x
+				char_quad.t = top_left.y + letter_data.offset.y
+				char_quad.r = char_quad.l + letter_data.width
+				char_quad.b = char_quad.t + letter_data.height
+				clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
+
+				// if pt_in_quad({char_quad.r, char_quad.b}, quad) {
+				if ok  {
+					push_quad_font(clamped_quad, color, letter_data.uv, f32(skip))
+				}
+			}
+
+			top_left.x += letter_data.advance
+		}
+		skip = clamp(skip - 1, 1, 5)
+	}
+}
+
 draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4 = {1,1,1,1} ) {
 	using stb
 
@@ -241,6 +330,23 @@ ui_text_size :: proc(axis: int, text: ^Short_String) -> f32 {
 
 ui_text_string_size :: proc(axis: int, text: string) -> f32 {
 	size: f32
+	if axis == X {
+		for letter in text {
+			size += state.ui.font.char_data[letter].advance
+		}
+	} else if axis == Y {
+		lines: f32 = 1
+		for letter in text {
+			if letter == '\n' do lines += 1
+		}
+		size = lines * state.ui.line_space
+	}
+	return size
+}
+
+ui_editable_string_size :: proc(axis: int, editable: ^Editable_String) -> f32 {
+	size: f32
+	text := editable_to_string(editable)
 	if axis == X {
 		for letter in text {
 			size += state.ui.font.char_data[letter].advance

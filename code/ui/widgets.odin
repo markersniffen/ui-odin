@@ -94,7 +94,7 @@ ui_axis 				:: proc(axis: Axis) 	{ state.ui.ctx.axis = axis }
 //   .MAX_CHILD		- the size of the largest child of that box (value not used)
 //   .MIN_SIBLINGS	- the size of the parent minus the sum of the box's siblings (value not used)
 //   .MAX_SIBLING	- the size of the largest sibling of that box (value not used)
-//
+
 ui_size :: proc (x_type: Box_Size_Type, x_value: f32, y_type: Box_Size_Type, y_value: f32) {
 	ui_size_x(x_type, x_value)
 	ui_size_y(y_type, y_value)
@@ -111,12 +111,15 @@ ui_size_y :: proc(type: Box_Size_Type, value: f32) {
 }
 
 // NOTE render layers are currently only used to keep floating panels on top
+
 ui_set_render_layer 	:: proc(layer: int) 	{ state.ui.ctx.render_layer = layer }
 
 // sets the border color
+
 ui_set_border_color 	:: proc(color: v4) 		{ state.ui.ctx.border_color = color }
 
 // sets the border thickness
+
 ui_set_border_thickness :: proc(value: f32)		{ state.ui.ctx.border = value }
 
 //______ WIDGETS ______//
@@ -174,11 +177,46 @@ ui_value :: proc(key: string, value: any) -> Box_Ops {
 	return box.ops	
 }
 
+// creates single line editable text
+
+ui_edit_text :: proc(editable: ^Editable_String) -> Box_Ops {
+	box := ui_create_box("editable_text", {
+		.CLICKABLE,
+		.HOVERABLE,
+		.EDITTEXT,
+		.DRAWBACKGROUND,
+		.DRAWBORDER,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+		.ACTIVEANIMATION,
+	})
+	box.editable_string = editable
+	return box.ops
+}
+
 // creates a button box
 
 ui_button :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key, {
 		.CLICKABLE,
+		.HOVERABLE,
+		.DRAWTEXT,
+		.DRAWBORDER,
+		.DRAWBACKGROUND,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+		.ACTIVEANIMATION,
+	})
+	box.text_align = .CENTER
+	return box.ops
+}
+
+// creates a selectable box
+
+ui_selectable :: proc(key: string) -> Box_Ops {
+	box := ui_create_box(key, {
+		.CLICKABLE,
+		.SELECTABLE,
 		.HOVERABLE,
 		.DRAWTEXT,
 		.DRAWBORDER,

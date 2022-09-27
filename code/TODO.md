@@ -1,14 +1,18 @@
 // TODO //
 
 [X] fix blinking panel on add (used queue for creating new panels after startup)
-[ ] editable text
 [X] add mouse cursor changes
 [X] fix clipping
 [X] fix scroll bar drag movement
-[ ] avoid making boxes that are cropped?
+[X] comment widgets
+[O] editable text
+[ ] context menu
+[ ] checkbox
+[X] dropdown
+[ ] tabs
 [ ] clean up colors
 [ ] clean up all the shit
-[ ] comment widgets
+[ ] avoid making boxes that are cropped?
 
 > crop panel content
 [X] scrolling
