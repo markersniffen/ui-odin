@@ -46,7 +46,9 @@ ui_panel_file_menu :: proc() {
 	ui_value("panels:", state.ui.panels.pool.nodes_used)
 	ui_value("/", state.ui.panels.pool.chunk_count)
 	ui_label("|")
-	ui_value("fps:", state.delta_time)
+	ui_value("fps:", state.fps)
+	ui_label("|")
+	ui_value("dt:", state.delta_time)
 	ui_spacer_pixels(6)
 	ui_end()
 }
@@ -150,10 +152,14 @@ ui_panel_debug :: proc() {
 		}
 	ui_pop()
 
-	ui_size(.TEXT,1, .TEXT,1)
+	ui_size(.PCT_PARENT,0.5, .TEXT,1)
 	ui_axis(.Y)
 	ui_label("Editable Text:")
 	ui_edit_text(&state.debug.text)
+	ui_value("TEXT", state.debug.text.mem)
+	ui_value("LEN", state.debug.text.len)
+	ui_value("START", state.debug.text.start)
+	ui_value("END", state.debug.text.end)
 	ui_value("len panels", state.ui.panels.pool.nodes_used)
 	ui_value("len boxes", len(state.ui.boxes.all))
 	ui_end()

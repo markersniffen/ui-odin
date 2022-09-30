@@ -47,31 +47,32 @@ string_to_short :: proc(text: string) -> Short_String {
 }
 
 string_to_editable :: proc(text: string) -> Editable_String {
-	editable: Editable_String
-	editable.len = len(text)
-	assert(editable.len <= LONG_STRING_LEN, text)
-	fmt.println(len(editable.mem),	editable.len, len(text))
-	copy(editable.mem[:editable.len], text)
-	return editable
+	es: Editable_String
+	es.len = len(text)
+	assert(es.len <= LONG_STRING_LEN, text)
+	// fmt.println(len(es.mem),	es.len, len(text))
+	copy(es.mem[:es.len], text)
+	return es
 }
 
-editable_to_string :: proc(editable: ^Editable_String) -> string {
-	return string(editable.mem[:editable.len])
+editable_to_string :: proc(es: ^Editable_String) -> string {
+	return string(es.mem[:es.len])
 }
 
-editable_jump_right :: proc(editable: ^Editable_String) -> int {
-	start := clamp(editable.start+1, 0, editable.len)
-	for m in editable.start+1..=editable.len {
-		letter := rune(editable.mem[m])
-		if letter == ' ' || m == editable.len {
-			if m == editable.len {
-				return m -1
-				// editable.start = m-1
-			} else {
-				return m
-				// editable.start = m
-			}
-			// editable.end = editable.start
+editable_jump_right :: proc(es: ^Editable_String) -> int {
+	start := es.start
+	end := es.end
+	if start > end {
+		start = es.end
+		end = es.start
+	}
+
+	for m in end+1..=es.len+1 {
+		letter := rune(es.mem[m])
+		if m == es.len {
+			return m
+		} else if letter == ' ' {
+			return m
 		}
 	}
 	return 0
@@ -81,26 +82,52 @@ editable_ctrl_left :: proc(editable: ^Editable_String) {
 
 }
 
-editable_jump_left :: proc(editable: ^Editable_String) -> int {
-	fmt.println("Start", editable.start, 0)
-	index := clamp(editable.start-2, 0, editable.len)
-	fmt.println(rune(editable.mem[index]))
+editable_jump_left :: proc(es: ^Editable_String) -> int {
+	start := es.start
+	end := es.end
+	if start > end {
+		start = es.end
+		end = es.start
+	}
+
+	index := start-1
 	for index >= 0 {
-		letter := rune(editable.mem[index])
-		fmt.println(letter, index)
-		if letter == ' ' || index == 0 {
-			if index == 0 {
-				// editable.start = index
-				return index
-			} else {
-				// editable.start = index+1
-				return index+1
-			}
-			// editable.end = editable.start
+		letter := rune(es.mem[clamp(index, 0, es.len)])
+		if index == 0 {
+			return index
+		} else if letter == ' ' {
+			return index
 		}
 		index -= 1
 	}
 	return 0
+}
+
+backspace :: proc(es: ^Editable_String) {
+	if es.start >= 0 { // TODO there might be a bug here
+		if es.start == es.end {
+			if es.start != 0 {
+				es.start-=1
+				es.end = es.start
+				if es.start >= es.len {
+					copy(es.mem[es.start-1:], es.mem[es.start:])
+				} else {
+					copy(es.mem[es.start:], es.mem[es.start+1:])
+				}
+				es.len -= 1
+			}
+		} else if es.start < es.end {
+			copy(es.mem[es.start:], es.mem[es.end:])
+			es.len = es.len - (es.end-1 - es.start)
+			es.end = es.start
+		} else if es.end < es.start {
+			copy(es.mem[es.end:], es.mem[es.start:])
+			fmt.println(es.start, es.end, es.len)
+			es.len -= (es.start - es.end)
+			es.start = es.end
+		}
+	}
+	fmt.println(es)
 }
 
 short_to_string :: proc(short: ^Short_String) -> string {

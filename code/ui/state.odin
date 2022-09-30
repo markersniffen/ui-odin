@@ -33,6 +33,7 @@ State :: struct {
 	start_time: time.Time,
 	prev_time: time.Time,
 	delta_time: f64,
+	fps: f64,
 
 	render: Gl,
 	ui: Ui,
@@ -119,6 +120,11 @@ Keys :: struct {
 	ctrl: bool,
 	alt: bool,
 	shift: bool,
+
+	a: bool,
+	c: bool,
+	x: bool,
+	v: bool,
 }
 
 init :: proc() -> bool {
@@ -159,9 +165,7 @@ init :: proc() -> bool {
 	state.mouse.cursor.y = glfw.CreateStandardCursor(glfw.VRESIZE_CURSOR)
 
 	// TODO DEBUG
-	state.debug.text = string_to_editable("Test String That Is Kind of Long!")
-	state.debug.text.start = 8
-	state.debug.text.end = 2
+	state.debug.text = string_to_editable("Hello World")
 
 	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
 	
@@ -174,6 +178,7 @@ init :: proc() -> bool {
 update :: proc() {
 	state.start_time = time.now()
 	state.delta_time = time.duration_milliseconds(time.diff(state.prev_time, state.start_time))
+	state.fps = 1000 / state.delta_time
 
 	state.quit = bool(glfw.WindowShouldClose(state.window.handle))
 	if state.quit do return
@@ -196,7 +201,8 @@ update :: proc() {
 	ui_update()
 	opengl_render()
 
-	frame_goal : time.Duration = 33330000
+	// frame_goal : time.Duration = 16665000
+	frame_goal : time.Duration = 8332500
 	time_so_far := time.diff(state.start_time, time.now())
 	sleep_for:= frame_goal - time_so_far
 
@@ -276,6 +282,8 @@ keyboard_callback :: proc(Window: glfw.WindowHandle, key: int, scancode: int, ac
 		
 		case glfw.KEY_LEFT_SHIFT:		process_keyboard_input(action, &state.keys.shift, false)
 		case glfw.KEY_RIGHT_SHIFT:		process_keyboard_input(action, &state.keys.shift, false)
+
+		case glfw.KEY_A:					process_keyboard_input(action, &state.keys.a, false)
 	}
 }
 

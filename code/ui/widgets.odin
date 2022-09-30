@@ -187,8 +187,6 @@ ui_edit_text :: proc(editable: ^Editable_String) -> Box_Ops {
 		.DRAWBACKGROUND,
 		.DRAWBORDER,
 		.DRAWGRADIENT,
-		.HOTANIMATION,
-		.ACTIVEANIMATION,
 	})
 	box.editable_string = editable
 	return box.ops

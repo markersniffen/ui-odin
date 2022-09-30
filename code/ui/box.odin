@@ -201,7 +201,12 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 
 	if .CLICKABLE in box.flags {
 		if mouse_over {
+
 			if lmb_click() {
+				if .EDITTEXT in box.flags {
+					box.ops.editing = true
+					state.ui.boxes.editing = box
+				}
 				box.ops.pressed = true
 				box.ops.clicked = true
 				state.ui.boxes.active = box
@@ -210,18 +215,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 			}
 			if lmb_release() {
 				if box.ops.pressed {
-					if .EDITTEXT in box.flags {
-						if ctrl() {
-							box.ops.editing = !box.ops.editing
-						} else {
-							// TODO handle dragging to select text
-						}
-						if box.ops.editing {
-							state.ui.boxes.editing = box
-						} else {
-							if state.ui.boxes.editing == box do state.ui.boxes.editing = nil
-						}
-					}
+					
 					if .SELECTABLE in box.flags {
 						box.ops.selected = !box.ops.selected
 					}
@@ -237,6 +231,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 			}
 			if lmb_click() {
 				box.ops.editing = false
+				if state.ui.boxes.editing == box do state.ui.boxes.editing = nil
 			}
 		}
 	}
@@ -265,7 +260,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 				if axis == X {
 					calc_size^ = ui_text_size(X, &box.name) + (state.ui.margin*2)
 					if .DISPLAYVALUE in box.flags do calc_size^ += ui_text_string_size(X, fmt.tprintf("%v", box.value))
-					if .EDITTEXT in box.flags do calc_size^ = ui_editable_string_size(X, box.editable_string)
+					if .EDITTEXT in box.flags do calc_size^ = ui_editable_string_size(X, box.editable_string) + state.ui.margin*2
 				} else if axis == Y {
 					calc_size^ = ui_text_size(Y, &box.name) * size.value
 				}

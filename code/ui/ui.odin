@@ -110,20 +110,39 @@ ui_update :: proc() {
 
 	// keyboard input for text editing
 	if state.ui.boxes.editing != nil {
+		box := state.ui.boxes.editing 
 		es :=state.ui.boxes.editing.editable_string
 
-		if state.ui.last_char >= 0 {
-			copy(es.mem[es.start+1:], es.mem[es.start:es.len])
-			es.mem[es.start] = u8(state.ui.last_char)
-			es.start +=	1
-			es.end = es.start
-			es.len += 1
-			state.ui.last_char = -1
+		// TYPE LETTERS
+		if state.ui.last_char > 0 {
+			if es.end-es.start != 0 {
+				backspace(es)
+			}
+			fmt.println(es)
+			if !(es.len+1 > LONG_STRING_LEN) {
+				if es.start >= es.len {
+					es.mem[es.len] = u8(state.ui.last_char)
+				} else {
+					copy(es.mem[clamp(es.start+1, 0, es.len):], es.mem[es.start:es.len])
+					es.mem[es.start] = u8(state.ui.last_char)
+				}
+				es.start +=	1
+				es.end = es.start
+				es.len += 1
+				state.ui.last_char = -1
+			} else {
+				fmt.println("MAX STRING LENGTH REACHED")
+			}
 		}
 
+		// LEFT
 		if read_key(&state.keys.left) {
 			if shift() {
-				es.end = clamp(es.end - 1, 0, es.len)
+				if ctrl() {
+					es.end = editable_jump_left(es)
+				} else {
+					es.end = clamp(es.end - 1, 0, es.len)
+				}
 			} else if ctrl() {
 				es.start = editable_jump_left(es)
 				es.end = es.start
@@ -133,45 +152,101 @@ ui_update :: proc() {
 			}
 		}
 
+		// RIGHT
 		if read_key(&state.keys.right) {
 			if shift() {
-				es.end = clamp(es.end + 1, 0, es.len-1)
+				if ctrl() {
+					es.end = editable_jump_right(es)
+				} else {
+					es.end = clamp(es.end + 1, 0, es.len-1)
+				}
 			} else if ctrl() {
 				es.start = editable_jump_right(es)
 				es.end = es.start
 			} else {
-				es.start = clamp(es.start + 1, 0, es.len-1)
+				es.start = clamp(es.start + 1, 0, es.len)
 				es.end = es.start
 			}
 		}
 
-		if read_key(&state.keys.backspace) {
-			if es.len > 0 {
+		if es.len > 0 {
+	 		// BACKSPACE
+			if read_key(&state.keys.backspace) {
 				if ctrl() {
 					es.start = editable_jump_left(es)
 				}
-				if es.len >= 0 && es.start >= 0 {
-					if es.start == es.end {
+				backspace(es)
+			}
+			// DELETE
+			if read_key(&state.keys.delete) {
+				if ctrl() {
+					es.end = editable_jump_right(es)
+				}
+				if es.start == es.end {
+					if es.start != es.len {
 						copy(es.mem[es.start:], es.mem[es.start+1:])
-						es.start-=1
-						es.end = es.start
 						es.len -= 1
-					} else if es.end > es.start {
-						copy(es.mem[es.start:], es.mem[es.end:])
-						es.end = es.start
-						es.len -= (es.end - es.start)
-					} else {
-						copy(es.mem[es.end:], es.mem[es.start:])
-						es.end = es.start
-						es.len -= (es.start - es.end)
 					}
+				} else if es.end > es.start {
+					copy(es.mem[es.start:], es.mem[es.end:])
+					es.len -= (es.end - es.start)
+					es.end = es.start
+				} else {
+					copy(es.mem[es.end:], es.mem[es.start:])
+					es.len -= (es.start - es.end)
+					es.start = es.end
 				}
 			}
+
+			// SELECT ALL
+			if ctrl() && read_key(&state.keys.a) {
+				es.start = 0
+				es.end = es.len
+			}
+
 		}
-		es.start = clamp(es.start, 0, es.len-1)
-		es.end = clamp(es.end, 0, es.len-1)
+
+		// ESCAPE
+		if read_key(&state.keys.escape) {
+			state.ui.boxes.editing.ops.editing = false
+			state.ui.boxes.editing = nil
+		}
+
+		// MOUSE SELECTION
+		quad := box.quad
+		quad.r = quad.l
+		quad.t = box.panel.quad.t
+		quad.b = box.panel.quad.b
+		if lmb_click_drag() {
+			cursor(.TEXT)
+			for i in 0..=es.len+1 {
+				if i <= es.len {
+					quad.r += state.ui.font.char_data[rune(es.mem[i])].advance
+				} else {
+					quad.r = box.quad.r
+				}
+				if mouse_in_quad(quad) {
+					if lmb_click() {
+						es.start = i
+						break
+					} else {
+						es.end = i
+						break
+					}
+				}
+				quad.l += state.ui.font.char_data[rune(es.mem[i])].advance
+			}
+		}
+		
+		for letter, i in es.mem {
+			if letter == 0 {
+				assert(es.len == i, "Editable_Text len doesn't match number of characters.")
+				break
+			}
+		}
 	}
-	
+
+
 	// create queued panel
 	if state.ui.panels.queued != {} {
 		q := state.ui.panels.queued
@@ -208,7 +283,6 @@ ui_update :: proc() {
 	if box_index > 0 {
 		for i in 0..<box_index {
 			box := cast(^Box)state.ui.boxes.to_delete[i]
-			// fmt.println("About to prune box:")
 			ui_delete_box(box)
 			state.ui.boxes.to_delete[i] = nil
 		}
@@ -263,6 +337,8 @@ ui_update :: proc() {
 		if state.ui.panels.floating.box.first != nil {
 		}
 	}
+
+	state.ui.last_char = 0
 }
 
 ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
@@ -280,15 +356,13 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		if .DRAWBACKGROUND in box.flags {
 			push_quad_gradient_v(quad, box.bg_color, box.bg_color)
 			if .SELECTABLE in box.flags {
-				if box.ops.selected do push_quad_gradient_v(quad, state.ui.col.active, state.ui.col.active)
+				if box.ops.selected {
+					push_quad_gradient_v(quad, state.ui.col.active, state.ui.col.active)
+				}
 			}
 		}
 		if .DRAWBORDER in box.flags {
-			if box.ops.editing {
-				push_quad_border(quad, state.ui.col.active, box.border)
-			} else {
-				push_quad_border(quad, state.ui.col.border, box.border)
-			}
+			push_quad_border(quad, state.ui.col.border, box.border)
 		}
 		if .HOVERABLE in box.flags {
 			// if box.ops.hovering do push_quad_solid(quad, state.ui.col.hot)
@@ -303,6 +377,7 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		if .DRAWTEXT in box.flags {
 			draw_text(short_to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align)
 		} else if .EDITTEXT in box.flags {
+			if box.ops.editing do push_quad_border(quad, state.ui.col.active, box.border)
 			draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align)
 		}
 		if .DISPLAYVALUE in box.flags {

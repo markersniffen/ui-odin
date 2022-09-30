@@ -141,30 +141,21 @@ draw_editable_text :: proc(editing: bool, editable: ^Editable_String, quad: Quad
 	text_width: f32
 	cursor : Quad
 
-	skip: int = 0
-	for letter, i in text {
-		if letter == '#' {
-			if (len(text) - i) > 3 {
-				if text[i:i+3] == "###" {
-					skip = 4
+	found_start := false
+	for i in 0..=editable.len + 1 {
+		if editing {
+			if i == editable.start || i == editable.end {
+				if found_start == false {
+					cursor = {text_width, quad.t + 6, text_width + 2, quad.b + 2}
+					found_start = true
+				} else {
+					cursor.r = text_width
 				}
 			}
 		}
-		if editing {
-			if i == editable.start {
-				cursor = {text_width, quad.t + 6, text_width + 2, quad.b + 2}
-			}
-			if i == editable.end && editable.end > editable.start {
-				cursor.r = text_width
-			}
+		if i < len(text) {
+			text_width += state.ui.font.char_data[rune(text[i])].advance
 		}
-		if skip == 0 {
-			text_width += state.ui.font.char_data[letter].advance
-		} else if skip == 1 {
-			text_width += state.ui.icons.char_data[letter].advance
-		}
-		skip = clamp(skip - 1, 0, 4)
-
 	}
 
 	if align == .CENTER {
@@ -184,38 +175,23 @@ draw_editable_text :: proc(editing: bool, editable: ^Editable_String, quad: Quad
 
 	push_quad_solid(cursor, state.ui.col.active)
 
-	skip = 1
 	for letter, i in text
 	{
-		if letter == '#' {
-			if (len(text) - i) > 3 {
-				if text[i:i+3] == "###" {
-					skip = 5
-				}
-			}
-		}
 		letter_data : Char_Data = state.ui.font.char_data[letter]
-		if skip == 2 do letter_data = state.ui.icons.char_data[letter]
-		if skip > 2 {
-		} else {
-			if letter != ' '
-			{
-				char_quad : Quad
-				char_quad.l = top_left.x + letter_data.offset.x
-				char_quad.t = top_left.y + letter_data.offset.y
-				char_quad.r = char_quad.l + letter_data.width
-				char_quad.b = char_quad.t + letter_data.height
-				clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
+		if letter != ' '
+		{
+			char_quad : Quad
+			char_quad.l = top_left.x + letter_data.offset.x
+			char_quad.t = top_left.y + letter_data.offset.y
+			char_quad.r = char_quad.l + letter_data.width
+			char_quad.b = char_quad.t + letter_data.height
+			clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
 
-				// if pt_in_quad({char_quad.r, char_quad.b}, quad) {
-				if ok  {
-					push_quad_font(clamped_quad, color, letter_data.uv, f32(skip))
-				}
+			if ok  {
+				push_quad_font(clamped_quad, color, letter_data.uv, 1)
 			}
-
-			top_left.x += letter_data.advance
 		}
-		skip = clamp(skip - 1, 1, 5)
+		top_left.x += letter_data.advance
 	}
 }
 
