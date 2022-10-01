@@ -5,11 +5,12 @@
 [X] fix clipping
 [X] fix scroll bar drag movement
 [X] comment widgets
-[o] editable text
-  [ ] adding space at begining or with no text crashes (?)
-  [ ] select any and backspace() calculates len wrong
+[X] editable text
+  [X] adding space at begining or with no text crashes (?)
+  [X] select any and backspace() calculates len wrong
 [ ] ctrl click editable text for values (e.g. buttons)
-[ ] context menu
+[O] context menu
+  [ ] hover over other menu buttons?
 [ ] checkbox
 [X] dropdown
 [ ] tabs

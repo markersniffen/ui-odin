@@ -6,6 +6,10 @@ Panel_Content :: enum {
 	NONE,
 	FILE_MENU,
 	FLOATER,
+	MENU_FILE,
+	MENU_EDIT,
+	MENU_VIEW,
+	CTX_PANEL,
 	PANEL_LIST,
 	DEBUG,
 	PROPERTIES,
@@ -19,6 +23,12 @@ build_panel_content :: proc(content: Panel_Content) {
 		case .DEBUG: 		ui_panel_debug()
 		case .FILE_MENU: 	ui_panel_file_menu()
 		case .PANEL_LIST: 	ui_panel_pick_panel()
+
+		case .MENU_FILE:	ui_file_menu()
+		case .MENU_EDIT:	ui_edit_menu()
+		case .MENU_VIEW:	ui_view_menu()
+
+		case .CTX_PANEL:    ui_ctx_panel()
 		// PANELS AFTER THIS ARE SWAPPABLE //
 		case .PROPERTIES: 	ui_panel_properties()
 		case .BOXLIST: 		ui_panel_boxlist()
@@ -30,9 +40,9 @@ ui_panel_file_menu :: proc() {
 	ui_begin()
 	ui_size(.TEXT, 1, .TEXT, 1)
 	ui_axis(.X)
-	ui_button("File")
-	ui_button("Edit")
-	ui_button("View")
+	if ui_button("File").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .MENU_FILE, 1.0, state.ui.ctx.panel.quad)
+	if ui_button("Edit").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .MENU_EDIT, 1.0, state.ui.ctx.panel.quad)
+	if ui_button("View").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .MENU_VIEW, 1.0, state.ui.ctx.panel.quad)
 	ui_spacer_fill()
 	ui_value("mouse pos:", state.mouse.pos)
 	ui_label("|")
@@ -53,55 +63,108 @@ ui_panel_file_menu :: proc() {
 	ui_end()
 }
 
+ui_file_menu :: proc() {
+	panel := ui_begin_menu()
+	ui_axis(.Y)
+	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
+	ui_empty()
+		ui_size(.PIXELS, 200, .TEXT, 1)
+		ui_menu_button("New")
+		ui_menu_button("Open")
+		ui_menu_button("Save")
+		ui_menu_button("Save As")
+		if ui_menu_button("Exit").clicked do state.quit=true
+	ui_pop()
+}
+
+ui_edit_menu :: proc() {
+	panel := ui_begin_menu()
+	ui_axis(.Y)
+	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
+	ui_empty()
+		ui_size(.PIXELS, 200, .TEXT, 1)
+		ui_menu_button("Cut")
+		ui_menu_button("Copy")
+		ui_menu_button("Paste")
+	ui_pop()
+}
+
+ui_view_menu :: proc() {
+	panel := ui_begin_menu()
+	ui_axis(.Y)
+	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
+	ui_empty()
+		ui_size(.PIXELS, 200, .TEXT, 1)
+		ui_menu_button("Some Stuff")
+		ui_menu_button("More Stuff")
+		ui_menu_button("Everything")
+	ui_pop()
+}
+
+ui_ctx_panel :: proc() {
+	panel := ui_begin_floating_menu()
+	ui_axis(.Y)
+	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
+	ui_empty()
+		ui_size(.PIXELS, 200, .TEXT, 1)
+		ui_menu_button("Cut")
+		ui_menu_button("Copy")
+		ui_menu_button("Paste")
+	ui_pop()
+}
+
 ui_panel_testlist :: proc() {
 	ui_begin()
-	ui_axis(.Y)
-	ui_size(.PCT_PARENT, 1, .TEXT, 1)
-	ui_empty()
-		ui_axis(.X)
-		ui_size(.TEXT, 1, .TEXT, 1)
-		if ui_button("###p").released {
-			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
-		}
-	ui_pop()
-	ui_axis(.Y)
-	ui_size(.PCT_PARENT, 1, .TEXT, 1)
-	ui_label("RANDOM LIST:")
-	ui_size(.PCT_PARENT, 1, .PIXELS, 150)
-	ui_empty("ONE")
-		ui_size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-		ui_empty("TWO")
-			ui_scrollbox()
-				for index in 0..=50 {
-					ui_axis(.Y)
-					ui_size(.PCT_PARENT, 1, .PIXELS, 30)
-						ui_empty()
-						ui_size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-						x := ui_empty()
-							for yindex in 0..=3 {
-								ui_axis(.X)
-								ui_size(.PIXELS, 150, .PCT_PARENT, 1)
-								ui_button(fmt.tprintf("Fun | %v | %v", index, yindex))
-							}
-						ui_pop()
-						ui_axis(.Y)
-						ui_sizebar_y()
-					ui_pop()
-				}
-			ui_pop()
+	ui_scrollbox()
+		ui_axis(.Y)
+		ui_size(.PCT_PARENT, 1, .TEXT, 1)
+		ui_empty()
 			ui_axis(.X)
-			ui_scrollbar()
+			ui_size(.TEXT, 1, .TEXT, 1)
+			if ui_button("###p").released {
+				ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.window.quad)
+			}
 		ui_pop()
+		ui_axis(.Y)
+		ui_size(.PCT_PARENT, 1, .TEXT, 1)
+		ui_label("RANDOM LIST:")
+		ui_size(.PCT_PARENT, 1, .PIXELS, 150)
+		ui_empty("ONE")
+			ui_size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+			ui_empty("TWO")
+				ui_scrollbox()
+					for index in 0..=50 {
+						ui_axis(.Y)
+						ui_size(.PCT_PARENT, 1, .PIXELS, 30)
+							ui_empty()
+							ui_size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+							x := ui_empty()
+								for yindex in 0..=3 {
+									ui_axis(.X)
+									ui_size(.PIXELS, 150, .PCT_PARENT, 1)
+									ui_button(fmt.tprintf("Fun | %v | %v", index, yindex))
+								}
+							ui_pop()
+							ui_axis(.Y)
+						ui_pop()
+					}
+				ui_pop()
+				ui_axis(.X)
+				ui_scrollbar()
+			ui_pop()
+			ui_pop()
+			ui_pop()
+		ui_sizebar_y()
 		ui_pop()
+		ui_size(.PCT_PARENT, 1, .TEXT, 1)
+		ui_button("whee")
+		if ui_selectable("Select Me").selected {
+			ui_button("first")
+			ui_button("second")
+		}
 		ui_pop()
-	ui_sizebar_y()
-	ui_pop()
-	ui_size(.PCT_PARENT, 1, .TEXT, 1)
-	ui_button("whee")
-	if ui_selectable("Select Me").selected {
-		ui_button("first")
-		ui_button("second")
-	}
+		ui_axis(.X)
+		ui_scrollbar()
 	ui_end()
 }
 
@@ -167,35 +230,15 @@ ui_panel_debug :: proc() {
 
 ui_panel_properties :: proc() {
 	ui_begin()
-	ui_axis(.Y)
-	ui_size(.PCT_PARENT, 1, .TEXT, 1)
-	ui_empty()
-		ui_axis(.X)
-		ui_size(.TEXT, 1, .TEXT, 1)
-		if ui_button("###p").released {
-			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+	vp := ui_scrollbox()
+		ui_axis(.Y)
+		ui_size(.PCT_PARENT, 1, .TEXT, 1)
+		for i in 0..=22 {
+			label := fmt.tprintf("Label %v", i)
+			ui_label(label)
 		}
-	ui_pop()
-
-	ui_axis(.Y)
-	ui_size(.SUM_CHILDREN, 1, .TEXT, 1)
-	ui_empty()
-		ui_axis(.X)
-		ui_size(.TEXT, 1, .TEXT, 1)
-		ui_button("test1")
-		ui_button("test2")
-		ui_button("test3")
-		ui_button("test4")
-	ui_pop()
-	ui_axis(.Y)
-	ui_size(.SUM_CHILDREN, 1, .TEXT, 1)
-	ui_empty()
-		ui_axis(.X)
-		ui_size(.TEXT, 1, .TEXT, 1)
-		ui_button("test6")
-		ui_button("test7")
-		ui_button("test8")
-		ui_button("test9")
+		ui_pop()
+	ui_scrollbar()
 	ui_pop()
 	ui_end()
 }

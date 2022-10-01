@@ -127,7 +127,17 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	// if box doesn't exist, create it
 	if !box_ok {
 		box = ui_generate_box(key)
-		if .FLOATING in flags do box.offset = v2_f32(state.mouse.pos)
+		if .FLOATING in flags {
+			box.offset = v2_f32(state.mouse.pos)
+		}	else if .MENU in flags {
+			if state.ui.boxes.active != nil {
+				offset := state.ui.boxes.active.offset
+				offset.y += state.ui.boxes.active.calc_size.y
+				box.offset = offset
+			} else {
+				box.offset = v2_f32(state.mouse.pos)
+			}
+		}
 	}
 
 	assert(box != nil)
@@ -241,6 +251,12 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 			cursor(.HAND)
 		}
 		box.ops.dragging = box.ops.pressed
+	}
+
+	if .MENU in box.flags {
+		if !mouse_over && lmb_click() {
+			ui_delete_panel(box.panel)
+		}
 	}
 
 	box.last_frame_touched = state.ui.frame

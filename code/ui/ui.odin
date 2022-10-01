@@ -118,7 +118,6 @@ ui_update :: proc() {
 			if es.end-es.start != 0 {
 				backspace(es)
 			}
-			fmt.println(es)
 			if !(es.len+1 > LONG_STRING_LEN) {
 				if es.start >= es.len {
 					es.mem[es.len] = u8(state.ui.last_char)
@@ -158,7 +157,7 @@ ui_update :: proc() {
 				if ctrl() {
 					es.end = editable_jump_right(es)
 				} else {
-					es.end = clamp(es.end + 1, 0, es.len-1)
+					es.end = clamp(es.end + 1, 0, es.len+1)
 				}
 			} else if ctrl() {
 				es.start = editable_jump_right(es)
@@ -205,6 +204,16 @@ ui_update :: proc() {
 			}
 
 		}
+		// HOME
+		if read_key(&state.keys.home) {
+			es.start = 0
+			es.end = 0
+		}
+
+		if read_key(&state.keys.end) {
+			es.start = es.len
+			es.end = es.len
+		}
 
 		// ESCAPE
 		if read_key(&state.keys.escape) {
@@ -219,8 +228,8 @@ ui_update :: proc() {
 		quad.b = box.panel.quad.b
 		if lmb_click_drag() {
 			cursor(.TEXT)
-			for i in 0..=es.len+1 {
-				if i <= es.len {
+			for i in 0..=es.len {
+				if i < es.len {
 					quad.r += state.ui.font.char_data[rune(es.mem[i])].advance
 				} else {
 					quad.r = box.quad.r
@@ -246,7 +255,6 @@ ui_update :: proc() {
 		}
 	}
 
-
 	// create queued panel
 	if state.ui.panels.queued != {} {
 		q := state.ui.panels.queued
@@ -257,6 +265,12 @@ ui_update :: proc() {
 	ui_calc_panel(state.ui.panels.root, state.window.quad)
 	if state.ui.panels.floating != nil {
 		ui_calc_panel(state.ui.panels.floating, state.ui.panels.floating.quad)
+	}
+	
+	if rmb_click() {
+		if state.ui.panels.hot.type != .NULL {
+			ui_queue_panel(state.ui.panels.hot, .Y, .FLOATING, .CTX_PANEL, 1.0, state.ui.ctx.panel.quad)
+		}
 	}
 
 	// NOTE build boxes
@@ -319,10 +333,6 @@ ui_update :: proc() {
 	if state.ui.panels.active != nil {
 		if state.ui.panels.active.type == .NULL {
 			push_quad_solid(state.ui.panels.active.bar, state.ui.col.active)
-		} else if state.ui.panels.active.type == .FLOATING {
-			// push_quad_solid(state.ui.panels.active.quad, {1,0,1,1})
-		} else {
-			// push_quad_solid(state.ui.panels.active.quad, {1,0,0,1})
 		}
 	}
 

@@ -67,14 +67,27 @@ editable_jump_right :: proc(es: ^Editable_String) -> int {
 		end = es.start
 	}
 
-	for m in end+1..=es.len+1 {
-		letter := rune(es.mem[m])
-		if m == es.len {
-			return m
-		} else if letter == ' ' {
-			return m
+	index := end+1
+	if index > es.len {
+		return es.len
+	} else {
+		for index <= es.len {
+			letter := rune(es.mem[clamp(index, 0, es.len)])
+			if letter == 0 || letter == ' ' {
+				return index
+			}
+			index += 1
 		}
 	}
+
+	// for m in end+1..=es.len+1 {
+	// 	letter := rune(es.mem[m])
+	// 	if m == es.len {
+	// 		return m
+	// 	} else if letter == ' ' {
+	// 		return m
+	// 	}
+	// }
 	return 0
 }
 
@@ -118,16 +131,14 @@ backspace :: proc(es: ^Editable_String) {
 			}
 		} else if es.start < es.end {
 			copy(es.mem[es.start:], es.mem[es.end:])
-			es.len = es.len - (es.end-1 - es.start)
+			es.len = es.len - (es.end - es.start)
 			es.end = es.start
 		} else if es.end < es.start {
 			copy(es.mem[es.end:], es.mem[es.start:])
-			fmt.println(es.start, es.end, es.len)
 			es.len -= (es.start - es.end)
 			es.start = es.end
 		}
 	}
-	fmt.println(es)
 }
 
 short_to_string :: proc(short: ^Short_String) -> string {

@@ -37,9 +37,6 @@ State :: struct {
 
 	render: Gl,
 	ui: Ui,
-	// window_size: v2i,
-	// window_quad: Quad,
-	// framebuffer_res: v2i,
 	mouse: Mouse,
 	keys: Keys,
 	mode: Mode,
@@ -112,6 +109,8 @@ Keys :: struct {
 	space: bool,
 	backspace: bool,
 	delete: bool,
+	home: bool,
+	end: bool,
 
 	n_enter: bool,
 	n_plus: bool,
@@ -165,7 +164,7 @@ init :: proc() -> bool {
 	state.mouse.cursor.y = glfw.CreateStandardCursor(glfw.VRESIZE_CURSOR)
 
 	// TODO DEBUG
-	state.debug.text = string_to_editable("Hello World")
+	state.debug.text = string_to_editable("xxxxx-----")
 
 	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
 	
@@ -269,7 +268,9 @@ keyboard_callback :: proc(Window: glfw.WindowHandle, key: int, scancode: int, ac
 		case glfw.KEY_SPACE:			process_keyboard_input(action, &state.keys.space, true)
 		case glfw.KEY_BACKSPACE:		process_keyboard_input(action, &state.keys.backspace, true)
 		case glfw.KEY_DELETE:			process_keyboard_input(action, &state.keys.delete, true)
-		
+		case glfw.KEY_HOME:				process_keyboard_input(action, &state.keys.home, true)
+	 	case glfw.KEY_END:				process_keyboard_input(action, &state.keys.end, true)
+
 		case glfw.KEY_KP_ENTER:			process_keyboard_input(action, &state.keys.enter, true)
 		case glfw.KEY_KP_SUBTRACT:		process_keyboard_input(action, &state.keys.n_minus, false)
 		case glfw.KEY_KP_ADD:			process_keyboard_input(action, &state.keys.n_plus, false)
@@ -309,6 +310,8 @@ lmb_click_drag :: proc() -> bool { return lmb_click() || lmb_drag() }
 lmb_release :: proc() -> bool { return mouse_button(state.mouse.left, .RELEASE) }
 lmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.left, .RELEASE) || mouse_button(state.mouse.left, .UP)) }
 lmb_up :: proc() -> bool { return mouse_button(state.mouse.left, .UP) }
+
+rmb_click :: proc() -> bool { return mouse_button(state.mouse.right, .CLICK) }
 
 set_cursor :: proc() {
 	cursor:glfw.CursorHandle

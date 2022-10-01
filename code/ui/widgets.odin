@@ -29,16 +29,33 @@ ui_begin :: proc() -> ^Panel {
 //   ui_begin_floating()
 // at the beginning of floating panels instead of ui_begin()
 //
-ui_begin_floating :: proc() -> ^Panel {
+ui_begin_floating :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING}) -> ^Panel {
 	state.ui.ctx.render_layer = 1
 	state.ui.ctx.box = nil
 	state.ui.ctx.parent = nil
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
-	box := ui_create_box("root_floating", { .ROOT, .DRAWBACKGROUND, .FLOATING })
+	box := ui_create_box("root_floating", flags)
 	state.ui.ctx.panel.box = box
 	ui_push_parent(box)
 	return state.ui.ctx.panel
 }
+
+// use
+//   ui_begin_menu()
+// at the beginning of menu panels instead of ui_begin()
+//
+ui_begin_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .MENU}) -> ^Panel {
+	return ui_begin_floating(flags)
+}
+
+// use
+//   ui_begin_floating_menu()
+// at the beginning of menu panels instead of ui_begin()
+//
+ui_begin_floating_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING, .MENU}) -> ^Panel {
+	return ui_begin_floating(flags)
+}
+
 // use 
 //   ui_end()
 // at end of each panel.
@@ -168,8 +185,8 @@ ui_label :: proc(key: string) -> Box_Ops {
 	return box.ops
 }
 
-// creates a box that draws text that is attached to a value
-// and is dynamic
+// creates a box that draws text that is
+// attached to a value and is dynamic.
 // uses fmt.tprintf() to convert value to text
 
 ui_value :: proc(key: string, value: any) -> Box_Ops {
@@ -209,7 +226,22 @@ ui_button :: proc(key: string) -> Box_Ops {
 	return box.ops
 }
 
-// creates a selectable box
+// creates a button without a border (for use in menus)
+
+ui_menu_button :: proc(key: string) -> Box_Ops {
+	box := ui_create_box(key, {
+		.CLICKABLE,
+		.HOVERABLE,
+		.DRAWTEXT,
+		.DRAWBACKGROUND,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+	})
+	box.text_align = .LEFT
+	return box.ops
+}
+
+// creates a selectable box (for making dropdowns, checkboxes)
 
 ui_selectable :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key, {
@@ -269,6 +301,7 @@ ui_scrollbox :: proc() -> ^Box {
 // add at the end of of a scrollbox to add a draggable bar to scroll with
 
 ui_scrollbar :: proc() -> ^Box {
+	
 	viewport := state.ui.ctx.parent.first
 	dragbar_height := ((viewport.calc_size.y + viewport.expand.y) / viewport.sum_children.y) * (viewport.calc_size.y + viewport.expand.y)
 
@@ -278,6 +311,7 @@ ui_scrollbar :: proc() -> ^Box {
 		ui_size(.PIXELS, 0, .PCT_PARENT, 1)
 	}
 	
+	ui_axis(.X)
 	dragbar := ui_create_box("scrollbar", { .DRAWBORDER, .CLIP } )
 	ui_push_parent(dragbar)
 	ui_axis(.Y)
@@ -316,14 +350,13 @@ ui_sizebar_y :: proc() -> ^Box {
 }
 
 // add this anywhere in a floating panel and you use the space to drag the panel around
-// TODO might be used for draggable boxes with boxes at some point?
+// TODO might be used for draggable boxes within boxes at some point?
 
 ui_drag_panel :: proc(label:string="") -> ^Box {
 	box: ^Box
 	if label == "" {
 		box = ui_create_box("drag_panel", {
 			.CLICKABLE,
-			.SELECTABLE,
 			.HOVERABLE,
 			.DRAGGABLE,
 			.DRAWBACKGROUND,
@@ -331,7 +364,6 @@ ui_drag_panel :: proc(label:string="") -> ^Box {
 	} else {
 		box = ui_create_box(label, {
 			.CLICKABLE,
-			.SELECTABLE,
 			.HOVERABLE,
 			.DRAGGABLE,
 			.DRAWBACKGROUND,
