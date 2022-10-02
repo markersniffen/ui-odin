@@ -123,7 +123,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	key := ui_gen_key(name)
 	box, box_ok := state.ui.boxes.all[key]
 	parent := state.ui.ctx.parent
-
+	
 	// if box doesn't exist, create it
 	if !box_ok {
 		box = ui_generate_box(key)
@@ -171,14 +171,6 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 				parent.last.next = box
 				box.prev = parent.last
 			}
-			// if state.ui.ctx.box == parent {
-			// 	parent.first = box
-			// 	box.prev = nil
-			// } else if parent.first != nil {
-			// 	assert(parent.last != nil)
-			// 	parent.last.next = box
-			// 	box.prev = parent.last
-			// }
 			parent.last = box
 			box.next = nil
 		}

@@ -154,6 +154,7 @@ init :: proc() -> bool {
 	glfw.SetMouseButtonCallback(state.window.handle, cast(glfw.MouseButtonProc)mouse_callback)
 	glfw.SetScrollCallback(state.window.handle, cast(glfw.ScrollProc)scroll_callback)
 	glfw.SetCharCallback(state.window.handle, cast(glfw.CharProc)typing_callback)
+	glfw.SetWindowSizeCallback(state.window.handle, cast(glfw.WindowSizeProc)size_callback)
 	glfw.SetWindowUserPointer(state.window.handle, state)
 
 	state.mouse.cursor.arrow = glfw.CreateStandardCursor(glfw.ARROW_CURSOR)
@@ -188,7 +189,6 @@ update :: proc() {
 	state.window.size = {width, height}
 	state.window.quad = {0, 0, f32(width), f32(height)}
 	
-
 	framebuffer_width, framebuffer_height := glfw.GetFramebufferSize(state.window.handle)
 	state.window.framebuffer = {framebuffer_width, framebuffer_height}
 	
@@ -220,6 +220,11 @@ quit :: proc() {
 	glfw.DestroyWindow(state.window.handle)
 	glfw.Terminate()
 	free(state)
+}
+
+size_callback :: proc() {
+	// fmt.sbprintf("%v", 10)
+	// ui_update(true)
 }
 
 shift :: proc() -> bool { return state.keys.shift }

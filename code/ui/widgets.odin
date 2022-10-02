@@ -243,7 +243,7 @@ ui_menu_button :: proc(key: string) -> Box_Ops {
 
 // creates a selectable box (for making dropdowns, checkboxes)
 
-ui_selectable :: proc(key: string) -> Box_Ops {
+ui_dropdown :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key, {
 		.CLICKABLE,
 		.SELECTABLE,
@@ -255,7 +255,12 @@ ui_selectable :: proc(key: string) -> Box_Ops {
 		.HOTANIMATION,
 		.ACTIVEANIMATION,
 	})
-	box.text_align = .CENTER
+	if box.ops.selected {
+		box.name = string_to_short("###s")
+	} else {
+		box.name = string_to_short("###d")
+	}
+	box.text_align = .LEFT
 	return box.ops
 }
 

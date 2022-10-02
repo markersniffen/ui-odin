@@ -5,7 +5,6 @@ import "core:fmt"
 Panel_Content :: enum {
 	NONE,
 	FILE_MENU,
-	FLOATER,
 	MENU_FILE,
 	MENU_EDIT,
 	MENU_VIEW,
@@ -158,7 +157,7 @@ ui_panel_testlist :: proc() {
 		ui_pop()
 		ui_size(.PCT_PARENT, 1, .TEXT, 1)
 		ui_button("whee")
-		if ui_selectable("Select Me").selected {
+		if ui_dropdown("Select Me").selected {
 			ui_button("first")
 			ui_button("second")
 		}
@@ -264,8 +263,10 @@ ui_panel_pick_panel :: proc() {
 	ui_size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
 	ui_empty()
 		ui_size(.PCT_PARENT, 1, .TEXT, 1)
+		draw_button := false
 		for p, i in Panel_Content {
-			if i > 3 {
+			if p == .DEBUG do draw_button = true
+			if draw_button {
 				if ui_button(fmt.tprintf("%v", p)).released {
 					panel.parent.content = p
 					ui_delete_panel(panel)

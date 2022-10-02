@@ -104,7 +104,7 @@ ui_init :: proc() {
 }
 
 //______ UI UPDATE ______//
-ui_update :: proc() {
+ui_update :: proc(test:=false) {
 	set_cursor()
 	cursor(.NULL)
 
@@ -254,6 +254,7 @@ ui_update :: proc() {
 			}
 		}
 	}
+	
 
 	// create queued panel
 	if state.ui.panels.queued != {} {
@@ -262,17 +263,18 @@ ui_update :: proc() {
 		state.ui.panels.queued = {}
 	}
 
+
 	ui_calc_panel(state.ui.panels.root, state.window.quad)
 	if state.ui.panels.floating != nil {
 		ui_calc_panel(state.ui.panels.floating, state.ui.panels.floating.quad)
 	}
 	
+
 	if rmb_click() {
 		if state.ui.panels.hot.type != .NULL {
 			ui_queue_panel(state.ui.panels.hot, .Y, .FLOATING, .CTX_PANEL, 1.0, state.ui.ctx.panel.quad)
 		}
 	}
-
 	// NOTE build boxes
 	for _, panel in state.ui.panels.all {
 		state.ui.ctx.panel = panel
@@ -294,6 +296,7 @@ ui_update :: proc() {
 			box_index += 1
 		}
 	}
+
 	if box_index > 0 {
 		for i in 0..<box_index {
 			box := cast(^Box)state.ui.boxes.to_delete[i]

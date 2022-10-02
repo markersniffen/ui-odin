@@ -8,6 +8,7 @@
 [X] editable text
   [X] adding space at begining or with no text crashes (?)
   [X] select any and backspace() calculates len wrong
+[ ] render while resizing window
 [ ] ctrl click editable text for values (e.g. buttons)
 [O] context menu
   [ ] hover over other menu buttons?
