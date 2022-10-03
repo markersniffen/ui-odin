@@ -14,6 +14,7 @@ Panel_Content :: enum {
 	PROPERTIES,
 	BOXLIST,
 	TESTLIST,
+	TABTEST,
 }
 
 build_panel_content :: proc(content: Panel_Content) {
@@ -32,6 +33,7 @@ build_panel_content :: proc(content: Panel_Content) {
 		case .PROPERTIES: 	ui_panel_properties()
 		case .BOXLIST: 		ui_panel_boxlist()
 		case .TESTLIST: 	ui_panel_testlist()
+		case .TABTEST:		ui_panel_tab_test()
 	}
 }
 
@@ -164,6 +166,36 @@ ui_panel_testlist :: proc() {
 		ui_pop()
 		ui_axis(.X)
 		ui_scrollbar()
+	ui_end()
+}
+
+ui_panel_tab_test :: proc() {
+	ui_begin()
+	tab_names : []string = {"First", "Second", "Third"}
+	tab, active := ui_tab(tab_names)
+	
+	ui_axis(.Y)
+	ui_size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
+	ui_empty()
+	ui_size(.TEXT, 1, .TEXT, 1)
+	ui_axis(.Y)
+	if active != nil {
+		switch string(active.name.mem[:active.name.len]) {
+			case "First":
+				ui_button("Tab one | Button 1")
+				ui_button("Tab one | Button 2")
+				ui_button("Tab one | Button 3")
+			case "Second":
+				ui_button("Tab two | Button 1")
+				ui_button("Tab two | Button 2")
+				ui_button("Tab two | Button 3")
+			case "Third":
+				ui_button("Tab three | Button 1")
+				ui_button("Tab three | Button 2")
+				ui_button("Tab three | Button 3")
+		}
+	}
+
 	ui_end()
 }
 

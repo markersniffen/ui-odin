@@ -22,6 +22,7 @@ Box :: struct {
 	hash_prev: ^Box,
 
 	last_frame_touched: u64,
+	frame_created: u64,
 
 	flags: bit_set[Box_Flags],
 	ops: Box_Ops,
@@ -126,7 +127,11 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	
 	// if box doesn't exist, create it
 	if !box_ok {
+		fmt.println("CReating from scratch: ", name)
+		fmt.println("FRAME CREATED:", state.ui.frame)
 		box = ui_generate_box(key)
+		box.frame_created = state.ui.frame
+		fmt.println(box.frame_created)
 		if .FLOATING in flags {
 			box.offset = v2_f32(state.mouse.pos)
 		}	else if .MENU in flags {
@@ -141,7 +146,6 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	}
 
 	assert(box != nil)
-
 	box.name = string_to_short(name)
 	box.flags = flags
 	box.value = value

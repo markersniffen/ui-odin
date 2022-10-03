@@ -256,12 +256,61 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 		.ACTIVEANIMATION,
 	})
 	if box.ops.selected {
-		box.name = string_to_short("###s")
+		box.name = string_to_short(fmt.tprintf("###s %v", key))
 	} else {
-		box.name = string_to_short("###d")
+		box.name = string_to_short(fmt.tprintf("###d %v", key))
 	}
 	box.text_align = .LEFT
 	return box.ops
+}
+
+// creates a radio button
+
+ui_radio :: proc(key: string) -> ^Box {
+	box := ui_create_box(key, {
+		.CLICKABLE,
+		.HOVERABLE,
+		.DRAWTEXT,
+		.DRAWBORDER,
+		.DRAWBACKGROUND,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+		.ACTIVEANIMATION,
+	})
+	return box
+}
+
+// creates a tab
+
+ui_tab :: proc(names: []string) -> (^Box, ^Box) {
+	ui_size(.PCT_PARENT, 1, .TEXT, 1)
+	tab := ui_empty()
+	ui_axis(.X)
+	ui_size(.TEXT, 1, .TEXT, 1)
+	selected : ^Box
+	clicked := false
+	for name in names {
+		radio := ui_radio(name)
+		if radio.ops.clicked {
+			selected = radio
+			clicked = true
+		}
+	}
+	if tab.first != nil {
+		if state.ui.frame - tab.first.frame_created <= 10 {
+			selected = tab.first
+			selected.ops.selected = true
+		}
+	}
+
+	if clicked {
+		for child := tab.first; child != nil; child = child.next {
+			child.ops.selected = string(child.name.mem[:child.name.len]) == string(selected.name.mem[:selected.name.len])
+		}
+	}
+
+	ui_pop()
+	return tab, selected
 }
 
 // creates a spacer that fills up the .X axis, subtracting the sum of siblings from the parent size

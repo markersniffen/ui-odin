@@ -104,7 +104,7 @@ ui_init :: proc() {
 }
 
 //______ UI UPDATE ______//
-ui_update :: proc(test:=false) {
+ui_update :: proc() {
 	set_cursor()
 	cursor(.NULL)
 
@@ -304,7 +304,6 @@ ui_update :: proc(test:=false) {
 			state.ui.boxes.to_delete[i] = nil
 		}
 	}
-	
 	panels : [MAX_PANELS]^Panel
 
 	index:= 0
@@ -344,7 +343,6 @@ ui_update :: proc(test:=false) {
 			ui_draw_boxes(panel.box, panel.quad)
 		}
 	}
-
 	if state.ui.panels.floating != nil {
 		ui_draw_boxes(state.ui.panels.floating.box, state.ui.panels.floating.quad)
 		if state.ui.panels.floating.box.first != nil {
@@ -368,10 +366,8 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	if clip_ok {
 		if .DRAWBACKGROUND in box.flags {
 			push_quad_gradient_v(quad, box.bg_color, box.bg_color)
-			if .SELECTABLE in box.flags {
-				if box.ops.selected {
-					push_quad_gradient_v(quad, state.ui.col.active, state.ui.col.active)
-				}
+			if box.ops.selected {
+				push_quad_gradient_v(quad, state.ui.col.active, state.ui.col.active)
 			}
 		}
 		if .DRAWBORDER in box.flags {

@@ -2,6 +2,7 @@ package ui
 
 import "core:fmt"
 import "core:time"
+import "core:runtime"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
 
@@ -26,6 +27,7 @@ v4i :: [4]i32
 state: ^State
 
 State :: struct {
+
 	uid: Uid,
 	window: Window,
 	quit: bool,
@@ -127,6 +129,7 @@ Keys :: struct {
 }
 
 init :: proc() -> bool {
+	fmt.println(context.temp_allocator)
 	if !bool(glfw.Init())
 	{
 		fmt.eprintln("GLFW has failed to load.")
@@ -154,7 +157,7 @@ init :: proc() -> bool {
 	glfw.SetMouseButtonCallback(state.window.handle, cast(glfw.MouseButtonProc)mouse_callback)
 	glfw.SetScrollCallback(state.window.handle, cast(glfw.ScrollProc)scroll_callback)
 	glfw.SetCharCallback(state.window.handle, cast(glfw.CharProc)typing_callback)
-	glfw.SetWindowSizeCallback(state.window.handle, cast(glfw.WindowSizeProc)size_callback)
+	// glfw.SetWindowSizeCallback(state.window.handle, cast(glfw.WindowSizeProc)size_callback)
 	glfw.SetWindowUserPointer(state.window.handle, state)
 
 	state.mouse.cursor.arrow = glfw.CreateStandardCursor(glfw.ARROW_CURSOR)
@@ -182,7 +185,7 @@ update :: proc() {
 
 	state.quit = bool(glfw.WindowShouldClose(state.window.handle))
 	if state.quit do return
-
+	
 	glfw.PollEvents()
 
 	width, height := glfw.GetWindowSize(state.window.handle)
@@ -214,6 +217,7 @@ update :: proc() {
 	}
 	state.mouse.scroll = {0,0}
 	state.prev_time = state.start_time
+	
 }
 
 quit :: proc() {
@@ -222,10 +226,9 @@ quit :: proc() {
 	free(state)
 }
 
-size_callback :: proc() {
-	// fmt.sbprintf("%v", 10)
-	// ui_update(true)
-}
+
+// size_callback :: proc(Window: glfw.WindowHandle) {
+// }
 
 shift :: proc() -> bool { return state.keys.shift }
 alt :: proc() -> bool { return state.keys.alt }
