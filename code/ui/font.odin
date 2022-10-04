@@ -58,23 +58,16 @@ Text_Align :: enum {
 }
 
 ui_init_font :: proc() {
-
 	ui_set_font_size()
-	state.ui.col.base 			= {0.1, 0.1, 0.1, 1}
-
-	state.ui.col.bg 			= {0.1, 0.1, 0.1, 1}
-	state.ui.col.bg_light 		= {0.1, 0.1, 0.1, 1}
-
-	state.ui.col.border 		= {0.3, 0.3, 0.3, 1}
-	state.ui.col.border_light 	= {0.5, 0.5, 0.5, 1}
-
-	state.ui.col.font 			= {  1,   1,   1, 1}
-	state.ui.col.font_hot 		= {  1, 0.6, 0.6, 1}
-
-	state.ui.col.hot 			= {0.4, 0.4, 0.3, 1}
-	state.ui.col.active 		= {0.8, 0.4, 0.1, 1}
-	
-	state.ui.col.highlight 		= {0.0, 0.2,   1, 1}
+	state.ui.col.backdrop 	= {0.0,  0.0,  .05,  1.0}
+	state.ui.col.bg 			= {0.0,  0.0,  0.1,  1.0}
+	state.ui.col.gradient	= {0.6,  0.0,  1.0,  0.2}
+	state.ui.col.border 		= {0.6,  0.0,  0.3,  1.0}
+	state.ui.col.font 		= {1.0,  1.0,  1.0,  1.0}
+	state.ui.col.hot 			= {0.6,  1.0,  0.4,  0.4}
+	state.ui.col.inactive   = {0.6,  1.0,  0.4,  0.4}
+	state.ui.col.active 		= {0.8,  0.5,  0.3,  1.0}
+	state.ui.col.highlight 	= {0.6,  0.7,  0.4,  1.0}
 }
 
 ui_load_font :: proc(font: ^Font) {
@@ -130,7 +123,7 @@ ui_set_font_size :: proc(size: f32 = 18) {
 	state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
 }
 
-draw_editable_text :: proc(editing: bool, editable: ^Editable_String, quad: Quad, align: Text_Align = .LEFT, color: v4 = {1,1,1,1}) {
+draw_editable_text :: proc(editing: bool, editable: ^Editable_String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}) {
 	using stb
 
 	text := editable_to_string(editable)
@@ -195,7 +188,7 @@ draw_editable_text :: proc(editing: bool, editable: ^Editable_String, quad: Quad
 	}
 }
 
-draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: v4 = {1,1,1,1} ) {
+draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1} ) {
 	using stb
 
 	left_align: f32 = quad.l

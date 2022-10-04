@@ -27,8 +27,11 @@ Box :: struct {
 	flags: bit_set[Box_Flags],
 	ops: Box_Ops,
 
-	bg_color: v4,
-	border_color: v4,
+
+	bg_color: 		HSL,
+	border_color: HSL,
+	font_color:		HSL,
+
 	border: f32,
 	text_align: Text_Align,
 
@@ -75,6 +78,7 @@ Box_Flags :: enum {
 	FLOATING,
 	MENU,
 	PANEL,
+	NO_OFFSET,
 
 	CLICKABLE,
 	HOVERABLE,		
@@ -127,20 +131,17 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	
 	// if box doesn't exist, create it
 	if !box_ok {
-		fmt.println("CReating from scratch: ", name)
-		fmt.println("FRAME CREATED:", state.ui.frame)
 		box = ui_generate_box(key)
 		box.frame_created = state.ui.frame
-		fmt.println(box.frame_created)
 		if .FLOATING in flags {
-			box.offset = v2_f32(state.mouse.pos)
+			box.offset = state.mouse.pos
 		}	else if .MENU in flags {
 			if state.ui.boxes.active != nil {
 				offset := state.ui.boxes.active.offset
 				offset.y += state.ui.boxes.active.calc_size.y
 				box.offset = offset
 			} else {
-				box.offset = v2_f32(state.mouse.pos)
+				box.offset = state.mouse.pos
 			}
 		}
 	}
@@ -153,6 +154,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	box.axis = state.ui.ctx.axis
 	box.bg_color = state.ui.ctx.bg_color
 	box.border_color = state.ui.ctx.border_color
+	box.font_color = state.ui.ctx.font_color
 	box.border = state.ui.ctx.border
 	box.text_align = state.ui.ctx.text_align
 	box.render_layer = state.ui.ctx.render_layer
@@ -343,7 +345,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 	for box := root; box != nil; box = box.hash_next	{
 		if .DRAGGABLE in box.flags {
 			if box.ops.dragging {
-				box.panel.box.offset += v2_f32(state.mouse.delta)
+				box.panel.box.offset += state.mouse.delta
 			}
 		} else if !(.ROOT in box.flags) {
 			if box.prev == nil {
@@ -362,7 +364,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 						box.scroll = {0,0}
 					}
 				}
-			} else {
+			} else if !(.NO_OFFSET in box.flags) {
 				box.offset[box.axis] = box.prev.offset[box.axis] + box.prev.calc_size[box.axis]
 			}
 		}

@@ -3,7 +3,7 @@ package ui
 import "core:fmt"
 
 MAX_PANELS :: 40
-PANEL_MARGIN :: 2
+PANEL_MARGIN :: 1
 
 Panel :: struct {
 	uid: Uid,

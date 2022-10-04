@@ -58,30 +58,49 @@ UI_Context :: struct {
 	axis: Axis,
 	size: [XY]Box_Size,
 
-	font_color: v4,
-	bg_color: v4,
-	border_color: v4,
+	bg_color: HSL,
+	border_color: HSL,
+	font_color: HSL,
 	border: f32,
 	text_align: Text_Align,
 }
 
+// backdrop					dark dark grey
+// bg						dark grey
+// border					grey
+// highlight				blue
+// accent					bright blue
+// hot						orange
+// inactive					
+// active					red
+// text 	light / dark	white
+
+HSL :: struct {
+	h:f32,
+	s:f32,
+	l:f32,
+	a:f32,
+}
+
 UI_Colors :: struct {
-	base: v4,
-	bg: v4,
-	bg_light: v4,
-	border: v4,
-	border_light: v4,
-	font: v4,
-	font_hot: v4,
-	hot: v4,
-	active: v4,	
-	highlight: v4,
+	backdrop: HSL,
+	bg: HSL,
+	gradient: HSL,
+	border: HSL,
+	highlight: HSL,
+	accent: HSL,
+	hot: HSL,
+	inactive: HSL,
+	font: HSL,
+	active: HSL,	
+	// bg_light: v4,
+	// border_light: v4,
+	// font_hot: v4,
 }
 
 Axis :: enum {
 	X,
 	Y,
-	XY,
 }
 
 //______ INITIALIZATION ______ //
@@ -92,7 +111,7 @@ ui_init :: proc() {
 	pool_init(&state.ui.boxes.pool, size_of(Box), MAX_BOXES, "Boxes")
 
 	ui_create_panel(nil, .Y, .STATIC, .FILE_MENU, 0.3)
-	ui_create_panel(state.ui.ctx.panel, .Y, .DYNAMIC, .TESTLIST, 0.1)
+	ui_create_panel(state.ui.ctx.panel, .Y, .DYNAMIC, .COLORS, 0.1)
 	ui_create_panel(state.ui.ctx.panel, .X, .DYNAMIC, .DEBUG, 0.5)
 	ui_create_panel(state.ui.ctx.panel, .Y, .DYNAMIC, .PROPERTIES, 0.3)
 
@@ -279,7 +298,7 @@ ui_update :: proc() {
 	for _, panel in state.ui.panels.all {
 		state.ui.ctx.panel = panel
 		if panel.type == .NULL {
-			push_quad_solid(panel.bar, {0.3,0.3,0.3,1})
+			push_quad_solid(panel.bar, state.ui.col.inactive)
 		} else {
 			build_panel_content(panel.content)
 		}
@@ -361,7 +380,8 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 
 	quad, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
 
-	if .ROOT in box.flags do push_quad_border(quad, {0.1,0.1,0.1,1}, 1)
+	// NOTE COLORS
+	// if .ROOT in box.flags do push_quad_border(quad, state.ui.col.backdrop, 1)
 
 	if clip_ok {
 		if .DRAWBACKGROUND in box.flags {
@@ -373,36 +393,38 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		if .DRAWBORDER in box.flags {
 			push_quad_border(quad, state.ui.col.border, box.border)
 		}
-		if .HOVERABLE in box.flags {
-			// if box.ops.hovering do push_quad_solid(quad, state.ui.col.hot)
+
+		if .HOTANIMATION in box.flags {
+			hot := state.ui.col.hot
+			push_quad_gradient_v(quad, {hot.h, hot.s, hot.l, hot.a * box.hot_t}, {hot.h, hot.s, hot.l, hot.a * box.hot_t})
+		}
+		if .ACTIVEANIMATION in box.flags {
+			active := state.ui.col.active
+			push_quad_gradient_v(quad, {active.h, active.s, active.l, active.a * box.active_t}, {active.h, active.s, active.l, active.a * box.active_t})	
 		}
 		if .DRAWGRADIENT in box.flags {
 			if box.ops.editing {
-				push_quad_gradient_v(quad, {0,0,0,0}, {1,1,1,0.1})
+				push_quad_gradient_v(quad, {0,0,0,0}, state.ui.col.gradient)
 			} else {
-				push_quad_gradient_v(quad, {1,1,1,0.1}, {0,0,0,0})
+				push_quad_gradient_v(quad, state.ui.col.gradient, {0,0,0,0})
 			}
 		}
 		if .DRAWTEXT in box.flags {
-			draw_text(short_to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align)
+			draw_text(short_to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
 		} else if .EDITTEXT in box.flags {
 			if box.ops.editing do push_quad_border(quad, state.ui.col.active, box.border)
-			draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align)
+			draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
 		}
 		if .DISPLAYVALUE in box.flags {
 			text := fmt.tprintf("%v %v", short_to_string(&box.name), box.value)
-			draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align)
+			draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
 		}
-		if .HOTANIMATION in box.flags {
-			push_quad_gradient_v(quad, {1,1,1,0.4 * box.hot_t}, {1,1,1,0.2 * box.hot_t})
-		}
-		if .ACTIVEANIMATION in box.flags {
-			push_quad_gradient_v(quad, {1,0,0,0.4 * box.active_t}, {0.5,0,0,0.2 * box.active_t})	
-		}
+
+		// TODO DEBUG
 		if .DEBUG in box.flags {
-			push_quad_border(quad, {1,0,1,1}, 1)
-			// draw_text(box.name, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, {1,0,1,1})
+			push_quad_border(quad, {0.85,1,0.5,1}, 1)
 		}
+
 	}
 
 	ui_draw_boxes(box.next, clip_to)

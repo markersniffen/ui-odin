@@ -14,3 +14,7 @@ mouse_in_quad :: proc(quad: Quad) -> bool {
 v2_f32 :: proc(value: v2i) -> v2 {
 	return {f32(value.x), f32(value.y)}
 }
+
+linear :: proc(value, OldMin, OldMax, NewMin, NewMax: f32) -> f32 {
+	return (((value - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+}

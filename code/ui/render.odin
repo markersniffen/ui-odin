@@ -4,6 +4,7 @@ import "core:fmt"
 import "core:mem"
 import "core:os"
 import "core:strings"
+import lin "core:math/linalg"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
 
@@ -133,8 +134,13 @@ set_render_layer :: proc(layer: int) {
 	state.render.layer_index = layer
 }
 
-push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1}, cD:v4={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	mix:f32=0) {
+push_quad :: 	proc(quad:Quad,	_cA:HSL={1,1,1,1}, _cB:HSL={1,1,1,1}, _cC:HSL={1,1,1,1}, _cD:HSL={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	mix:f32=0) {
 	vertex_arrays: [4][40]f32
+
+	cA : v4 = v4(lin.vector4_hsl_to_rgb(_cA.h, _cA.s, _cA.l, _cA.a))
+	cB : v4 = v4(lin.vector4_hsl_to_rgb(_cB.h, _cB.s, _cB.l, _cB.a))
+	cC : v4 = v4(lin.vector4_hsl_to_rgb(_cC.h, _cC.s, _cC.l, _cC.a))
+	cD : v4 = v4(lin.vector4_hsl_to_rgb(_cD.h, _cD.s, _cD.l, _cD.a))
 
 	if border == 0
 	{
@@ -173,23 +179,23 @@ push_quad :: 	proc(quad:Quad,	cA:v4={1,1,1,1}, cB:v4={1,1,1,1}, cC:v4={1,1,1,1},
 	}
 }
 
-push_quad_solid :: proc(quad: Quad, color:v4) {
+push_quad_solid :: proc(quad: Quad, color:HSL) {
 	push_quad(quad,	color, color, color, color, 0, {0,0,0,0}, 0)
 }
 
-push_quad_gradient_h :: proc(quad: Quad, color_left:v4, color_right:v4) {
+push_quad_gradient_h :: proc(quad: Quad, color_left:HSL, color_right:HSL) {
 	push_quad(quad,	color_left, color_right, color_left, color_right, 0, {0,0,0,0}, 0)
 }
 
-push_quad_gradient_v :: proc(quad: Quad, color_top:v4, color_bottom:v4) {
+push_quad_gradient_v :: proc(quad: Quad, color_top:HSL, color_bottom:HSL) {
 	push_quad(quad,	color_top, color_top, color_bottom, color_bottom, 0, {0,0,0,0}, 0)
 }
 
-push_quad_border :: proc(quad: Quad, color:v4, border: f32=2) {
+push_quad_border :: proc(quad: Quad, color:HSL, border: f32=2) {
 	push_quad(quad,	color, color, color, color, border, {0,0,0,0}, 0)
 }
 
-push_quad_font :: proc(quad: Quad, color:v4, uv:Quad, font_icon:f32) {
+push_quad_font :: proc(quad: Quad, color:HSL, uv:Quad, font_icon:f32) {
 	push_quad(quad,	color, color, color, color, 0, uv, font_icon)
 }
 

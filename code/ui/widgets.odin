@@ -11,7 +11,14 @@ import "core:mem"
 //   ui_begin()
 // this creates a root box and set's it to the context parent
 
+ui_reset_colors :: proc() {
+	state.ui.ctx.bg_color = state.ui.col.bg
+	state.ui.ctx.border_color = state.ui.col.border
+	state.ui.ctx.font_color = state.ui.col.font
+}
+
 ui_begin :: proc() -> ^Panel {
+	ui_reset_colors()
 	state.ui.ctx.render_layer = 0
 	state.ui.ctx.box = nil
 	state.ui.ctx.parent = nil
@@ -30,6 +37,7 @@ ui_begin :: proc() -> ^Panel {
 // at the beginning of floating panels instead of ui_begin()
 //
 ui_begin_floating :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING}) -> ^Panel {
+	ui_reset_colors()
 	state.ui.ctx.render_layer = 1
 	state.ui.ctx.box = nil
 	state.ui.ctx.parent = nil
@@ -133,7 +141,7 @@ ui_set_render_layer 	:: proc(layer: int) 	{ state.ui.ctx.render_layer = layer }
 
 // sets the border color
 
-ui_set_border_color 	:: proc(color: v4) 		{ state.ui.ctx.border_color = color }
+ui_set_border_color 	:: proc(color: HSL) 		{ state.ui.ctx.border_color = color }
 
 // sets the border thickness
 
@@ -177,6 +185,29 @@ ui_empty :: proc(_name:string="") -> ^Box {
 	return box
 }
 
+
+ui_bar :: proc(axis:Axis=.Y) -> ^Box {
+	ui_axis(axis)
+	if axis == .Y {
+		ui_size(.PCT_PARENT, 1, .PIXELS, state.ui.margin)
+	} else {
+		ui_size(.PIXELS, state.ui.margin, .PCT_PARENT, 1)
+	}
+	return ui_create_box("bar", { .DRAWBACKGROUND })
+}
+
+// draws a color filled box
+
+ui_color :: proc(color:HSL) -> ^Box {
+	box := ui_create_box("editable_text", {
+		.DRAWBACKGROUND,
+		.DRAWBORDER,
+	})
+	box.bg_color = color
+	return box
+}
+
+
 // creates a box that draws static text
 // don't use this for values that change
 
@@ -206,6 +237,47 @@ ui_edit_text :: proc(editable: ^Editable_String) -> Box_Ops {
 		.DRAWGRADIENT,
 	})
 	box.editable_string = editable
+	return box.ops
+}
+
+ui_slider :: proc(label:string, value:^f32) -> Box_Ops {
+	old_size := state.ui.ctx.size
+	box := ui_create_box(label, {
+		.CLICKABLE,
+		.HOVERABLE,
+		.DRAWBACKGROUND,
+		.DRAWBORDER,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+		.ACTIVEANIMATION,
+	}, any(value))
+
+	if box.ops.clicked {
+		fmt.println(linear(value^, 0, 1, 0, box.calc_size.x))
+		state.mouse.delta_temp = state.mouse.pos - linear(value^, 0, 1, 0, box.calc_size.x)
+	}
+
+	if box.ops.pressed {
+		value^ = clamp(linear(state.mouse.pos.x-state.mouse.delta_temp.x, 0, box.calc_size.x, 0, 1), 0, 1)
+	}
+	
+	ui_push_parent(box)
+	ui_size(.PCT_PARENT, value^, .PCT_PARENT, 1)
+	highlight := ui_create_box("highlight", {
+		.DRAWBACKGROUND,
+		.DRAWGRADIENT,
+	})
+	highlight.bg_color = state.ui.col.highlight
+
+
+	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
+	display_value := ui_create_box("", {
+		.NO_OFFSET,
+		.DISPLAYVALUE,
+	}, value^)
+	
+	ui_pop()
+	state.ui.ctx.size = old_size
 	return box.ops
 }
 
@@ -249,7 +321,6 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 		.SELECTABLE,
 		.HOVERABLE,
 		.DRAWTEXT,
-		.DRAWBORDER,
 		.DRAWBACKGROUND,
 		.DRAWGRADIENT,
 		.HOTANIMATION,
@@ -271,7 +342,6 @@ ui_radio :: proc(key: string) -> ^Box {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWTEXT,
-		.DRAWBORDER,
 		.DRAWBACKGROUND,
 		.DRAWGRADIENT,
 		.HOTANIMATION,
@@ -310,6 +380,10 @@ ui_tab :: proc(names: []string) -> (^Box, ^Box) {
 	}
 
 	ui_pop()
+	ui_bar()
+	for child := tab.first; child != nil; child = child.next {
+		if child.ops.selected do return tab, child
+	}
 	return tab, selected
 }
 
@@ -342,7 +416,7 @@ ui_spacer_pixels :: proc(pixels: f32) -> Box_Ops {
 // and scroll when the scroll wheel is used
 
 ui_scrollbox :: proc() -> ^Box {
-	empty := ui_create_box("scrollbox", { .DRAWBORDER })
+	empty := ui_create_box("scrollbox", { })
 	ui_push_parent(empty)
 	ui_axis(.X)
 	ui_size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
@@ -366,11 +440,11 @@ ui_scrollbar :: proc() -> ^Box {
 	}
 	
 	ui_axis(.X)
-	dragbar := ui_create_box("scrollbar", { .DRAWBORDER, .CLIP } )
+	dragbar := ui_create_box("scrollbar", { .DRAWBACKGROUND, .CLIP } )
 	ui_push_parent(dragbar)
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .PIXELS, min(dragbar_height, viewport.calc_size.y))
-	handle := ui_create_box("handle", { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+	handle := ui_create_box("handle", { .DRAWGRADIENT, .DRAWBORDER, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
 
 	dragbar_range := (viewport.calc_size.y + viewport.expand.y) - dragbar_height
 	scroll_range := viewport.sum_children.y - (viewport.calc_size.y + viewport.expand.y)

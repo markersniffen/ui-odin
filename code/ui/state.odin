@@ -59,8 +59,8 @@ Mode :: enum {
 }
 
 Mouse :: struct {
-	pos: v2i,
-	delta: v2i,
+	pos: v2,
+	delta: v2,
 	delta_temp: v2,
 	left: Button,
 	right: Button,
@@ -197,7 +197,7 @@ update :: proc() {
 	
 	mouseX, mouseY := glfw.GetCursorPos(state.window.handle)
 	old_mouse := state.mouse.pos
-	state.mouse.pos = {i32(mouseX), i32(mouseY)}
+	state.mouse.pos = {f32(mouseX), f32(mouseY)}
 	state.mouse.delta = (state.mouse.pos - old_mouse) / 2
 	
 	ui_update()
