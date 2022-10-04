@@ -59,15 +59,15 @@ Text_Align :: enum {
 
 ui_init_font :: proc() {
 	ui_set_font_size()
-	state.ui.col.backdrop 	= {0.0,  0.0,  .05,  1.0}
-	state.ui.col.bg 			= {0.0,  0.0,  0.1,  1.0}
-	state.ui.col.gradient	= {0.6,  0.0,  1.0,  0.2}
-	state.ui.col.border 		= {0.6,  0.0,  0.3,  1.0}
-	state.ui.col.font 		= {1.0,  1.0,  1.0,  1.0}
-	state.ui.col.hot 			= {0.6,  1.0,  0.4,  0.4}
-	state.ui.col.inactive   = {0.6,  1.0,  0.4,  0.4}
-	state.ui.col.active 		= {0.8,  0.5,  0.3,  1.0}
-	state.ui.col.highlight 	= {0.6,  0.7,  0.4,  1.0}
+	state.ui.col.backdrop 	= {0.0,   0.0,  .05,   1.0}
+	state.ui.col.bg 			= {0.56,   0.0,  0.1,   1.0}
+	state.ui.col.gradient	= {0.56,  0.55, .74,   0.2}
+	state.ui.col.border 		= {0.56,  0.0,  0.0,   1.0}
+	state.ui.col.font 		= {0.56,  1.0,  1.0,   1.0}
+	state.ui.col.hot 			= {0.56,  .35,  0.28,  1.0}
+	state.ui.col.inactive   = {0.56,  .67,  0.34,  1.0}
+	state.ui.col.active 		= {0.56,  1,    0.41,  1.0}
+	state.ui.col.highlight 	= {0.56,  1,    0.17,  1.0}
 }
 
 ui_load_font :: proc(font: ^Font) {

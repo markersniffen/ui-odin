@@ -185,15 +185,18 @@ ui_empty :: proc(_name:string="") -> ^Box {
 	return box
 }
 
-
-ui_bar :: proc(axis:Axis=.Y) -> ^Box {
+ui_bar :: proc(color:HSL={}, axis:Axis=.Y) -> ^Box {
 	ui_axis(axis)
 	if axis == .Y {
-		ui_size(.PCT_PARENT, 1, .PIXELS, state.ui.margin)
+		ui_size(.PCT_PARENT, 1, .PIXELS, state.ui.margin/2)
 	} else {
 		ui_size(.PIXELS, state.ui.margin, .PCT_PARENT, 1)
 	}
-	return ui_create_box("bar", { .DRAWBACKGROUND })
+	bar := ui_create_box("bar", { .DRAWBACKGROUND })
+
+	if color != {} do bar.bg_color = color
+
+	return bar
 }
 
 // draws a color filled box
@@ -380,7 +383,7 @@ ui_tab :: proc(names: []string) -> (^Box, ^Box) {
 	}
 
 	ui_pop()
-	ui_bar()
+	ui_bar(state.ui.col.active)
 	for child := tab.first; child != nil; child = child.next {
 		if child.ops.selected do return tab, child
 	}
