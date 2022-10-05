@@ -55,20 +55,26 @@ opengl_init :: proc() {
 	if !shader_success do fmt.println("UI shader did not compile!")
 	gl.UseProgram(state.render.shader)
 
-	state.ui.font.name = "Roboto-Regular"
-	state.ui.font.label = "font_texture"
-	state.ui.font.texture_size = 512 // size of font bitmap
-	state.ui.font.texture_unit = 0
-	gl.GenTextures(1, &state.ui.font.texture)
+	state.ui.fonts.regular.name = "Roboto-Regular"
+	state.ui.fonts.regular.label = "font_texture"
+	state.ui.fonts.regular.texture_size = 512 // size of font bitmap
+	state.ui.fonts.regular.texture_unit = 0
+	gl.GenTextures(1, &state.ui.fonts.regular.texture)
 
-	state.ui.icons.name = "ui_icons"
-	state.ui.icons.label = "icon_texture"
-	state.ui.icons.texture_size = 512
-	state.ui.icons.texture_unit = 2
-	gl.GenTextures(1, &state.ui.icons.texture)
+	// state.ui.fonts.bold.name = "Roboto-Bold"
+	// state.ui.fonts.bold.label = "font_texture"
+	// state.ui.fonts.bold.texture_size = 512 // size of font bitmap
+	// state.ui.fonts.bold.texture_unit = 1
+	// gl.GenTextures(1, &state.ui.fonts.bold.texture)
 
-	fmt.println(state.ui.font)
-	fmt.println(state.ui.icons)
+	state.ui.fonts.icons.name = "ui_icons"
+	state.ui.fonts.icons.label = "icon_texture"
+	state.ui.fonts.icons.texture_size = 512
+	state.ui.fonts.icons.texture_unit = 2
+	gl.GenTextures(1, &state.ui.fonts.icons.texture)
+
+	fmt.println(state.ui.fonts.regular)
+	fmt.println(state.ui.fonts.icons)
 
 	gl.GenVertexArrays(1, &state.render.vao)
 	gl.BindVertexArray(state.render.vao)
@@ -92,7 +98,8 @@ opengl_load_texture :: proc(font: ^Font, image: rawptr) -> bool {
 
 opengl_render :: proc() {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
-	gl.ClearColor(0, 0, 0, 1)
+	bd := v4(lin.vector4_hsl_to_rgb(state.ui.col.backdrop.h, state.ui.col.backdrop.s, state.ui.col.backdrop.l, state.ui.col.backdrop.a))
+	gl.ClearColor(bd.r, bd.g, bd.b, bd.a)
 	gl.Viewport(0, 0, i32(state.window.framebuffer.x), i32(state.window.framebuffer.y))
 	gl.Scissor(0, 0, i32(state.window.framebuffer.x), i32(state.window.framebuffer.y))
 	gl.Clear(gl.COLOR_BUFFER_BIT)

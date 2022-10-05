@@ -8,16 +8,17 @@
 [X] editable text
   [X] adding space at begining or with no text crashes (?)
   [X] select any and backspace() calculates len wrong
-[ ] render while resizing window
+[ ] font weights
+[ ] different colored text
 [ ] ctrl click editable text for values (e.g. buttons)
 [O] context menu
   [ ] hover over other menu buttons?
 [ ] checkbox
 [X] dropdown
-[ ] tabs
-[ ] clean up colors
-[ ] clean up all the shit
+[X] tabs
+[X] clean up colors
 [ ] avoid making boxes that are cropped?
+[ ] render while resizing window
 
 > crop panel content
 [X] scrolling

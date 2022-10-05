@@ -252,7 +252,7 @@ ui_slider :: proc(label:string, value:^f32) -> Box_Ops {
 		.DRAWBORDER,
 		.DRAWGRADIENT,
 		.HOTANIMATION,
-		.ACTIVEANIMATION,
+		// .ACTIVEANIMATION,
 	}, any(value))
 
 	if box.ops.clicked {
@@ -269,10 +269,13 @@ ui_slider :: proc(label:string, value:^f32) -> Box_Ops {
 	highlight := ui_create_box("highlight", {
 		.DRAWBACKGROUND,
 		.DRAWGRADIENT,
+		.ACTIVEANIMATION,
+		.HOTANIMATION,
+		.HOVERABLE,
+		.CLICKABLE,
 	})
 	highlight.bg_color = state.ui.col.highlight
-
-
+	
 	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
 	display_value := ui_create_box("", {
 		.NO_OFFSET,
@@ -330,9 +333,9 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 		.ACTIVEANIMATION,
 	})
 	if box.ops.selected {
-		box.name = string_to_short(fmt.tprintf("###s %v", key))
+		box.name = string_to_short(fmt.tprintf("<i>s<r> %v", key))
 	} else {
-		box.name = string_to_short(fmt.tprintf("###d %v", key))
+		box.name = string_to_short(fmt.tprintf("<i>d<r> %v", key))
 	}
 	box.text_align = .LEFT
 	return box.ops
@@ -447,7 +450,8 @@ ui_scrollbar :: proc() -> ^Box {
 	ui_push_parent(dragbar)
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .PIXELS, min(dragbar_height, viewport.calc_size.y))
-	handle := ui_create_box("handle", { .DRAWGRADIENT, .DRAWBORDER, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+	handle := ui_create_box("handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+	handle.bg_color = state.ui.col.inactive
 
 	dragbar_range := (viewport.calc_size.y + viewport.expand.y) - dragbar_height
 	scroll_range := viewport.sum_children.y - (viewport.calc_size.y + viewport.expand.y)
@@ -463,6 +467,7 @@ ui_scrollbar :: proc() -> ^Box {
 		}
 		viewport.first.scroll.y = ((f32(state.mouse.pos.y)*(scroll_range/dragbar_range)) - state.mouse.delta_temp.y) * -1
 	}
+	handle.ops.selected = handle.ops.pressed
 	return dragbar
 }
 

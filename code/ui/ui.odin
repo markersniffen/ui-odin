@@ -14,9 +14,9 @@ Ui :: struct {
 
 	col: UI_Colors,
 	ctx: UI_Context,
+	
+	fonts: UI_Fonts,
 
-	font: Font,
-	icons: Font,
 	// char_data: map[rune]Char_Data,
 	
 	font_size: f32,			// NOTE pixels tall
@@ -46,6 +46,12 @@ UI_Boxes :: struct {
 	editing: ^Box,
 	hot: ^Box,
 	index: int,
+}
+
+UI_Fonts :: struct {
+	regular: Font,
+	bold: Font,
+	icons: Font,
 }
 
 UI_Context :: struct {
@@ -105,6 +111,15 @@ Axis :: enum {
 
 //______ INITIALIZATION ______ //
 ui_init :: proc() {
+	state.ui.col.backdrop 	= {0.0,   0.0,  .05,   1.0}
+	state.ui.col.bg 		= {0.56,   0.0,  0.1,   1.0}
+	state.ui.col.gradient	= {0.56,  0.55, .74,   0.2}
+	state.ui.col.border 	= {0.56,  0.0,  0.0,   1.0}
+	state.ui.col.font 		= {0.56,  1.0,  1.0,   1.0}
+	state.ui.col.hot 		= {0.56,  .35,  0.28,  1.0}
+	state.ui.col.inactive   = {0.56,  .67,  0.34,  1.0}
+	state.ui.col.active 	= {0.56,  1,    0.41,  1.0}
+	state.ui.col.highlight 	= {0.56,  1,    0.17,  1.0}
 	ui_init_font()
 	
 	pool_init(&state.ui.panels.pool, size_of(Panel), MAX_PANELS, "Panels")
@@ -249,7 +264,7 @@ ui_update :: proc() {
 			cursor(.TEXT)
 			for i in 0..=es.len {
 				if i < es.len {
-					quad.r += state.ui.font.char_data[rune(es.mem[i])].advance
+					quad.r += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
 				} else {
 					quad.r = box.quad.r
 				}
@@ -262,7 +277,7 @@ ui_update :: proc() {
 						break
 					}
 				}
-				quad.l += state.ui.font.char_data[rune(es.mem[i])].advance
+				quad.l += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
 			}
 		}
 		
@@ -385,7 +400,7 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 
 	if clip_ok {
 		if .DRAWBACKGROUND in box.flags {
-			push_quad_gradient_v(quad, box.bg_color, box.bg_color)
+			push_quad_solid(quad, box.bg_color)
 			if box.ops.selected {
 				push_quad_gradient_v(quad, state.ui.col.active, state.ui.col.active)
 			}
@@ -393,7 +408,6 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		if .DRAWBORDER in box.flags {
 			push_quad_border(quad, state.ui.col.border, box.border)
 		}
-
 		if .HOTANIMATION in box.flags {
 			hot := state.ui.col.hot
 			push_quad_gradient_v(quad, {hot.h, hot.s, hot.l, hot.a * box.hot_t}, {hot.h, hot.s, hot.l, hot.a * box.hot_t})

@@ -124,7 +124,7 @@ ui_panel_testlist :: proc() {
 		ui_empty()
 			ui_axis(.X)
 			ui_size(.TEXT, 1, .TEXT, 1)
-			if ui_button("###p").released {
+			if ui_button("<i>p").released {
 				ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.window.quad)
 			}
 		ui_pop()
@@ -187,7 +187,20 @@ ui_panel_colors :: proc() {
 	ui_pop()
 	ui_bar(state.ui.col.highlight)
 	ui_axis(.Y)
-
+	ui_size(.PCT_PARENT, 1, .TEXT, 1)
+	ui_empty()
+		ui_axis(.X)
+		ui_size(.PCT_PARENT, .15, .TEXT, 1)
+		ui_label("Backdrop:")
+		ui_size(.PCT_PARENT, .05, .TEXT, 1)
+		ui_color(state.ui.col.bg)
+		ui_size(.PCT_PARENT, .2, .TEXT, 1)
+		ui_slider("h:", &state.ui.col.backdrop.h)
+		ui_slider("s:", &state.ui.col.backdrop.s)
+		ui_slider("l:", &state.ui.col.backdrop.l)
+		ui_slider("v:", &state.ui.col.backdrop.a)
+	ui_pop()
+	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
 	ui_empty()
 		ui_axis(.X)
@@ -339,7 +352,7 @@ ui_panel_boxlist :: proc() {
 	ui_empty()
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
-		if ui_button("###p").released {
+		if ui_button("<i>p").released {
 			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
@@ -354,7 +367,7 @@ ui_panel_boxlist :: proc() {
 		ui_label("Panel List:")
 		for key, panel in state.ui.panels.all {
 			if panel.box != nil {
-				ui_button(fmt.tprintf("%v | %v ###d %v", panel.uid, panel.content, panel.box.key.len))
+				ui_button(fmt.tprintf("%v | %v <i>d %v", panel.uid, panel.content, panel.box.key.len))
 			} else {
 				ui_button(fmt.tprintf("%v | %v", panel.uid, panel.content))
 			}
@@ -374,7 +387,7 @@ ui_panel_debug :: proc() {
 	ui_empty()
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
-		if ui_button("###p").released {
+		if ui_button("<i>p").released {
 			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
@@ -417,7 +430,7 @@ ui_panel_pick_panel :: proc() {
 		ui_drag_panel("Select Panel:")
 		ui_size(.TEXT, 1, .TEXT, 1)
 		// ui_spacer_pixels(120)
-		if ui_button("###x").released {
+		if ui_button("<i>x").released {
 			if state.ui.panels.floating != nil {
 				ui_delete_panel(state.ui.panels.floating)
 			}
@@ -450,7 +463,7 @@ ui_panel_floater :: proc() {
 		ui_size(.TEXT, 1, .TEXT, 1)
 		ui_label("FLOATING PANEL")
 		ui_spacer_pixels(50)
-		if ui_button("###x").released do ui_delete_panel(state.ui.panels.floating)
+		if ui_button("<i>x").released do ui_delete_panel(state.ui.panels.floating)
 	ui_pop()
 	ui_end()
 }
