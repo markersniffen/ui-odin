@@ -177,7 +177,7 @@ ui_panel_colors :: proc() {
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
 	ui_empty()
 		ui_axis(.X)
-		ui_label("UI Colors")
+		ui_label("<b>UI Colors")
 		ui_spacer_fill()
 		ui_size(.PCT_PARENT, .2, .TEXT, 1)
 		ui_label("Hue")

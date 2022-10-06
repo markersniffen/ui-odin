@@ -1,13 +1,13 @@
 package ui
 
 import "core:fmt"
+import "core:mem"
 
 KEY_LEN :: 32
-SHORT_STRING_LEN :: 64
 LONG_STRING_LEN :: 128
 
 Key :: struct {
-	mem: [KEY_LEN]byte,
+	mem: [KEY_LEN]u8,
 	len: int,
 }
 
@@ -19,47 +19,30 @@ string_to_key :: proc(text: string) -> Key {
 	return key
 }
 
-Short_String :: struct {
-	mem: [SHORT_STRING_LEN]byte,
-	len: int,
+key_to_string :: proc(key: ^Key) -> string {
+	return string(key.mem[:key.len])
 }
 
-Long_String :: struct {
-	mem: [LONG_STRING_LEN]byte,
+String :: struct {
+	mem: [LONG_STRING_LEN]u8,
 	len: int,
-}
-
-Editable_String :: struct {
-	mem: [LONG_STRING_LEN]byte,
-	len: int,
+	max: int,
 	start: int,
 	end: int,
 }
 
-
-
-string_to_short :: proc(text: string) -> Short_String {
-	short: Short_String
-	short.len = len(text)
-	assert(short.len <= SHORT_STRING_LEN, text)
-	copy(short.mem[:short.len], text)
-	return short
+to_string :: proc(es: ^String) -> string {
+	return string(es.mem[:es.len])
 }
 
-string_to_editable :: proc(text: string) -> Editable_String {
-	es: Editable_String
+from_string :: proc(text: string) -> String {
+	es : String
 	es.len = len(text)
-	assert(es.len <= LONG_STRING_LEN, text)
-	// fmt.println(len(es.mem),	es.len, len(text))
 	copy(es.mem[:es.len], text)
 	return es
 }
 
-editable_to_string :: proc(es: ^Editable_String) -> string {
-	return string(es.mem[:es.len])
-}
-
-editable_jump_right :: proc(es: ^Editable_String) -> int {
+editable_jump_right :: proc(es: ^String) -> int {
 	start := es.start
 	end := es.end
 	if start > end {
@@ -79,23 +62,10 @@ editable_jump_right :: proc(es: ^Editable_String) -> int {
 			index += 1
 		}
 	}
-
-	// for m in end+1..=es.len+1 {
-	// 	letter := rune(es.mem[m])
-	// 	if m == es.len {
-	// 		return m
-	// 	} else if letter == ' ' {
-	// 		return m
-	// 	}
-	// }
 	return 0
 }
 
-editable_ctrl_left :: proc(editable: ^Editable_String) {
-
-}
-
-editable_jump_left :: proc(es: ^Editable_String) -> int {
+editable_jump_left :: proc(es: ^String) -> int {
 	start := es.start
 	end := es.end
 	if start > end {
@@ -116,7 +86,7 @@ editable_jump_left :: proc(es: ^Editable_String) -> int {
 	return 0
 }
 
-backspace :: proc(es: ^Editable_String) {
+backspace :: proc(es: ^String) {
 	if es.start >= 0 { // TODO there might be a bug here
 		if es.start == es.end {
 			if es.start != 0 {
@@ -141,11 +111,4 @@ backspace :: proc(es: ^Editable_String) {
 	}
 }
 
-short_to_string :: proc(short: ^Short_String) -> string {
-	return string(short.mem[:short.len])
-}
-
-key_to_string :: proc(key: ^Key) -> string {
-	return string(key.mem[:key.len])
-}
 

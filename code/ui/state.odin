@@ -168,7 +168,7 @@ init :: proc() -> bool {
 	state.mouse.cursor.y = glfw.CreateStandardCursor(glfw.VRESIZE_CURSOR)
 
 	// TODO DEBUG
-	state.debug.text = string_to_editable("xxxxx-----")
+	state.debug.text = from_string("xxxxx-----")
 
 	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
 	

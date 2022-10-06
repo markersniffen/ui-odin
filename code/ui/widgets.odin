@@ -230,7 +230,8 @@ ui_value :: proc(key: string, value: any) -> Box_Ops {
 
 // creates single line editable text
 
-ui_edit_text :: proc(editable: ^Editable_String) -> Box_Ops {
+// ui_edit_text :: proc(editable: ^String) -> Box_Ops {
+ui_edit_text :: proc(editable: ^String) -> Box_Ops {
 	box := ui_create_box("editable_text", {
 		.CLICKABLE,
 		.HOVERABLE,
@@ -333,9 +334,9 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 		.ACTIVEANIMATION,
 	})
 	if box.ops.selected {
-		box.name = string_to_short(fmt.tprintf("<i>s<r> %v", key))
+		box.name = from_string(fmt.tprintf("<i>s<r> %v", key))
 	} else {
-		box.name = string_to_short(fmt.tprintf("<i>d<r> %v", key))
+		box.name = from_string(fmt.tprintf("<i>d<r> %v", key))
 	}
 	box.text_align = .LEFT
 	return box.ops

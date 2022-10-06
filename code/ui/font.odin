@@ -106,7 +106,7 @@ ui_set_font_size :: proc(size: f32 = 18) {
 	state.ui.font_size = size
 
 	ui_load_font(&state.ui.fonts.regular)
-	// ui_load_font(&state.ui.bold)
+	ui_load_font(&state.ui.fonts.bold)
 	ui_load_font(&state.ui.fonts.icons)
 
 	letter_data := state.ui.fonts.regular.char_data['W']
@@ -115,16 +115,16 @@ ui_set_font_size :: proc(size: f32 = 18) {
 	state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
 }
 
-draw_editable_text :: proc(editing: bool, editable: ^Editable_String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}) {
+draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}) {
 	using stb
 
-	text := editable_to_string(editable)
+	text := to_string(editable)
 
 	left_align: f32 = quad.l
 	top_align: f32 = quad.t + state.ui.margin
 	text_height: f32 = state.ui.font_size
 	text_width: f32
-	cursor : Quad
+	cursor : Quad // NOTE special
 
 	found_start := false
 	for i in 0..=editable.len + 1 {
@@ -366,15 +366,15 @@ draw_text_multiline :: proc(text:string, quad:Quad, align:Text_Align=.LEFT, kern
 	}
 }
 
-ui_text_size :: proc(axis: int, text: ^Short_String) -> f32 {
+ui_text_size :: proc(axis: int, text: ^String) -> f32 {
 	size: f32
 	if axis == X {
-		for letter in short_to_string(text) {
+		for letter in to_string(text) {
 			size += state.ui.fonts.regular.char_data[letter].advance
 		}
 	} else if axis == Y {
 		lines: f32 = 1
-		for letter in short_to_string(text) {
+		for letter in to_string(text) {
 			if letter == '\n' do lines += 1
 		}
 		size = lines * state.ui.line_space
@@ -398,9 +398,9 @@ ui_text_string_size :: proc(axis: int, text: string) -> f32 {
 	return size
 }
 
-ui_editable_string_size :: proc(axis: int, editable: ^Editable_String) -> f32 {
+ui_String_size :: proc(axis: int, editable: ^String) -> f32 {
 	size: f32
-	text := editable_to_string(editable)
+	text := to_string(editable)
 	if axis == X {
 		for letter in text {
 			size += state.ui.fonts.regular.char_data[letter].advance

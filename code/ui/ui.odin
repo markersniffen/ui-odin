@@ -71,16 +71,6 @@ UI_Context :: struct {
 	text_align: Text_Align,
 }
 
-// backdrop					dark dark grey
-// bg						dark grey
-// border					grey
-// highlight				blue
-// accent					bright blue
-// hot						orange
-// inactive					
-// active					red
-// text 	light / dark	white
-
 HSL :: struct {
 	h:f32,
 	s:f32,
@@ -99,9 +89,6 @@ UI_Colors :: struct {
 	inactive: HSL,
 	font: HSL,
 	active: HSL,	
-	// bg_light: v4,
-	// border_light: v4,
-	// font_hot: v4,
 }
 
 Axis :: enum {
@@ -424,13 +411,13 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 			}
 		}
 		if .DRAWTEXT in box.flags {
-			draw_text(short_to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
+			draw_text(to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
 		} else if .EDITTEXT in box.flags {
 			if box.ops.editing do push_quad_border(quad, state.ui.col.active, box.border)
 			draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
 		}
 		if .DISPLAYVALUE in box.flags {
-			text := fmt.tprintf("%v %v", short_to_string(&box.name), box.value)
+			text := fmt.tprintf("%v %v", to_string(&box.name), box.value)
 			draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
 		}
 

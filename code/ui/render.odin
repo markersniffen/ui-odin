@@ -61,11 +61,11 @@ opengl_init :: proc() {
 	state.ui.fonts.regular.texture_unit = 0
 	gl.GenTextures(1, &state.ui.fonts.regular.texture)
 
-	// state.ui.fonts.bold.name = "Roboto-Bold"
-	// state.ui.fonts.bold.label = "font_texture"
-	// state.ui.fonts.bold.texture_size = 512 // size of font bitmap
-	// state.ui.fonts.bold.texture_unit = 1
-	// gl.GenTextures(1, &state.ui.fonts.bold.texture)
+	state.ui.fonts.bold.name = "Roboto-Bold"
+	state.ui.fonts.bold.label = "font_texture"
+	state.ui.fonts.bold.texture_size = 512 // size of font bitmap
+	state.ui.fonts.bold.texture_unit = 1
+	gl.GenTextures(1, &state.ui.fonts.bold.texture)
 
 	state.ui.fonts.icons.name = "ui_icons"
 	state.ui.fonts.icons.label = "icon_texture"
@@ -141,7 +141,7 @@ set_render_layer :: proc(layer: int) {
 	state.render.layer_index = layer
 }
 
-push_quad :: 	proc(quad:Quad,	_cA:HSL={1,1,1,1}, _cB:HSL={1,1,1,1}, _cC:HSL={1,1,1,1}, _cD:HSL={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	mix:f32=0) {
+push_quad :: 	proc(quad:Quad,	_cA:HSL={1,1,1,1}, _cB:HSL={1,1,1,1}, _cC:HSL={1,1,1,1}, _cD:HSL={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	texture_id:f32=0) {
 	vertex_arrays: [4][40]f32
 
 	cA : v4 = v4(lin.vector4_hsl_to_rgb(_cA.h, _cA.s, _cA.l, _cA.a))
@@ -152,20 +152,20 @@ push_quad :: 	proc(quad:Quad,	_cA:HSL={1,1,1,1}, _cB:HSL={1,1,1,1}, _cC:HSL={1,1
 	if border == 0
 	{
 		vertex_arrays[0]  = { 
-				quad.l,quad.t,0,	uv.l,uv.t,	cA[0],cA[1],cA[2],cA[3],	mix,
-				quad.r,quad.t,0,	uv.r,uv.t,	cB[0],cB[1],cB[2],cB[3],	mix,
-				quad.r,quad.b,0,	uv.r,uv.b,	cD[0],cD[1],cD[2],cD[3],	mix,
-				quad.l,quad.b,0,	uv.l,uv.b,	cC[0],cC[1],cC[2],cC[3],	mix,
+				quad.l,quad.t,0,	uv.l,uv.t,	cA[0],cA[1],cA[2],cA[3],	texture_id,
+				quad.r,quad.t,0,	uv.r,uv.t,	cB[0],cB[1],cB[2],cB[3],	texture_id,
+				quad.r,quad.b,0,	uv.r,uv.b,	cD[0],cD[1],cD[2],cD[3],	texture_id,
+				quad.l,quad.b,0,	uv.l,uv.b,	cC[0],cC[1],cC[2],cC[3],	texture_id,
 		}
 	} else {
 
 		inner: Quad = {quad.l + border,quad.t + border,quad.r - border,quad.b - border,}
 
 		vertex_arrays = {
-			{ quad.l,quad.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	quad.r,quad.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	inner.r,inner.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	inner.l,inner.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], mix},
-			{ quad.r,quad.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	quad.r,quad.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	inner.r,inner.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	inner.r,inner.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], mix},
-			{ quad.r,quad.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	quad.l,quad.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	inner.l,inner.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	inner.r,inner.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], mix},
-			{ quad.l,quad.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	quad.l,quad.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	inner.l,inner.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	inner.l,inner.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], mix},
+			{ quad.l,quad.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	quad.r,quad.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	inner.r,inner.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	inner.l,inner.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], texture_id},
+			{ quad.r,quad.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	quad.r,quad.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	inner.r,inner.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	inner.r,inner.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], texture_id},
+			{ quad.r,quad.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	quad.l,quad.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	inner.l,inner.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	inner.r,inner.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], texture_id},
+			{ quad.l,quad.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	quad.l,quad.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	inner.l,inner.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	inner.l,inner.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], texture_id},
 		}
 	}
 		
@@ -263,14 +263,14 @@ UIMAIN_VS ::
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec2 uv;
 layout(location = 2) in vec4 color;
-layout(location = 3) in float mix_texture;
+layout(location = 3) in float texture_id;
 
 uniform vec2 framebuffer_res;
 uniform vec2 multiplier;
 
 out vec4 vertex_color;
 out vec2 uv_coords;
-out float texture_mix;
+out float texture_id;
 
 void main()
 {
@@ -290,23 +290,26 @@ UIMAIN_FRAG ::
 #version 420 core
 in vec4 vertex_color;
 in vec2 uv_coords;
-in float texture_mix;
+in float texture_id;
 
 out vec4 FragColor;
 
 uniform sampler2D font_texture;
+uniform sampler2D bold_texture;
 uniform sampler2D icon_texture;
 
 void main()
 {
 	vec4 Mul = vec4((vertex_color.xyz * vertex_color.rrr), vertex_color.r);
 
-	if (texture_mix == 0)
+	if (texture_id == 0)
 	{
 		FragColor = vertex_color;
-	} else if (texture_mix == 1) {
+	} else if (texture_id == 1) {
 		FragColor = vec4(vertex_color.rgb, texture(font_texture, uv_coords).r);
-	} else if (texture_mix == 2) {
+	} else if (texture_id == 2) {
+		FragColor = vec4(vertex_color.rgb, texture(bold_texture, uv_coords).r);
+	} else if (texture_id == 3) {
 		FragColor = vec4(vertex_color.rgb, texture(icon_texture, uv_coords).r);
 	}
 }

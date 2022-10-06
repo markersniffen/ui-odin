@@ -6,9 +6,9 @@ MAX_BOXES :: 4096
 
 Box :: struct {
 	key: Key,
-	name: Short_String,
+	name: String,
 	value: any,
-	editable_string: ^Editable_String,
+	editable_string: ^String,
 
 	panel: ^Panel,
 
@@ -119,6 +119,7 @@ ui_gen_key :: proc(name: string) -> Key {
 ui_generate_box :: proc(key: Key) -> ^Box {
 	box := cast(^Box)pool_alloc(&state.ui.boxes.pool)
 	box.key = key
+
 	assert(!(box.key in state.ui.boxes.all))
 	state.ui.boxes.all[box.key] = box
 	return box
@@ -147,7 +148,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	}
 
 	assert(box != nil)
-	box.name = string_to_short(name)
+	box.name = from_string(name)
 	box.flags = flags
 	box.value = value
 	box.size = state.ui.ctx.size
@@ -274,7 +275,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 				if axis == X {
 					calc_size^ = ui_text_size(X, &box.name) + (state.ui.margin*2)
 					if .DISPLAYVALUE in box.flags do calc_size^ += ui_text_string_size(X, fmt.tprintf("%v", box.value))
-					if .EDITTEXT in box.flags do calc_size^ = ui_editable_string_size(X, box.editable_string) + state.ui.margin*2
+					if .EDITTEXT in box.flags do calc_size^ = ui_String_size(X, box.editable_string) + state.ui.margin*2
 				} else if axis == Y {
 					calc_size^ = ui_text_size(Y, &box.name) * size.value
 				}

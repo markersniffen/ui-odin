@@ -19,6 +19,8 @@
 [X] clean up colors
 [ ] avoid making boxes that are cropped?
 [ ] render while resizing window
+[ ] copy/paste values
+[ ] load defaults from file
 
 > crop panel content
 [X] scrolling

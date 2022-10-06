@@ -5,5 +5,5 @@ Debug :: struct {
 	box: ^Box,
 	swtch: bool,
 
-	text: Editable_String,
+	text: String,
 }
