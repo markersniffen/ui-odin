@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:mem"
 
 KEY_LEN :: 32
-LONG_STRING_LEN :: 128
+LONG_STRING_LEN :: 512
 
 Key :: struct {
 	mem: [KEY_LEN]u8,

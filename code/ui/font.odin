@@ -107,6 +107,8 @@ ui_set_font_size :: proc(size: f32 = 18) {
 
 	ui_load_font(&state.ui.fonts.regular)
 	ui_load_font(&state.ui.fonts.bold)
+	ui_load_font(&state.ui.fonts.italic)
+	ui_load_font(&state.ui.fonts.light)
 	ui_load_font(&state.ui.fonts.icons)
 
 	letter_data := state.ui.fonts.regular.char_data['W']
@@ -180,6 +182,111 @@ draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: 
 	}
 }
 
+get_font_from_pattern :: proc(text: string, i: int, current_font: Font) -> (Font, bool) {
+	if text[i] == '<' {
+		if i+2 < len(text) {
+			if text[i+2] == '>' {
+				switch text[i+1] {
+					case 'r':
+					return state.ui.fonts.regular, true
+					case 'b':
+					return state.ui.fonts.bold, true
+					case 'i':
+					return state.ui.fonts.italic, true
+					case 'l':
+					return state.ui.fonts.light, true
+					case '#':
+					return state.ui.fonts.icons, true
+				}
+			}
+		}
+	}
+	return current_font, false
+}
+
+draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1} ) {
+	using stb
+	
+	text := to_string(es)
+
+	left_align: f32 = quad.l
+	top_align: f32 = quad.t + state.ui.margin
+	text_height: f32 = state.ui.font_size
+	text_width: f32
+	cursor : Quad // NOTE special
+
+	if align != .LEFT || editing
+	{
+		i := 0
+		font := state.ui.fonts.regular
+		found_start := false
+		for i < len(text)+1 {
+			if editing {
+				if i == es.start || i == es.end {
+					if found_start == false {
+						cursor = {text_width, quad.t + 6, text_width + 2, quad.b + 2}
+						found_start = true
+					} else {
+						cursor.r = text_width
+					}
+				}
+			}
+
+			if i < len(text) {
+				letter := rune(text[i])
+				_font, change_font := get_font_from_pattern(text, i, font)
+				if change_font {
+					font = _font
+					i += 2
+				} else {
+					text_width += font.char_data[letter].advance
+				}
+			}
+			i += 1
+		}
+	}
+
+	if align == .LEFT {
+		left_align += state.ui.margin
+	} else if align == .CENTER {
+		left_align = (left_align - text_width / 2) + ((quad.r - quad.l) / 2)
+	} else if align == .RIGHT {
+		left_align -= text_width + state.ui.margin
+	}
+	
+	top_left : v2 = { left_align, top_align }
+	cursor.l += left_align // NOTE Special
+	cursor.r += left_align // NOTE Special
+	push_quad_solid(cursor, state.ui.col.active) // NOTE Special
+
+	i := 0
+	font := state.ui.fonts.regular
+	for i < len(text) {
+		letter := rune(text[i])
+		_font, change_font := get_font_from_pattern(text, i, font)
+		if change_font {
+			font = _font
+			i += 3
+		} else {
+			if letter != ' '
+			{
+				char_quad : Quad
+				char_quad.l = top_left.x + font.char_data[letter].offset.x
+				char_quad.t = top_left.y + font.char_data[letter].offset.y
+				char_quad.r = char_quad.l + font.char_data[letter].width
+				char_quad.b = char_quad.t + font.char_data[letter].height
+				clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
+				if ok  {
+					skip :f32= 1
+					push_quad_font(clamped_quad, color, font.char_data[letter].uv, f32(font.texture_unit+1))
+
+				}
+			}
+			top_left.x += font.char_data[letter].advance
+			i += 1
+		}
+	}
+}
 
 draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1} ) {
 	using stb
@@ -189,33 +296,15 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 	text_height: f32 = state.ui.font_size
 	text_width: f32
 
-	check_pattern :: proc(text: string, i: int) -> (rune, bool) {
-		if text[i] == '<' {
-			if i+2 < len(text) {
-				if text[i+2] == '>' {
-					return rune(text[i+1]), true
-				}
-			}
-		}
-		return rune(0), false
-	}
-
 	if align != .LEFT
 	{
 		i := 0
 		font := state.ui.fonts.regular
 		for i < len(text) {
 			letter := rune(text[i])
-			font_type, change_font := check_pattern(text, i)
+			_font, change_font := get_font_from_pattern(text, i, font)
 			if change_font {
-				switch font_type {
-					case 'r':
-					font = state.ui.fonts.regular
-					case 'b':
-					font = state.ui.fonts.bold
-					case 'i':
-					font = state.ui.fonts.icons
-				}
+				font = _font
 				i += 3
 			} else {
 				text_width += font.char_data[letter].advance
@@ -238,16 +327,9 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 	font := state.ui.fonts.regular
 	for i < len(text) {
 		letter := rune(text[i])
-		font_type, change_font := check_pattern(text, i)
+		_font, change_font := get_font_from_pattern(text, i, font)
 		if change_font {
-			switch font_type {
-				case 'r':
-				font = state.ui.fonts.regular
-				case 'b':
-				font = state.ui.fonts.bold
-				case 'i':
-				font = state.ui.fonts.icons
-			}
+			font = _font
 			i += 3
 		} else {
 			if letter != ' '
@@ -258,12 +340,10 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 				char_quad.r = char_quad.l + font.char_data[letter].width
 				char_quad.b = char_quad.t + font.char_data[letter].height
 				clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
-
-				// if pt_in_quad({char_quad.r, char_quad.b}, quad) {
 				if ok  {
 					skip :f32= 1
-					if font.texture_unit == state.ui.fonts.icons.texture_unit do skip = 2
-					push_quad_font(clamped_quad, color, font.char_data[letter].uv, skip)
+					push_quad_font(clamped_quad, color, font.char_data[letter].uv, f32(font.texture_unit+1))
+
 				}
 			}
 			top_left.x += font.char_data[letter].advance
@@ -272,8 +352,7 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 	}
 }
 
-
-draw_textx :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1} ) {
+draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1} ) {
 	using stb
 
 	left_align: f32 = quad.l
@@ -345,8 +424,13 @@ draw_textx :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: H
 	}
 }
 
-draw_text_multiline :: proc(text:string, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2) {
+// TODO Redo this whole thing, based of of []u8
+draw_text_multiline :: proc(_text:^String, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2) {
+	text := to_string(_text)
+	// TODO hackey
 	max := (quad.b - quad.t) / state.ui.line_space
+	max_width := quad.r - quad.l - (state.ui.margin*10)
+	current_width :f32= 0
 	start, end: int 
 	letter_index: int
 	line_index: int
@@ -355,13 +439,15 @@ draw_text_multiline :: proc(text:string, quad:Quad, align:Text_Align=.LEFT, kern
 		if f32(line_index) > max do break
 		jump := f32(line_index) * (state.ui.line_space - (state.ui.margin*2) + kerning) 
 		letter := text[letter_index]
-		if letter == '\n' || letter_index == len(text)-1 {
+		if letter == '\n' || letter_index == len(text)-1 || current_width >= max_width {
 			end = letter_index
 			if letter != '\n' do end += 1
 			draw_text(text[start:end], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font)
 			start = end
+			current_width = 0
 			line_index += 1
 		}
+		current_width += state.ui.fonts.regular.char_data[rune(letter)].advance
 		letter_index += 1
 	}
 }

@@ -6,4 +6,5 @@ Debug :: struct {
 	swtch: bool,
 
 	text: String,
+	para: String,
 }

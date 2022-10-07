@@ -8,7 +8,7 @@
 [X] editable text
   [X] adding space at begining or with no text crashes (?)
   [X] select any and backspace() calculates len wrong
-[ ] font weights
+[X] font weights
 [ ] different colored text
 [ ] ctrl click editable text for values (e.g. buttons)
 [O] context menu
@@ -17,7 +17,7 @@
 [X] dropdown
 [X] tabs
 [X] clean up colors
-[ ] avoid making boxes that are cropped?
+[!] avoid making boxes that are cropped?
 [ ] render while resizing window
 [ ] copy/paste values
 [ ] load defaults from file

@@ -230,7 +230,6 @@ ui_value :: proc(key: string, value: any) -> Box_Ops {
 
 // creates single line editable text
 
-// ui_edit_text :: proc(editable: ^String) -> Box_Ops {
 ui_edit_text :: proc(editable: ^String) -> Box_Ops {
 	box := ui_create_box("editable_text", {
 		.CLICKABLE,
@@ -243,6 +242,15 @@ ui_edit_text :: proc(editable: ^String) -> Box_Ops {
 	box.editable_string = editable
 	return box.ops
 }
+
+ui_paragraph :: proc(text: ^String) -> Box_Ops {
+	box := ui_create_box("paragraph", { .DRAWPARAGRAPH, .DEBUG })
+	box.editable_string = text
+	return box.ops
+}
+
+
+// creates a slider for editing float values
 
 ui_slider :: proc(label:string, value:^f32) -> Box_Ops {
 	old_size := state.ui.ctx.size
@@ -334,9 +342,9 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 		.ACTIVEANIMATION,
 	})
 	if box.ops.selected {
-		box.name = from_string(fmt.tprintf("<i>s<r> %v", key))
+		box.name = from_string(fmt.tprintf("<#>s<r> %v", key))
 	} else {
-		box.name = from_string(fmt.tprintf("<i>d<r> %v", key))
+		box.name = from_string(fmt.tprintf("<#>d<r> %v", key))
 	}
 	box.text_align = .LEFT
 	return box.ops

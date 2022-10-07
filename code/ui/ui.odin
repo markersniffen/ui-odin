@@ -17,8 +17,6 @@ Ui :: struct {
 	
 	fonts: UI_Fonts,
 
-	// char_data: map[rune]Char_Data,
-	
 	font_size: f32,			// NOTE pixels tall
 	font_offset_y: f32,
 	margin: f32,
@@ -51,6 +49,8 @@ UI_Boxes :: struct {
 UI_Fonts :: struct {
 	regular: Font,
 	bold: Font,
+	italic: Font,
+	light: Font,
 	icons: Font,
 }
 
@@ -415,6 +415,8 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		} else if .EDITTEXT in box.flags {
 			if box.ops.editing do push_quad_border(quad, state.ui.col.active, box.border)
 			draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
+		} else if .DRAWPARAGRAPH in box.flags {
+			draw_text_multiline(box.editable_string, quad)
 		}
 		if .DISPLAYVALUE in box.flags {
 			text := fmt.tprintf("%v %v", to_string(&box.name), box.value)

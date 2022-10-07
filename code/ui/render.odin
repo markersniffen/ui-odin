@@ -56,24 +56,37 @@ opengl_init :: proc() {
 	gl.UseProgram(state.render.shader)
 
 	state.ui.fonts.regular.name = "Roboto-Regular"
-	state.ui.fonts.regular.label = "font_texture"
+	state.ui.fonts.regular.label = "regular_texture"
 	state.ui.fonts.regular.texture_size = 512 // size of font bitmap
 	state.ui.fonts.regular.texture_unit = 0
 	gl.GenTextures(1, &state.ui.fonts.regular.texture)
 
 	state.ui.fonts.bold.name = "Roboto-Bold"
-	state.ui.fonts.bold.label = "font_texture"
+	state.ui.fonts.bold.label = "bold_texture"
 	state.ui.fonts.bold.texture_size = 512 // size of font bitmap
 	state.ui.fonts.bold.texture_unit = 1
 	gl.GenTextures(1, &state.ui.fonts.bold.texture)
 
+	state.ui.fonts.italic.name = "Roboto-Italic"
+	state.ui.fonts.italic.label = "italic_texture"
+	state.ui.fonts.italic.texture_size = 512 // size of font bitmap
+	state.ui.fonts.italic.texture_unit = 2
+	gl.GenTextures(1, &state.ui.fonts.italic.texture)
+
+	state.ui.fonts.light.name = "Roboto-Light"
+	state.ui.fonts.light.label = "light_texture"
+	state.ui.fonts.light.texture_size = 512 // size of font bitmap
+	state.ui.fonts.light.texture_unit = 3
+	gl.GenTextures(1, &state.ui.fonts.light.texture)
+
 	state.ui.fonts.icons.name = "ui_icons"
 	state.ui.fonts.icons.label = "icon_texture"
 	state.ui.fonts.icons.texture_size = 512
-	state.ui.fonts.icons.texture_unit = 2
+	state.ui.fonts.icons.texture_unit = 4
 	gl.GenTextures(1, &state.ui.fonts.icons.texture)
 
 	fmt.println(state.ui.fonts.regular)
+	fmt.println(state.ui.fonts.bold)
 	fmt.println(state.ui.fonts.icons)
 
 	gl.GenVertexArrays(1, &state.render.vao)
@@ -86,6 +99,7 @@ opengl_init :: proc() {
 }
 
 opengl_load_texture :: proc(font: ^Font, image: rawptr) -> bool {
+	fmt.println(font.texture_unit, font.label)
 	gl.ActiveTexture(gl.TEXTURE0 + font.texture_unit)
 	gl.BindTexture(gl.TEXTURE_2D, font.texture)
   	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, font.texture_size,font.texture_size, 0, gl.RED, gl.UNSIGNED_BYTE, image)
@@ -141,7 +155,16 @@ set_render_layer :: proc(layer: int) {
 	state.render.layer_index = layer
 }
 
-push_quad :: 	proc(quad:Quad,	_cA:HSL={1,1,1,1}, _cB:HSL={1,1,1,1}, _cC:HSL={1,1,1,1}, _cD:HSL={1,1,1,1},	border: f32=0.0, uv:Quad={0,0,0,0},	texture_id:f32=0) {
+push_quad :: 	proc(
+							quad:Quad,
+							_cA:			HSL=	{1,1,1,1},
+							_cB:			HSL=	{1,1,1,1},
+							_cC:			HSL=	{1,1,1,1},
+							_cD:			HSL=	{1,1,1,1},
+							border: 		f32=	0.0, 
+							uv:			Quad=	{0,0,0,0},
+							texture_id:	f32=	0.0)
+{
 	vertex_arrays: [4][40]f32
 
 	cA : v4 = v4(lin.vector4_hsl_to_rgb(_cA.h, _cA.s, _cA.l, _cA.a))
@@ -236,7 +259,7 @@ quad_clamp_or_reject :: proc (quad_a, quad_b: Quad) -> (Quad, bool) {
 		ok = false
 	} else {
 		ok = true
-		quad = quad_clamp_to_quad(quad_a, quad_b)
+		// quad = quad_clamp_to_quad(quad_a, quad_b)
 	}
 
 	return quad, ok
@@ -263,7 +286,7 @@ UIMAIN_VS ::
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec2 uv;
 layout(location = 2) in vec4 color;
-layout(location = 3) in float texture_id;
+layout(location = 3) in float _texture_id;
 
 uniform vec2 framebuffer_res;
 uniform vec2 multiplier;
@@ -278,10 +301,8 @@ void main()
 	float y = ((pos.y * multiplier.y) - framebuffer_res.y) / -framebuffer_res.y;
 	uv_coords = uv;
 	vertex_color = color;
-	texture_mix = mix_texture;
+	texture_id = _texture_id;
 	gl_Position.xyzw = vec4(x, y, pos.z, 1);
-
-	// gl_Position.xyzw = vec4((pos.x-window_res.x)/window_res.x, (pos.y - window_res.y)/(-window_res.y), pos.z, 1);
 }
 `
 
@@ -294,8 +315,10 @@ in float texture_id;
 
 out vec4 FragColor;
 
-uniform sampler2D font_texture;
+uniform sampler2D regular_texture;
 uniform sampler2D bold_texture;
+uniform sampler2D italic_texture;
+uniform sampler2D light_texture;
 uniform sampler2D icon_texture;
 
 void main()
@@ -306,10 +329,14 @@ void main()
 	{
 		FragColor = vertex_color;
 	} else if (texture_id == 1) {
-		FragColor = vec4(vertex_color.rgb, texture(font_texture, uv_coords).r);
+		FragColor = vec4(vertex_color.rgb, texture(regular_texture, uv_coords).r);
 	} else if (texture_id == 2) {
 		FragColor = vec4(vertex_color.rgb, texture(bold_texture, uv_coords).r);
 	} else if (texture_id == 3) {
+		FragColor = vec4(vertex_color.rgb, texture(italic_texture, uv_coords).r);
+	} else if (texture_id == 4) {
+		FragColor = vec4(vertex_color.rgb, texture(light_texture, uv_coords).r);
+	} else if (texture_id == 5) {
 		FragColor = vec4(vertex_color.rgb, texture(icon_texture, uv_coords).r);
 	}
 }

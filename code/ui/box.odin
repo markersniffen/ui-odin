@@ -88,6 +88,7 @@ Box_Flags :: enum {
 	EDITTEXT,
  
 	DRAWTEXT,
+	DRAWPARAGRAPH,
 	DISPLAYVALUE,
 	DRAWBORDER,
 	DRAWBACKGROUND,
@@ -380,6 +381,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 	}
 
 	for box := root; box != nil; box = box.hash_next	{
+
 		if .HOTANIMATION in box.flags {
 			if box.ops.hovering && box == state.ui.boxes.hot {
 				box.hot_t = clamp(box.hot_t + 0.12, 0, 1)
