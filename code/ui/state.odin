@@ -306,7 +306,11 @@ typing_callback :: proc(window: glfw.WindowHandle, codepoint: u32) {
 }
 
 scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64) {
-	state.mouse.scroll = {f32(x),f32(y)}
+	if shift() {
+		state.mouse.scroll = {0, f32(x)}
+	} else {
+		state.mouse.scroll = {f32(x),f32(y)}
+	}
 }
 
 mouse_button :: proc(button: Button, type: Button) -> bool {

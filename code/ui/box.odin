@@ -355,8 +355,10 @@ ui_calc_boxes :: proc(root: ^Box) {
 					if .VIEWSCROLL in box.parent.flags {
 						if mouse_in_quad(box.parent.parent.quad) {
 							box.scroll.y = (box.scroll + (state.mouse.scroll*20)).y
+							// box.scroll.x = (box.scroll + (state.mouse.scroll*20)).x
 						}
 						box.scroll.y = clamp(box.scroll.y, -box.parent.sum_children.y + box.parent.calc_size.y, 0)
+						// box.scroll.x = clamp(box.scroll.x, -box.parent.sum_children.x + box.parent.calc_size.x, 0)
 						if box.scroll != box.offset {
 							to_go := (box.scroll - box.offset)/1.5
 							box.offset.y = box.offset.y + to_go.y

@@ -47,6 +47,8 @@ ui_panel_file_menu :: proc() {
 	if ui_button("Edit").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .MENU_EDIT, 1.0, state.ui.ctx.panel.quad)
 	if ui_button("View").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .MENU_VIEW, 1.0, state.ui.ctx.panel.quad)
 	ui_spacer_fill()
+	ui_value("scroll:", state.mouse.scroll)
+	ui_label("|")
 	ui_value("mouse pos:", state.mouse.pos)
 	ui_label("|")
 	ui_value("window width:", state.window.size.x)
@@ -412,7 +414,7 @@ ui_panel_properties :: proc() {
 		// ui_paragraph(&state.debug.para)
 
 		ui_size(.PCT_PARENT, 1, .PIXELS, 100)
-		ui_size(.PCT_PARENT, 1, .TEXT, 1)
+		ui_size(.PIXELS, 800, .TEXT, 1)
 		ui_label("WHEE")
 		for i in 0..=22 {
 			label := fmt.tprintf("Label %v", i)

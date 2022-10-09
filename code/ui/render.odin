@@ -177,12 +177,6 @@ push_quad :: 	proc(
 
 	if border == 0
 	{
-		// vertex_arrays[0]  = { 
-		// 		quad.l,quad.t,0,	uv.l,uv.t,	cA[0],cA[1],cA[2],cA[3],	texture_id,
-		// 		quad.r,quad.t,0,	uv.r,uv.t,	cB[0],cB[1],cB[2],cB[3],	texture_id,
-		// 		quad.r,quad.b,0,	uv.r,uv.b,	cD[0],cD[1],cD[2],cD[3],	texture_id,
-		// 		quad.l,quad.b,0,	uv.l,uv.b,	cC[0],cC[1],cC[2],cC[3],	texture_id,
-		// }
 		vertex_arrays[0]  = { 
 				quad.l,quad.t,0,	uv.l,uv.t,	cA[0],cA[1],cA[2],cA[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
 				quad.r,quad.t,0,	uv.r,uv.t,	cB[0],cB[1],cB[2],cB[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
@@ -276,7 +270,7 @@ quad_full_in_quad	:: proc(quad_a, quad_b: Quad) -> bool {
 	return result
 }
 
-quad_clamp_or_reject :: proc (quad_a, quad_b: Quad) -> (Quad, bool) {
+OLD_quad_clamp_or_reject :: proc (quad_a, quad_b: Quad) -> (Quad, bool) {
 	quad : Quad = quad_a
 	ok := false
 	a := pt_in_quad({quad_a.l,quad_a.t}, quad_b)
@@ -292,6 +286,15 @@ quad_clamp_or_reject :: proc (quad_a, quad_b: Quad) -> (Quad, bool) {
 	}
 
 	return quad, ok
+}
+
+quad_clamp_or_reject :: proc (quad_a, quad_b: Quad) -> (Quad, bool) {
+	clamped := quad_clamp_to_quad(quad_a, quad_b)
+
+	if (clamped.l == clamped.r) || (clamped.t == clamped.b) {
+		return clamped, false
+	}
+	return clamped, true
 }
 
 quad_clamp_to_quad :: proc (quad, quad_b: Quad) -> Quad {
