@@ -96,10 +96,10 @@ opengl_init :: proc() {
 	gl.EnableVertexAttribArray(1)
 	gl.EnableVertexAttribArray(2)
 	gl.EnableVertexAttribArray(3)
+	gl.EnableVertexAttribArray(4)
 }
 
 opengl_load_texture :: proc(font: ^Font, image: rawptr) -> bool {
-	fmt.println(font.texture_unit, font.label)
 	gl.ActiveTexture(gl.TEXTURE0 + font.texture_unit)
 	gl.BindTexture(gl.TEXTURE_2D, font.texture)
   	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, font.texture_size,font.texture_size, 0, gl.RED, gl.UNSIGNED_BYTE, image)
@@ -125,11 +125,12 @@ opengl_render :: proc() {
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, state.render.vertex_buffer)
 		gl.BufferData(gl.ARRAY_BUFFER, layer.v_index * size_of(f32), &layer.vertices[0], gl.STATIC_DRAW)
-		
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 0 * size_of(f32))
-		gl.VertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 3 * size_of(f32))
-		gl.VertexAttribPointer(2, 4, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 5 * size_of(f32))
-		gl.VertexAttribPointer(3, 1, gl.FLOAT, gl.FALSE, 10 * size_of(f32), 9 * size_of(f32))
+								  // idx		size	type			norm		 total size			  offset
+		gl.VertexAttribPointer(0, 		3, 	gl.FLOAT, 	gl.FALSE, 14 * size_of(f32), 0 * size_of(f32))
+		gl.VertexAttribPointer(1, 		2, 	gl.FLOAT, 	gl.FALSE, 14 * size_of(f32), 3 * size_of(f32))
+		gl.VertexAttribPointer(2, 		4, 	gl.FLOAT, 	gl.FALSE, 14 * size_of(f32), 5 * size_of(f32))
+		gl.VertexAttribPointer(3, 		1, 	gl.FLOAT, 	gl.FALSE, 14 * size_of(f32), 9 * size_of(f32))
+		gl.VertexAttribPointer(4, 		4, 	gl.FLOAT, 	gl.FALSE, 14 * size_of(f32), 10 * size_of(f32))
 
 		framebuffer_res := gl.GetUniformLocation(state.render.shader, "framebuffer_res")
 		gl.Uniform2f(framebuffer_res, f32(state.window.framebuffer.x)/2, f32(state.window.framebuffer.y)/2)
@@ -163,9 +164,11 @@ push_quad :: 	proc(
 							_cD:			HSL=	{1,1,1,1},
 							border: 		f32=	0.0, 
 							uv:			Quad=	{0,0,0,0},
-							texture_id:	f32=	0.0)
+							texture_id:	f32=	0.0,
+							clip:			Quad= {0,0,0,0},
+							)
 {
-	vertex_arrays: [4][40]f32
+	vertex_arrays: [4][56]f32
 
 	cA : v4 = v4(lin.vector4_hsl_to_rgb(_cA.h, _cA.s, _cA.l, _cA.a))
 	cB : v4 = v4(lin.vector4_hsl_to_rgb(_cB.h, _cB.s, _cB.l, _cB.a))
@@ -174,21 +177,47 @@ push_quad :: 	proc(
 
 	if border == 0
 	{
+		// vertex_arrays[0]  = { 
+		// 		quad.l,quad.t,0,	uv.l,uv.t,	cA[0],cA[1],cA[2],cA[3],	texture_id,
+		// 		quad.r,quad.t,0,	uv.r,uv.t,	cB[0],cB[1],cB[2],cB[3],	texture_id,
+		// 		quad.r,quad.b,0,	uv.r,uv.b,	cD[0],cD[1],cD[2],cD[3],	texture_id,
+		// 		quad.l,quad.b,0,	uv.l,uv.b,	cC[0],cC[1],cC[2],cC[3],	texture_id,
+		// }
 		vertex_arrays[0]  = { 
-				quad.l,quad.t,0,	uv.l,uv.t,	cA[0],cA[1],cA[2],cA[3],	texture_id,
-				quad.r,quad.t,0,	uv.r,uv.t,	cB[0],cB[1],cB[2],cB[3],	texture_id,
-				quad.r,quad.b,0,	uv.r,uv.b,	cD[0],cD[1],cD[2],cD[3],	texture_id,
-				quad.l,quad.b,0,	uv.l,uv.b,	cC[0],cC[1],cC[2],cC[3],	texture_id,
+				quad.l,quad.t,0,	uv.l,uv.t,	cA[0],cA[1],cA[2],cA[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				quad.r,quad.t,0,	uv.r,uv.t,	cB[0],cB[1],cB[2],cB[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				quad.r,quad.b,0,	uv.r,uv.b,	cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				quad.l,quad.b,0,	uv.l,uv.b,	cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
 		}
 	} else {
 
 		inner: Quad = {quad.l + border,quad.t + border,quad.r - border,quad.b - border,}
 
 		vertex_arrays = {
-			{ quad.l,quad.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	quad.r,quad.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	inner.r,inner.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	inner.l,inner.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], texture_id},
-			{ quad.r,quad.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], 0,	quad.r,quad.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	inner.r,inner.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	inner.r,inner.t,0, 0,0, cB[0],cB[1],cB[2],cB[3], texture_id},
-			{ quad.r,quad.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], 0,	quad.l,quad.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	inner.l,inner.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	inner.r,inner.b,0, 0,0, cD[0],cD[1],cD[2],cD[3], texture_id},
-			{ quad.l,quad.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], 0,	quad.l,quad.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	inner.l,inner.t,0, 0,0, cA[0],cA[1],cA[2],cA[3], 0,	inner.l,inner.b,0, 0,0, cC[0],cC[1],cC[2],cC[3], texture_id},
+			{ 
+				quad.l,quad.t,0, 		0,0, cA[0],cA[1],cA[2],cA[3], texture_id, clip.l,clip.t,clip.r,clip.b,
+				quad.r,quad.t,0, 		0,0, cB[0],cB[1],cB[2],cB[3], texture_id, clip.l,clip.t,clip.r,clip.b,
+				inner.r,inner.t,0, 	0,0, cB[0],cB[1],cB[2],cB[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				inner.l,inner.t,0, 	0,0, cA[0],cA[1],cA[2],cA[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+			},
+			{ 
+				quad.r,quad.t,0, 		0,0, cB[0],cB[1],cB[2],cB[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				quad.r,quad.b,0, 		0,0, cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				inner.r,inner.b,0, 	0,0, cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				inner.r,inner.t,0, 	0,0, cB[0],cB[1],cB[2],cB[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+			},
+			{ 
+				quad.r,quad.b,0, 		0,0, cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				quad.l,quad.b,0, 		0,0, cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				inner.l,inner.b,0, 	0,0, cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				inner.r,inner.b,0, 	0,0, cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+			},
+			{ 
+				quad.l,quad.b,0, 		0,0, cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				quad.l,quad.t,0, 		0,0, cA[0],cA[1],cA[2],cA[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				inner.l,inner.t,0, 	0,0, cA[0],cA[1],cA[2],cA[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+				inner.l,inner.b,0, 	0,0, cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
+			},
 		}
 	}
 		
@@ -200,8 +229,8 @@ push_quad :: 	proc(
 		quad_index := u32(layer.quad_index * 4)
 		indices :[6]u32 = {0+quad_index, 1+quad_index, 3+quad_index, 1+quad_index, 2+quad_index, 3+quad_index}
 		
-		copy(layer.vertices[layer.v_index:layer.v_index+40], vertex_array[:])
-		layer.v_index += 40
+		copy(layer.vertices[layer.v_index:layer.v_index+56], vertex_array[:])
+		layer.v_index += 56
 		
 		copy(layer.indices[layer.i_index:layer.i_index+6], indices[:])
 		layer.i_index += 6
@@ -209,24 +238,24 @@ push_quad :: 	proc(
 	}
 }
 
-push_quad_solid :: proc(quad: Quad, color:HSL) {
-	push_quad(quad,	color, color, color, color, 0, {0,0,0,0}, 0)
+push_quad_solid :: proc(quad: Quad, color:HSL, clip: Quad) {
+	push_quad(quad,	color, color, color, color, 0, {0,0,0,0}, 0, clip)
 }
 
-push_quad_gradient_h :: proc(quad: Quad, color_left:HSL, color_right:HSL) {
-	push_quad(quad,	color_left, color_right, color_left, color_right, 0, {0,0,0,0}, 0)
+push_quad_gradient_h :: proc(quad: Quad, color_left:HSL, color_right:HSL, clip: Quad) {
+	push_quad(quad,	color_left, color_right, color_left, color_right, 0, {0,0,0,0}, 0, clip)
 }
 
-push_quad_gradient_v :: proc(quad: Quad, color_top:HSL, color_bottom:HSL) {
-	push_quad(quad,	color_top, color_top, color_bottom, color_bottom, 0, {0,0,0,0}, 0)
+push_quad_gradient_v :: proc(quad: Quad, color_top:HSL, color_bottom:HSL, clip:Quad) {
+	push_quad(quad,	color_top, color_top, color_bottom, color_bottom, 0, {0,0,0,0}, 0, clip)
 }
 
-push_quad_border :: proc(quad: Quad, color:HSL, border: f32=2) {
-	push_quad(quad,	color, color, color, color, border, {0,0,0,0}, 0)
+push_quad_border :: proc(quad: Quad, color:HSL, border: f32=2, clip: Quad) {
+	push_quad(quad,	color, color, color, color, border, {0,0,0,0}, 0, clip)
 }
 
-push_quad_font :: proc(quad: Quad, color:HSL, uv:Quad, font_icon:f32) {
-	push_quad(quad,	color, color, color, color, 0, uv, font_icon)
+push_quad_font :: proc(quad: Quad, color:HSL, uv:Quad, font_icon:f32, clip: Quad) {
+	push_quad(quad,	color, color, color, color, 0, uv, font_icon, clip)
 }
 
 pt_in_quad 	:: proc(pt: v2, quad: Quad) -> bool {
@@ -259,7 +288,7 @@ quad_clamp_or_reject :: proc (quad_a, quad_b: Quad) -> (Quad, bool) {
 		ok = false
 	} else {
 		ok = true
-		// quad = quad_clamp_to_quad(quad_a, quad_b)
+		quad = quad_clamp_to_quad(quad_a, quad_b)
 	}
 
 	return quad, ok
@@ -287,6 +316,7 @@ layout(location = 0) in vec3 pos;
 layout(location = 1) in vec2 uv;
 layout(location = 2) in vec4 color;
 layout(location = 3) in float _texture_id;
+layout(location = 4) in vec4 _clip;
 
 uniform vec2 framebuffer_res;
 uniform vec2 multiplier;
@@ -294,9 +324,13 @@ uniform vec2 multiplier;
 out vec4 vertex_color;
 out vec2 uv_coords;
 out float texture_id;
+out vec4 clip;
+out vec2 fb_res;
 
 void main()
 {
+	fb_res = framebuffer_res;
+	clip = _clip;
 	float x = ((pos.x * multiplier.x) - framebuffer_res.x) / framebuffer_res.x;
 	float y = ((pos.y * multiplier.y) - framebuffer_res.y) / -framebuffer_res.y;
 	uv_coords = uv;
@@ -312,6 +346,12 @@ UIMAIN_FRAG ::
 in vec4 vertex_color;
 in vec2 uv_coords;
 in float texture_id;
+in vec4 clip;
+
+in vec2 fb_res;
+// in vec4 gl_FragCoord;
+layout(origin_upper_left) in vec4 gl_FragCoord;
+
 
 out vec4 FragColor;
 
@@ -325,19 +365,23 @@ void main()
 {
 	vec4 Mul = vec4((vertex_color.xyz * vertex_color.rrr), vertex_color.r);
 
-	if (texture_id == 0)
-	{
-		FragColor = vertex_color;
-	} else if (texture_id == 1) {
-		FragColor = vec4(vertex_color.rgb, texture(regular_texture, uv_coords).r);
-	} else if (texture_id == 2) {
-		FragColor = vec4(vertex_color.rgb, texture(bold_texture, uv_coords).r);
-	} else if (texture_id == 3) {
-		FragColor = vec4(vertex_color.rgb, texture(italic_texture, uv_coords).r);
-	} else if (texture_id == 4) {
-		FragColor = vec4(vertex_color.rgb, texture(light_texture, uv_coords).r);
-	} else if (texture_id == 5) {
-		FragColor = vec4(vertex_color.rgb, texture(icon_texture, uv_coords).r);
+	if (((gl_FragCoord.y > clip.y) && (gl_FragCoord.y < clip.w)) && ((gl_FragCoord.x > clip.x) && (gl_FragCoord.x < clip.z))) { 
+		if (texture_id == 0)
+		{
+			FragColor = vertex_color;
+		} else if (texture_id == 1) {
+			FragColor = vec4(vertex_color.rgb, texture(regular_texture, uv_coords).r);
+		} else if (texture_id == 2) {
+			FragColor = vec4(vertex_color.rgb, texture(bold_texture, uv_coords).r);
+		} else if (texture_id == 3) {
+			FragColor = vec4(vertex_color.rgb, texture(italic_texture, uv_coords).r);
+		} else if (texture_id == 4) {
+			FragColor = vec4(vertex_color.rgb, texture(light_texture, uv_coords).r);
+		} else if (texture_id == 5) {
+			FragColor = vec4(vertex_color.rgb, texture(icon_texture, uv_coords).r);
+		}
 	}
+
+	
 }
 `

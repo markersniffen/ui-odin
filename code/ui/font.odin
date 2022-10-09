@@ -117,7 +117,7 @@ ui_set_font_size :: proc(size: f32 = 18) {
 	state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
 }
 
-draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}) {
+draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}, clip:Quad) {
 	using stb
 
 	text := to_string(editable)
@@ -160,7 +160,10 @@ draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: 
 	cursor.l += left_align
 	cursor.r += left_align
 
-	push_quad_solid(cursor, state.ui.col.active)
+	cursor_clamped_quad, c_ok := quad_clamp_or_reject(cursor, clip)
+	if c_ok {
+		push_quad_solid(cursor, state.ui.col.active, cursor_clamped_quad)
+	}
 
 	for letter, i in text
 	{
@@ -172,10 +175,10 @@ draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: 
 			char_quad.t = top_left.y + letter_data.offset.y
 			char_quad.r = char_quad.l + letter_data.width
 			char_quad.b = char_quad.t + letter_data.height
-			clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
+			clamped_quad, ok := quad_clamp_or_reject(char_quad, clip)
 
 			if ok  {
-				push_quad_font(clamped_quad, color, letter_data.uv, 1)
+				push_quad_font(char_quad, color, letter_data.uv, 1, clamped_quad)
 			}
 		}
 		top_left.x += letter_data.advance
@@ -257,7 +260,7 @@ draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Q
 	top_left : v2 = { left_align, top_align }
 	cursor.l += left_align // NOTE Special
 	cursor.r += left_align // NOTE Special
-	push_quad_solid(cursor, state.ui.col.active) // NOTE Special
+	push_quad_solid(cursor, state.ui.col.active, quad) // NOTE Special
 
 	i := 0
 	font := state.ui.fonts.regular
@@ -278,7 +281,7 @@ draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Q
 				clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
 				if ok  {
 					skip :f32= 1
-					push_quad_font(clamped_quad, color, font.char_data[letter].uv, f32(font.texture_unit+1))
+					push_quad_font(quad, color, font.char_data[letter].uv, f32(font.texture_unit+1), clamped_quad)
 
 				}
 			}
@@ -288,7 +291,7 @@ draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Q
 	}
 }
 
-draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1} ) {
+draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}, clip:Quad) {
 	using stb
 	
 	left_align: f32 = quad.l
@@ -339,10 +342,10 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 				char_quad.t = top_left.y + font.char_data[letter].offset.y
 				char_quad.r = char_quad.l + font.char_data[letter].width
 				char_quad.b = char_quad.t + font.char_data[letter].height
-				clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
+				clamped_quad, ok := quad_clamp_or_reject(char_quad, clip)
 				if ok  {
 					skip :f32= 1
-					push_quad_font(clamped_quad, color, font.char_data[letter].uv, f32(font.texture_unit+1))
+					push_quad_font(char_quad, color, font.char_data[letter].uv, f32(font.texture_unit+1), clamped_quad)
 
 				}
 			}
@@ -415,7 +418,7 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 
 				// if pt_in_quad({char_quad.r, char_quad.b}, quad) {
 				if ok  {
-					push_quad_font(clamped_quad, color, letter_data.uv, f32(skip))
+					push_quad_font(quad, color, letter_data.uv, f32(skip), clamped_quad)
 				}
 			}
 			top_left.x += letter_data.advance
@@ -425,7 +428,7 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 }
 
 // TODO Redo this whole thing, based of of []u8
-draw_text_multiline :: proc(_text:^String, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2) {
+draw_text_multiline :: proc(_text:^String, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
 	text := to_string(_text)
 	// TODO hackey
 	max := (quad.b - quad.t) / state.ui.line_space
@@ -442,7 +445,7 @@ draw_text_multiline :: proc(_text:^String, quad:Quad, align:Text_Align=.LEFT, ke
 		if letter == '\n' || letter_index == len(text)-1 || current_width >= max_width {
 			end = letter_index
 			if letter != '\n' do end += 1
-			draw_text(text[start:end], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font)
+			draw_text(text[start:end], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font, clip)
 			start = end
 			current_width = 0
 			line_index += 1

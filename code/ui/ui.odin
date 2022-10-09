@@ -300,7 +300,7 @@ ui_update :: proc() {
 	for _, panel in state.ui.panels.all {
 		state.ui.ctx.panel = panel
 		if panel.type == .NULL {
-			push_quad_solid(panel.bar, state.ui.col.inactive)
+			push_quad_solid(panel.bar, state.ui.col.inactive, panel.quad)
 		} else {
 			build_panel_content(panel.content)
 		}
@@ -347,7 +347,7 @@ ui_update :: proc() {
 		if state.ui.panels.hot.type == .NULL {
 			if state.ui.panels.hot.child_a != nil {
 				if state.ui.panels.hot.child_a.type != .STATIC {
-					push_quad_solid(state.ui.panels.hot.bar, state.ui.col.hot)
+					push_quad_solid(state.ui.panels.hot.bar, state.ui.col.hot, state.ui.panels.hot.quad)
 				}
 			}
 		}
@@ -355,7 +355,7 @@ ui_update :: proc() {
 
 	if state.ui.panels.active != nil {
 		if state.ui.panels.active.type == .NULL {
-			push_quad_solid(state.ui.panels.active.bar, state.ui.col.active)
+			push_quad_solid(state.ui.panels.active.bar, state.ui.col.active, state.ui.panels.active.quad)
 		}
 	}
 
@@ -379,60 +379,62 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	
 	quad := box.quad
 	clip_ok := true
+	clip_quad: Quad
 
-	quad, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
+
+	clip_quad, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
 
 	// NOTE COLORS
 	// if .ROOT in box.flags do push_quad_border(quad, state.ui.col.backdrop, 1)
 
 	if clip_ok {
 		if .DRAWBACKGROUND in box.flags {
-			push_quad_solid(quad, box.bg_color)
+			push_quad_solid(quad, box.bg_color, clip_quad)
 			if box.ops.selected {
-				push_quad_gradient_v(quad, state.ui.col.active, state.ui.col.active)
+				push_quad_gradient_v(quad, state.ui.col.active, state.ui.col.active, clip_quad)
 			}
 		}
 		if .DRAWBORDER in box.flags {
-			push_quad_border(quad, state.ui.col.border, box.border)
+			push_quad_border(quad, state.ui.col.border, box.border, clip_quad)
 		}
 		if .HOTANIMATION in box.flags {
 			hot := state.ui.col.hot
-			push_quad_gradient_v(quad, {hot.h, hot.s, hot.l, hot.a * box.hot_t}, {hot.h, hot.s, hot.l, hot.a * box.hot_t})
+			push_quad_gradient_v(quad, {hot.h, hot.s, hot.l, hot.a * box.hot_t}, {hot.h, hot.s, hot.l, hot.a * box.hot_t}, clip_quad)
 		}
 		if .ACTIVEANIMATION in box.flags {
 			active := state.ui.col.active
-			push_quad_gradient_v(quad, {active.h, active.s, active.l, active.a * box.active_t}, {active.h, active.s, active.l, active.a * box.active_t})	
+			push_quad_gradient_v(quad, {active.h, active.s, active.l, active.a * box.active_t}, {active.h, active.s, active.l, active.a * box.active_t}, clip_quad)	
 		}
 		if .DRAWGRADIENT in box.flags {
 			if box.ops.editing {
-				push_quad_gradient_v(quad, {0,0,0,0}, state.ui.col.gradient)
+				push_quad_gradient_v(quad, {0,0,0,0}, state.ui.col.gradient, clip_quad)
 			} else {
-				push_quad_gradient_v(quad, state.ui.col.gradient, {0,0,0,0})
+				push_quad_gradient_v(quad, state.ui.col.gradient, {0,0,0,0}, clip_quad)
 			}
 		}
 		if .DRAWTEXT in box.flags {
-			draw_text(to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
+			draw_text(to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, clip_quad)
 		} else if .EDITTEXT in box.flags {
-			if box.ops.editing do push_quad_border(quad, state.ui.col.active, box.border)
-			draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
+			if box.ops.editing do push_quad_border(quad, state.ui.col.active, box.border, clip_quad)
+			draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, clip_quad)
 		} else if .DRAWPARAGRAPH in box.flags {
-			draw_text_multiline(box.editable_string, quad)
+			draw_text_multiline(box.editable_string, quad, .LEFT, 2, clip_quad)
 		}
 		if .DISPLAYVALUE in box.flags {
 			text := fmt.tprintf("%v %v", to_string(&box.name), box.value)
-			draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color)
+			draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, clip_quad)
 		}
 
 		// TODO DEBUG
 		if .DEBUG in box.flags {
-			push_quad_border(quad, {0.85,1,0.5,1}, 1)
+			push_quad_border(quad, {0.85,1,0.5,1}, 1, clip_quad)
 		}
 
 	}
 
 	ui_draw_boxes(box.next, clip_to)
 
-	clip_quad := clip_to
+	clip_quad = clip_to
 	if .CLIP in box.flags do clip_quad = quad
 	ui_draw_boxes(box.first,clip_quad)
 }
