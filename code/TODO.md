@@ -17,9 +17,9 @@
 [X] dropdown
 [X] tabs
 [X] clean up colors
-[ ] proper box clipping
+[X] scrolling
+[X] proper box clipping
 [ ] avoid making boxes that are cropped?
 [ ] render while resizing window
 [ ] copy/paste values
 [ ] load defaults from file
-[O] scrolling

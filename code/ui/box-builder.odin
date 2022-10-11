@@ -155,7 +155,7 @@ ui_panel_testlist :: proc() {
 					}
 				ui_pop()
 				ui_axis(.X)
-				ui_scrollbar()
+				// ui_scrollbar()
 			ui_pop()
 			ui_pop()
 			ui_pop()
@@ -169,12 +169,13 @@ ui_panel_testlist :: proc() {
 		}
 		ui_pop()
 		ui_axis(.X)
-		ui_scrollbar()
+		// ui_scrollbar()
 	ui_end()
 }
 
 ui_panel_colors :: proc() {
 	ui_begin()
+	
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
 	ui_empty()
@@ -361,10 +362,11 @@ ui_panel_boxlist :: proc() {
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
 	ui_value("box length", len(state.ui.boxes.all))
-	ui_size(.PCT_PARENT, 1, .TEXT, 4)
-	ui_empty()
+	ui_size(.PCT_PARENT, 1, .TEXT, 6)
 	ui_scrollbox()
 		ui_axis(.Y)
+		ui_size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
+		ui_empty()
 		ui_size(.PCT_PARENT, 1, .TEXT, 1)
 		ui_label("Panel List:")
 		for key, panel in state.ui.panels.all {
@@ -375,10 +377,6 @@ ui_panel_boxlist :: proc() {
 			}
 		}
 		ui_pop()
-		ui_axis(.X)
-	ui_scrollbar()
-	ui_pop()
-	ui_pop()
 	ui_end()
 }
 
@@ -409,21 +407,17 @@ ui_panel_debug :: proc() {
 
 ui_panel_properties :: proc() {
 	ui_begin()
-	vp := ui_scrollbox()
+	ui_scrollbox()
 		ui_axis(.Y)
-		// ui_paragraph(&state.debug.para)
-
-		ui_size(.PCT_PARENT, 1, .PIXELS, 100)
-		ui_size(.PIXELS, 800, .TEXT, 1)
+		ui_size(.PCT_PARENT, 1, .SUM_CHILDREN, 1 )
+		ui_empty()
+		ui_size(.PCT_PARENT, 1, .TEXT, 1)
 		ui_label("WHEE")
 		for i in 0..=22 {
 			label := fmt.tprintf("Label %v", i)
 			ui_button(label)
 		}
-
 		ui_pop()
-	ui_scrollbar()
-	ui_pop()
 	ui_end()
 }
 

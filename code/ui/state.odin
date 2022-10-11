@@ -307,7 +307,7 @@ typing_callback :: proc(window: glfw.WindowHandle, codepoint: u32) {
 
 scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64) {
 	if shift() {
-		state.mouse.scroll = {0, f32(x)}
+		state.mouse.scroll = {f32(y), 0}
 	} else {
 		state.mouse.scroll = {f32(x),f32(y)}
 	}
@@ -325,6 +325,18 @@ lmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.left, .RELEA
 lmb_up :: proc() -> bool { return mouse_button(state.mouse.left, .UP) }
 
 rmb_click :: proc() -> bool { return mouse_button(state.mouse.right, .CLICK) }
+rmb_drag :: proc() -> bool { return mouse_button(state.mouse.right, .DRAG) }
+rmb_click_drag :: proc() -> bool { return rmb_click() || rmb_drag() }
+rmb_release :: proc() -> bool { return mouse_button(state.mouse.right, .RELEASE) }
+rmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.right, .RELEASE) || mouse_button(state.mouse.right, .UP)) }
+rmb_up :: proc() -> bool { return mouse_button(state.mouse.right, .UP) }
+
+mmb_click :: proc() -> bool { return mouse_button(state.mouse.middle, .CLICK) }
+mmb_drag :: proc() -> bool { return mouse_button(state.mouse.middle, .DRAG) }
+mmb_click_drag :: proc() -> bool { return mmb_click() || mmb_drag() }
+mmb_release :: proc() -> bool { return mouse_button(state.mouse.middle, .RELEASE) }
+mmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.middle, .RELEASE) || mouse_button(state.mouse.middle, .UP)) }
+mmb_up :: proc() -> bool { return mouse_button(state.mouse.middle, .UP) }
 
 set_cursor :: proc() {
 	cursor:glfw.CursorHandle

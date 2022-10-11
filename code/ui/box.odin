@@ -46,6 +46,7 @@ Box :: struct {
 	offset: v2,		// from parent
 	scroll: v2,
 	quad: Quad,
+	clip: Quad,
 	bar: Quad,
 	render_layer: int,
 }
@@ -74,6 +75,7 @@ Box_Size :: struct {
 
 Box_Flags :: enum {
 	DEBUG,
+	DEBUGCLIP,
 	ROOT,
 	FLOATING,
 	MENU,
@@ -81,9 +83,10 @@ Box_Flags :: enum {
 	NO_OFFSET,
 
 	CLICKABLE,
-	HOVERABLE,		
+	HOVERABLE,
 	SELECTABLE,
 	DRAGGABLE,
+	MIDDLEDRAGGABLE,
 	VIEWSCROLL,
 	EDITTEXT,
  
@@ -103,6 +106,8 @@ Box_Ops :: struct {
   clicked: bool,
   double_clicked: bool,
   right_clicked: bool,
+  middle_clicked: bool,
+  middle_dragged: bool,
   pressed: bool,
   released: bool,
   selected: bool,
@@ -192,7 +197,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	state.ui.ctx.box = box
 
 	// PROCESS OPS ------------------------------
-	mouse_over := mouse_in_quad(box.quad)
+	mouse_over := mouse_in_quad(box.clip)
 	box.ops.clicked = false
 	box.ops.released = false
 
@@ -251,6 +256,22 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 			cursor(.HAND)
 		}
 		box.ops.dragging = box.ops.pressed
+	}
+
+	if .VIEWSCROLL in box.flags {
+		if mouse_over {
+			if mmb_click() {
+				box.ops.middle_clicked = true
+				box.ops.middle_dragged = true
+				// TODO really do this?
+				state.ui.boxes.active = box
+			} else {
+				box.ops.middle_clicked = false
+			}
+			if mmb_release_up() {
+				box.ops.middle_dragged = false
+			}
+		}
 	}
 
 	if .MENU in box.flags {
@@ -354,15 +375,13 @@ ui_calc_boxes :: proc(root: ^Box) {
 				if box.parent != nil {
 					if .VIEWSCROLL in box.parent.flags {
 						if mouse_in_quad(box.parent.parent.quad) {
-							box.scroll.y = (box.scroll + (state.mouse.scroll*20)).y
-							// box.scroll.x = (box.scroll + (state.mouse.scroll*20)).x
+							box.scroll = box.scroll + (state.mouse.scroll*20)
 						}
 						box.scroll.y = clamp(box.scroll.y, -box.parent.sum_children.y + box.parent.calc_size.y, 0)
-						// box.scroll.x = clamp(box.scroll.x, -box.parent.sum_children.x + box.parent.calc_size.x, 0)
+						box.scroll.x = clamp(box.scroll.x, box.parent.calc_size.x - box.calc_size.x, 0)
 						if box.scroll != box.offset {
 							to_go := (box.scroll - box.offset)/1.5
-							box.offset.y = box.offset.y + to_go.y
-							box.offset.x = box.offset.x + to_go.x
+							box.offset = box.offset + to_go
 						}
 					} else {
 						box.scroll = {0,0}

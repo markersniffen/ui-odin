@@ -28,7 +28,8 @@ ui_begin :: proc() -> ^Panel {
 	box.offset = {quad.l, quad.t}
 	state.ui.ctx.panel.box = box
 	ui_push_parent(box)
-	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
+	ui_size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
+	ui_axis(.Y)
 	return state.ui.ctx.panel
 }
 
@@ -265,7 +266,6 @@ ui_slider :: proc(label:string, value:^f32) -> Box_Ops {
 	}, any(value))
 
 	if box.ops.clicked {
-		fmt.println(linear(value^, 0, 1, 0, box.calc_size.x))
 		state.mouse.delta_temp = state.mouse.pos - linear(value^, 0, 1, 0, box.calc_size.x)
 	}
 
@@ -428,56 +428,91 @@ ui_spacer_pixels :: proc(pixels: f32) -> Box_Ops {
 }
 
 // creates a box that will clip it's contents by it's height
-// and scroll when the scroll wheel is used
+// and offset the first child by x and y
 
-ui_scrollbox :: proc() -> ^Box {
-	empty := ui_create_box("scrollbox", { })
-	ui_push_parent(empty)
-	ui_axis(.X)
-	ui_size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
-	viewport := ui_create_box("viewport", { .VIEWSCROLL, .CLIP })
-	ui_push_parent(viewport)
-	ui_axis(.Y)
-	return viewport
-}
+ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
+	scrollbox := ui_create_box("scrollbox", { })
+	ui_push_parent(scrollbox)
 
-// add at the end of of a scrollbox to add a draggable bar to scroll with
+	bar_width :f32= 14
+	x := _x
+	y := _y
 
-ui_scrollbar :: proc() -> ^Box {
-	
-	viewport := state.ui.ctx.parent.first
-	dragbar_height := ((viewport.calc_size.y + viewport.expand.y) / viewport.sum_children.y) * (viewport.calc_size.y + viewport.expand.y)
-
-	if viewport.calc_size.y > dragbar_height {
-		ui_size(.PIXELS, 12, .PCT_PARENT, 1)
-	} else {
-		ui_size(.PIXELS, 0, .PCT_PARENT, 1)
-	}
-	
-	ui_axis(.X)
-	dragbar := ui_create_box("scrollbar", { .DRAWBACKGROUND, .CLIP } )
-	ui_push_parent(dragbar)
-	ui_axis(.Y)
-	ui_size(.PCT_PARENT, 1, .PIXELS, min(dragbar_height, viewport.calc_size.y))
-	handle := ui_create_box("handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
-	handle.bg_color = state.ui.col.inactive
-
-	dragbar_range := (viewport.calc_size.y + viewport.expand.y) - dragbar_height
-	scroll_range := viewport.sum_children.y - (viewport.calc_size.y + viewport.expand.y)
-	scroll_value := viewport.first.offset.y
-	multiplier := scroll_value / scroll_range
-	dragbar_value := dragbar_range * multiplier
-	handle.offset.y = -dragbar_value
-
-	handle.bg_color = state.ui.col.highlight
-	if handle.ops.pressed {
-		if handle.ops.clicked {
-			state.mouse.delta_temp.y = (f32(state.mouse.pos.y) * (scroll_range/dragbar_range)) + viewport.first.offset.y
+	if scrollbox.first != nil {
+		if scrollbox.first.first != nil {
+			first := scrollbox.first.first
+			x = (first.calc_size.x > scrollbox.first.calc_size.x)
+			y = (first.calc_size.y > scrollbox.first.calc_size.y)
 		}
-		viewport.first.scroll.y = ((f32(state.mouse.pos.y)*(scroll_range/dragbar_range)) - state.mouse.delta_temp.y) * -1
 	}
-	handle.ops.selected = handle.ops.pressed
-	return dragbar
+	
+	viewport_width := scrollbox.calc_size.x
+	if y do viewport_width -= bar_width
+
+	viewport_height := scrollbox.calc_size.y
+	if x do viewport_height -= bar_width
+
+	ui_axis(.X)
+	ui_size(.PIXELS, viewport_width, .PIXELS, viewport_height)
+	viewport := ui_create_box("viewport", { .CLIP, .VIEWSCROLL })
+
+	if viewport.first != nil {
+		db_size := ((viewport.calc_size + viewport.expand) / viewport.first.calc_size) * (viewport.calc_size + viewport.expand)
+		db_range := (viewport.calc_size + viewport.expand) - db_size
+		scr_range := viewport.first.calc_size - (viewport.calc_size + viewport.expand)
+		scr_value := viewport.first.offset
+		mpl := scr_value / scr_range
+		db_value := db_range * mpl
+		if y {
+
+			ui_size(.PIXELS, bar_width, .PIXELS, viewport_height)
+			sby := ui_create_box("scrollbar_y", { .NO_OFFSET, .DRAWBACKGROUND })
+			sby.offset.x = viewport_width
+			ui_push_parent(sby)
+
+			ui_size(.PCT_PARENT, 1, .PIXELS, db_size.y)
+			y_handle := ui_create_box("y_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+			y_handle.bg_color = state.ui.col.inactive
+			y_handle.offset.y = -db_value.y
+			ui_pop()
+
+			if y_handle.ops.pressed {
+				if y_handle.ops.clicked {
+					state.mouse.delta_temp.y = state.mouse.pos.y * (scr_range.y/db_range.y) + viewport.first.offset.y
+				}
+				viewport.first.scroll.y = ((state.mouse.pos.y*(scr_range.y/db_range.y)) - state.mouse.delta_temp.y) * -1
+			}
+		}
+		if x {
+			ui_size(.PIXELS, viewport_width, .PIXELS, bar_width)
+			sbx := ui_create_box("scrollbar_x", { .NO_OFFSET, .DRAWBACKGROUND })
+			sbx.offset.y = viewport_height
+			ui_push_parent(sbx)
+
+			ui_size(.PIXELS, db_size.x, .PCT_PARENT, 1)
+			x_handle := ui_create_box("x_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+			x_handle.bg_color = state.ui.col.inactive
+			x_handle.offset.x = -db_value.x
+			ui_pop()
+
+			if x_handle.ops.pressed {
+				if x_handle.ops.clicked {
+					state.mouse.delta_temp.x = state.mouse.pos.x * (scr_range.x/db_range.x) + viewport.first.offset.x
+				}
+				viewport.first.scroll.x = ((state.mouse.pos.x*(scr_range.x/db_range.x)) - state.mouse.delta_temp.x) * -1
+			}
+		}
+
+		if viewport.ops.middle_dragged {
+			if viewport.ops.middle_clicked {
+				state.mouse.delta_temp = state.mouse.pos - viewport.first.offset
+			}
+			viewport.first.scroll = state.mouse.pos - state.mouse.delta_temp
+		}
+	}
+
+	ui_push_parent(viewport)
+	return viewport
 }
 
 // add this at the end of an empty to be able to manually change the scale
