@@ -59,6 +59,15 @@ Text_Align :: enum {
 
 ui_init_font :: proc() {
 	ui_set_font_size()
+
+
+	// TODO DEBUG
+	state.debug.text = from_string("xxxxx-----")
+	state.debug.para = from_string("Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.")
+	file_memory, ok := os.read_entire_file("./assets/temp.txt")
+	state.debug.lorem.mem = file_memory
+	state.debug.lorem.len = len(file_memory)
+
 }
 
 ui_load_font :: proc(font: ^Font) {
@@ -428,30 +437,30 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 }
 
 // TODO Redo this whole thing, based of of []u8
-draw_text_multiline :: proc(_text:^String, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
-	text := to_string(_text)
-	// TODO hackey
-	max := (quad.b - quad.t) / state.ui.line_space
-	max_width := quad.r - quad.l - (state.ui.margin*10)
-	current_width :f32= 0
-	start, end: int 
-	letter_index: int
-	line_index: int
-	for letter_index < len(text)
-	{
-		if f32(line_index) > max do break
-		jump := f32(line_index) * (state.ui.line_space - (state.ui.margin*2) + kerning) 
-		letter := text[letter_index]
-		if letter == '\n' || letter_index == len(text)-1 || current_width >= max_width {
-			end = letter_index
-			if letter != '\n' do end += 1
-			draw_text(text[start:end], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font, clip)
-			start = end
-			current_width = 0
-			line_index += 1
+draw_text_multiline :: proc(value:any, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
+	assert(value.id == V_String)	
+	text : string = "FAILED TO LOAD TEXT"
+	v_string : V_String
+	
+	if value.id == V_String {
+		v_string = (cast(^V_String)value.data)^
+		text = string(v_string.mem)
+	}
+
+	max_width := quad.r - quad.l
+	start : int
+	lines : int
+	width :f32= 0
+	for char, index in text { //text[v_string.index:clamp(v_string.index+1000, 0, v_string.len)] {
+		if char == '\n' {
+			jump := f32(lines) * (state.ui.line_space-4)
+			draw_text(text[start:index], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font, clip)
+			start = index+1
+			lines += 1
+			width = 0
+		} else {
+			width += state.ui.fonts.regular.char_data[rune(char)].advance
 		}
-		current_width += state.ui.fonts.regular.char_data[rune(letter)].advance
-		letter_index += 1
 	}
 }
 

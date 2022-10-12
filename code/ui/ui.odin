@@ -114,7 +114,7 @@ ui_init :: proc() {
 
 	ui_create_panel(nil, .Y, .STATIC, .FILE_MENU, 0.3)
 	ui_create_panel(state.ui.ctx.panel, .Y, .DYNAMIC, .COLORS, 0.1)
-	ui_create_panel(state.ui.ctx.panel, .X, .DYNAMIC, .DEBUG, 0.5)
+	ui_create_panel(state.ui.ctx.panel, .X, .DYNAMIC, .LOREM, 0.5)
 	ui_create_panel(state.ui.ctx.panel, .Y, .DYNAMIC, .PROPERTIES, 0.3)
 
 	// SET DEFAULT COLORS ------------------------------
@@ -416,7 +416,7 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 			if box.ops.editing do push_quad_border(quad, state.ui.col.active, box.border, box.clip)
 			draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		} else if .DRAWPARAGRAPH in box.flags {
-			draw_text_multiline(box.editable_string, quad, .LEFT, 2, box.clip)
+			draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
 		}
 		if .DISPLAYVALUE in box.flags {
 			text := fmt.tprintf("%v %v", to_string(&box.name), box.value)

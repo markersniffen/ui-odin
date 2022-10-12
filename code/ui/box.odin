@@ -27,7 +27,6 @@ Box :: struct {
 	flags: bit_set[Box_Flags],
 	ops: Box_Ops,
 
-
 	bg_color: 		HSL,
 	border_color: HSL,
 	font_color:		HSL,
@@ -49,12 +48,6 @@ Box :: struct {
 	clip: Quad,
 	bar: Quad,
 	render_layer: int,
-}
-
-Value_Type :: enum {
-	F32,
-	INT,
-	STRING,
 }
 
 Box_Size_Type :: enum {

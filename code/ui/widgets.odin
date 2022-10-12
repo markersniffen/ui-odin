@@ -244,9 +244,35 @@ ui_edit_text :: proc(editable: ^String) -> Box_Ops {
 	return box.ops
 }
 
-ui_paragraph :: proc(text: ^String) -> Box_Ops {
-	box := ui_create_box("paragraph", { .DRAWPARAGRAPH, .DEBUG })
-	box.editable_string = text
+ui_paragraph :: proc(value: any) -> Box_Ops {
+	assert(value.id == V_String)
+	val := cast(^V_String)value.data
+	
+	sbox := ui_scrollbox()
+
+
+
+	if val.width != sbox.calc_size.x {
+		val.width = sbox.calc_size.x
+		val.lines = 1
+		width : f32 = 0
+		last_space := 0
+		for char, index in val.mem {
+			if char == ' ' do last_space = index
+			if char == '\n' {
+				val.lines += 1
+			} else {
+				width += state.ui.fonts.regular.char_data[rune(char)].advance
+			}
+		}
+	}
+
+
+	ui_size(.PIXELS, val.width, .PIXELS, (state.ui.line_space-4) * f32(val.lines))
+	box := ui_create_box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH, .DEBUG }, value)
+
+	val.index = clamp( (int( (-box.scroll.y / box.calc_size.y) * f32(val.len) ) ), 0, val.len)
+
 	return box.ops
 }
 
@@ -458,6 +484,8 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 
 	if viewport.first != nil {
 		db_size := ((viewport.calc_size + viewport.expand) / viewport.first.calc_size) * (viewport.calc_size + viewport.expand)
+		db_size.x = max(db_size.x, 40)
+		db_size.y = max(db_size.y, 40)
 		db_range := (viewport.calc_size + viewport.expand) - db_size
 		scr_range := viewport.first.calc_size - (viewport.calc_size + viewport.expand)
 		scr_value := viewport.first.offset
@@ -552,3 +580,4 @@ ui_drag_panel :: proc(label:string="") -> ^Box {
 	}
 	return box
 }
+

@@ -31,6 +31,16 @@ String :: struct {
 	end: int,
 }
 
+V_String :: struct {
+	mem: []u8,
+	len: int,
+	index: int,
+	width: f32,
+	lines: int,
+	start: int,
+	end: int,
+}
+
 to_string :: proc(es: ^String) -> string {
 	return string(es.mem[:es.len])
 }

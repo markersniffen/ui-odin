@@ -13,9 +13,9 @@ Panel_Content :: enum {
 	DEBUG,
 	PROPERTIES,
 	BOXLIST,
-	TESTLIST,
 	TABTEST,
 	COLORS,
+	LOREM,
 }
 
 build_panel_content :: proc(content: Panel_Content) {
@@ -33,9 +33,9 @@ build_panel_content :: proc(content: Panel_Content) {
 		// PANELS AFTER THIS ARE SWAPPABLE //
 		case .PROPERTIES: 	ui_panel_properties()
 		case .BOXLIST: 		ui_panel_boxlist()
-		case .TESTLIST: 	ui_panel_testlist()
-		case .TABTEST:		ui_panel_tab_test()
+ 		case .TABTEST:		ui_panel_tab_test()
 		case .COLORS:		ui_panel_colors()
+		case .LOREM:		ui_lorem()
 	}
 }
 
@@ -116,61 +116,6 @@ ui_ctx_panel :: proc() {
 		ui_menu_button("Copy")
 		ui_menu_button("Paste")
 	ui_pop()
-}
-
-ui_panel_testlist :: proc() {
-	ui_begin()
-	ui_scrollbox()
-		ui_axis(.Y)
-		ui_size(.PCT_PARENT, 1, .TEXT, 1)
-		ui_empty()
-			ui_axis(.X)
-			ui_size(.TEXT, 1, .TEXT, 1)
-			if ui_button("<#>p").released {
-				ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.window.quad)
-			}
-		ui_pop()
-		ui_axis(.Y)
-		ui_size(.PCT_PARENT, 1, .TEXT, 1)
-		ui_label("RANDOM LIST:")
-		ui_size(.PCT_PARENT, 1, .PIXELS, 150)
-		ui_empty("ONE")
-			ui_size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-			ui_empty("TWO")
-				ui_scrollbox()
-					for index in 0..=50 {
-						ui_axis(.Y)
-						ui_size(.PCT_PARENT, 1, .TEXT, 1)
-							ui_empty()
-							ui_size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-							x := ui_empty()
-								for yindex in 0..=3 {
-									ui_axis(.X)
-									ui_size(.PIXELS, 150, .PCT_PARENT, 1)
-									ui_button(fmt.tprintf("Fun | %v | %v", index, yindex))
-								}
-							ui_pop()
-							ui_axis(.Y)
-						ui_pop()
-					}
-				ui_pop()
-				ui_axis(.X)
-				// ui_scrollbar()
-			ui_pop()
-			ui_pop()
-			ui_pop()
-		ui_sizebar_y()
-		ui_pop()
-		ui_size(.PCT_PARENT, 1, .TEXT, 1)
-		ui_button("whee")
-		if ui_dropdown("Select Me").selected {
-			ui_button("first")
-			ui_button("second")
-		}
-		ui_pop()
-		ui_axis(.X)
-		// ui_scrollbar()
-	ui_end()
 }
 
 ui_panel_colors :: proc() {
@@ -314,6 +259,15 @@ ui_panel_colors :: proc() {
 		ui_slider("s:", &state.ui.col.highlight.s)
 		ui_slider("l:", &state.ui.col.highlight.l)
 		ui_slider("v:", &state.ui.col.highlight.a)
+	ui_pop()
+	ui_end()
+}
+
+ui_lorem :: proc() {
+	ui_begin()
+	ui_axis(.Y)
+	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
+	ui_paragraph(state.debug.lorem)
 	ui_pop()
 	ui_end()
 }
