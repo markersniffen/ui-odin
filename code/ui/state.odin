@@ -1,11 +1,14 @@
 package ui
 
+import tracy "../../../odin-tracy"
+
 import "core:fmt"
 import "core:time"
 import "core:runtime"
 import "core:os"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
+
 
 when ODIN_OS == .Windows {
 	import win "core:sys/windows"

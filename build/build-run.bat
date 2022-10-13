@@ -1,1 +1,1 @@
-odin build ../code --debug
+odin build ../code --debug -define:TRACY_ENABLE=true

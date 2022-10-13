@@ -1,5 +1,7 @@
 package ui
 
+import tracy "../../../odin-tracy"
+
 import "core:fmt"
 
 // AXIS ------------------------------
@@ -126,157 +128,163 @@ ui_init :: proc() {
 
 //______ UI UPDATE ______//
 ui_update :: proc() {
+	tracy.Zone()
 	set_cursor()
 	cursor(.NULL)
 
-	// keyboard input for text editing
-	if state.ui.boxes.editing != nil {
-		box := state.ui.boxes.editing 
-		es :=state.ui.boxes.editing.editable_string
 
-		// TYPE LETTERS
-		if state.ui.last_char > 0 {
-			if es.end-es.start != 0 {
-				backspace(es)
-			}
-			if !(es.len+1 > LONG_STRING_LEN) {
-				if es.start >= es.len {
-					es.mem[es.len] = u8(state.ui.last_char)
-				} else {
-					copy(es.mem[clamp(es.start+1, 0, es.len):], es.mem[es.start:es.len])
-					es.mem[es.start] = u8(state.ui.last_char)
-				}
-				es.start +=	1
-				es.end = es.start
-				es.len += 1
-				state.ui.last_char = -1
-			} else {
-				fmt.println("MAX STRING LENGTH REACHED")
-			}
-		}
+	{
+		tracy.ZoneN("Keyboard input")
 
-		// LEFT
-		if read_key(&state.keys.left) {
-			if shift() {
-				if ctrl() {
-					es.end = editable_jump_left(es)
-				} else {
-					es.end = clamp(es.end - 1, 0, es.len)
-				}
-			} else if ctrl() {
-				es.start = editable_jump_left(es)
-				es.end = es.start
-			} else {
-				es.start = clamp(es.start - 1, 0, LONG_STRING_LEN)
-				es.end = es.start
-			}
-		}
+		// keyboard input for text editing
+		if state.ui.boxes.editing != nil {
+			box := state.ui.boxes.editing 
+			es :=state.ui.boxes.editing.editable_string
 
-		// RIGHT
-		if read_key(&state.keys.right) {
-			if shift() {
-				if ctrl() {
-					es.end = editable_jump_right(es)
-				} else {
-					es.end = clamp(es.end + 1, 0, es.len+1)
+			// TYPE LETTERS
+			if state.ui.last_char > 0 {
+				if es.end-es.start != 0 {
+					backspace(es)
 				}
-			} else if ctrl() {
-				es.start = editable_jump_right(es)
-				es.end = es.start
-			} else {
-				es.start = clamp(es.start + 1, 0, es.len)
-				es.end = es.start
-			}
-		}
-
-		if es.len > 0 {
-	 		// BACKSPACE
-			if read_key(&state.keys.backspace) {
-				if ctrl() {
-					es.start = editable_jump_left(es)
-				}
-				backspace(es)
-			}
-			// DELETE
-			if read_key(&state.keys.delete) {
-				if ctrl() {
-					es.end = editable_jump_right(es)
-				}
-				if es.start == es.end {
-					if es.start != es.len {
-						copy(es.mem[es.start:], es.mem[es.start+1:])
-						es.len -= 1
+				if !(es.len+1 > LONG_STRING_LEN) {
+					if es.start >= es.len {
+						es.mem[es.len] = u8(state.ui.last_char)
+					} else {
+						copy(es.mem[clamp(es.start+1, 0, es.len):], es.mem[es.start:es.len])
+						es.mem[es.start] = u8(state.ui.last_char)
 					}
-				} else if es.end > es.start {
-					copy(es.mem[es.start:], es.mem[es.end:])
-					es.len -= (es.end - es.start)
+					es.start +=	1
+					es.end = es.start
+					es.len += 1
+					state.ui.last_char = -1
+				} else {
+					fmt.println("MAX STRING LENGTH REACHED")
+				}
+			}
+
+			// LEFT
+			if read_key(&state.keys.left) {
+				if shift() {
+					if ctrl() {
+						es.end = editable_jump_left(es)
+					} else {
+						es.end = clamp(es.end - 1, 0, es.len)
+					}
+				} else if ctrl() {
+					es.start = editable_jump_left(es)
 					es.end = es.start
 				} else {
-					copy(es.mem[es.end:], es.mem[es.start:])
-					es.len -= (es.start - es.end)
-					es.start = es.end
+					es.start = clamp(es.start - 1, 0, LONG_STRING_LEN)
+					es.end = es.start
 				}
 			}
 
-			// SELECT ALL
-			if ctrl() && read_key(&state.keys.a) {
+			// RIGHT
+			if read_key(&state.keys.right) {
+				if shift() {
+					if ctrl() {
+						es.end = editable_jump_right(es)
+					} else {
+						es.end = clamp(es.end + 1, 0, es.len+1)
+					}
+				} else if ctrl() {
+					es.start = editable_jump_right(es)
+					es.end = es.start
+				} else {
+					es.start = clamp(es.start + 1, 0, es.len)
+					es.end = es.start
+				}
+			}
+
+			if es.len > 0 {
+		 		// BACKSPACE
+				if read_key(&state.keys.backspace) {
+					if ctrl() {
+						es.start = editable_jump_left(es)
+					}
+					backspace(es)
+				}
+				// DELETE
+				if read_key(&state.keys.delete) {
+					if ctrl() {
+						es.end = editable_jump_right(es)
+					}
+					if es.start == es.end {
+						if es.start != es.len {
+							copy(es.mem[es.start:], es.mem[es.start+1:])
+							es.len -= 1
+						}
+					} else if es.end > es.start {
+						copy(es.mem[es.start:], es.mem[es.end:])
+						es.len -= (es.end - es.start)
+						es.end = es.start
+					} else {
+						copy(es.mem[es.end:], es.mem[es.start:])
+						es.len -= (es.start - es.end)
+						es.start = es.end
+					}
+				}
+
+				// SELECT ALL
+				if ctrl() && read_key(&state.keys.a) {
+					es.start = 0
+					es.end = es.len
+				}
+
+			}
+			// HOME
+			if read_key(&state.keys.home) {
 				es.start = 0
+				es.end = 0
+			}
+
+			if read_key(&state.keys.end) {
+				es.start = es.len
 				es.end = es.len
 			}
 
-		}
-		// HOME
-		if read_key(&state.keys.home) {
-			es.start = 0
-			es.end = 0
-		}
+			// ESCAPE
+			if read_key(&state.keys.escape) {
+				state.ui.boxes.editing.ops.editing = false
+				state.ui.boxes.editing = nil
+			}
 
-		if read_key(&state.keys.end) {
-			es.start = es.len
-			es.end = es.len
-		}
-
-		// ESCAPE
-		if read_key(&state.keys.escape) {
-			state.ui.boxes.editing.ops.editing = false
-			state.ui.boxes.editing = nil
-		}
-
-		// MOUSE SELECTION
-		quad := box.quad
-		quad.r = quad.l
-		quad.t = box.panel.quad.t
-		quad.b = box.panel.quad.b
-		if lmb_click_drag() {
-			cursor(.TEXT)
-			for i in 0..=es.len {
-				if i < es.len {
-					quad.r += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
-				} else {
-					quad.r = box.quad.r
-				}
-				if mouse_in_quad(quad) {
-					if lmb_click() {
-						es.start = i
-						break
+			// MOUSE SELECTION
+			quad := box.quad
+			quad.r = quad.l
+			quad.t = box.panel.quad.t
+			quad.b = box.panel.quad.b
+			if lmb_click_drag() {
+				cursor(.TEXT)
+				for i in 0..=es.len {
+					if i < es.len {
+						quad.r += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
 					} else {
-						es.end = i
-						break
+						quad.r = box.quad.r
 					}
+					if mouse_in_quad(quad) {
+						if lmb_click() {
+							es.start = i
+							break
+						} else {
+							es.end = i
+							break
+						}
+					}
+					quad.l += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
 				}
-				quad.l += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
+			}
+			
+			for letter, i in es.mem {
+				if letter == 0 {
+					assert(es.len == i, "Editable_Text len doesn't match number of characters.")
+					break
+				}
 			}
 		}
-		
-		for letter, i in es.mem {
-			if letter == 0 {
-				assert(es.len == i, "Editable_Text len doesn't match number of characters.")
-				break
-			}
-		}
+
 	}
 	
-
 	// create queued panel
 	if state.ui.panels.queued != {} {
 		q := state.ui.panels.queued
@@ -296,33 +304,40 @@ ui_update :: proc() {
 			ui_queue_panel(state.ui.panels.hot, .Y, .FLOATING, .CTX_PANEL, 1.0, state.ui.ctx.panel.quad)
 		}
 	}
-	// NOTE build boxes
-	for _, panel in state.ui.panels.all {
-		state.ui.ctx.panel = panel
-		if panel.type == .NULL {
-			push_quad_solid(panel.bar, state.ui.col.inactive, panel.quad)
-		} else {
-			build_panel_content(panel.content)
+
+	{
+	tracy.ZoneN("Build Boxes")
+		// NOTE build boxes
+		for _, panel in state.ui.panels.all {
+			state.ui.ctx.panel = panel
+			if panel.type == .NULL {
+				push_quad_solid(panel.bar, state.ui.col.inactive, panel.quad)
+			} else {
+				build_panel_content(panel.content)
+			}
 		}
 	}
 
-  	// prune boxes that aren't used ------------------------------
-	box_index := 0
-	for _, box in state.ui.boxes.all {
-		if state.ui.frame > box.last_frame_touched {
-			if box.key.len == 0 {
-				assert(0 != 0)
-			} 
-			state.ui.boxes.to_delete[box_index] = box
-			box_index += 1
+	{
+		tracy.ZoneN("Prune Boxes")
+	  	// prune boxes that aren't used ------------------------------
+		box_index := 0
+		for _, box in state.ui.boxes.all {
+			if state.ui.frame > box.last_frame_touched {
+				if box.key.len == 0 {
+					assert(0 != 0)
+				} 
+				state.ui.boxes.to_delete[box_index] = box
+				box_index += 1
+			}
 		}
-	}
 
-	if box_index > 0 {
-		for i in 0..<box_index {
-			box := cast(^Box)state.ui.boxes.to_delete[i]
-			ui_delete_box(box)
-			state.ui.boxes.to_delete[i] = nil
+		if box_index > 0 {
+			for i in 0..<box_index {
+				box := cast(^Box)state.ui.boxes.to_delete[i]
+				ui_delete_box(box)
+				state.ui.boxes.to_delete[i] = nil
+			}
 		}
 	}
 	panels : [MAX_PANELS]^Panel
@@ -333,9 +348,12 @@ ui_update :: proc() {
 		index += 1
 	}
 	
-	for panel in panels {
-		if panel != nil {
-			if panel.box != nil do ui_calc_boxes(panel.box)
+	{
+		tracy.ZoneN("CALC BOXES")
+		for panel in panels {
+			if panel != nil {
+				if panel.box != nil do ui_calc_boxes(panel.box)
+			}
 		}
 	}
 
@@ -359,21 +377,34 @@ ui_update :: proc() {
 		}
 	}
 
-	for _, panel in state.ui.panels.all {
-		if panel.type != .FLOATING {
-			ui_draw_boxes(panel.box, panel.quad)
+ 	{
+		tracy.ZoneN("DRAW BOXES")
+		for _, panel in state.ui.panels.all {
+			if panel.type != .FLOATING {
+				tracy.ZoneN(fmt.tprintf("Draw %v", panel.content))
+				ui_draw_boxes(panel.box, panel.quad)
+			}
 		}
-	}
-	if state.ui.panels.floating != nil {
-		ui_draw_boxes(state.ui.panels.floating.box, state.ui.panels.floating.quad)
-		if state.ui.panels.floating.box.first != nil {
+ 	}
+
+ 	{
+	 	tracy.ZoneN("DRAW Floating Box")
+		if state.ui.panels.floating != nil {
+			ui_draw_boxes(state.ui.panels.floating.box, state.ui.panels.floating.quad)
+			if state.ui.panels.floating.box.first != nil {
+			}
 		}
-	}
+ 	}
 
 	state.ui.last_char = 0
 }
 
 ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
+	nme := "Draw Box..."
+	if box != nil {
+		nme = to_string(&box.name)
+	}
+	tracy.ZoneN(nme)
 	if box == nil do return
 	set_render_layer(box.render_layer)
 	

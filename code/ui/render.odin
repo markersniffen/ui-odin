@@ -1,5 +1,7 @@
 package ui
 
+import tracy "../../../odin-tracy"
+
 import "core:fmt"
 import "core:mem"
 import "core:os"
@@ -111,6 +113,7 @@ opengl_load_texture :: proc(font: ^Font, image: rawptr) -> bool {
 }
 
 opengl_render :: proc() {
+	tracy.Zone()
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 	bd := v4(lin.vector4_hsl_to_rgb(state.ui.col.backdrop.h, state.ui.col.backdrop.s, state.ui.col.backdrop.l, state.ui.col.backdrop.a))
 	gl.ClearColor(bd.r, bd.g, bd.b, bd.a)

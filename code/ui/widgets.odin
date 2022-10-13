@@ -249,29 +249,40 @@ ui_paragraph :: proc(value: any) -> Box_Ops {
 	val := cast(^V_String)value.data
 	
 	sbox := ui_scrollbox()
-
-
+	
+	width : f32 = 0
+	last_space := 0
+	start := 0
 
 	if val.width != sbox.calc_size.x {
 		val.width = sbox.calc_size.x
-		val.lines = 1
-		width : f32 = 0
-		last_space := 0
-		for char, index in val.mem {
-			if char == ' ' do last_space = index
-			if char == '\n' {
+		val.lines = 0
+		i : int = 0
+		for i < len(val.mem) {
+			char := val.mem[i]
+			if char == ' ' do last_space = i
+			return_break := (char == '\n')
+			width_break := (width >= val.width-30)
+			last_char := (i == len(val.mem)-1)
+			if return_break || width_break || last_char {
+				if width_break {
+					if last_space > start do i = last_space+1
+				}
+				start = i
 				val.lines += 1
+				width = 0
 			} else {
 				width += state.ui.fonts.regular.char_data[rune(char)].advance
 			}
+			i += 1
 		}
 	}
-
-
-	ui_size(.PIXELS, val.width, .PIXELS, (state.ui.line_space-4) * f32(val.lines))
+	
+	ui_size(.PIXELS, val.width, .PIXELS, (state.ui.line_space-4) * f32(val.lines+1))
 	box := ui_create_box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH, .DEBUG }, value)
 
-	val.index = clamp( (int( (-box.scroll.y / box.calc_size.y) * f32(val.len) ) ), 0, val.len)
+	val.current_line = clamp( (int( (-box.scroll.y / (box.calc_size.y)) * f32(val.lines+1) ) ), 0, val.lines)
+	val.last_line = clamp( val.current_line + int(sbox.calc_size.y/(state.ui.line_space-4)), 0, val.lines)
 
 	return box.ops
 }
@@ -499,7 +510,7 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 			ui_push_parent(sby)
 
 			ui_size(.PCT_PARENT, 1, .PIXELS, db_size.y)
-			y_handle := ui_create_box("y_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+			y_handle := ui_create_box("y_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
 			y_handle.bg_color = state.ui.col.inactive
 			y_handle.offset.y = -db_value.y
 			ui_pop()
@@ -537,6 +548,9 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 			}
 			viewport.first.scroll = state.mouse.pos - state.mouse.delta_temp
 		}
+
+		viewport.first.scroll.y = clamp(viewport.first.scroll.y, -viewport.first.calc_size.y + viewport.calc_size.y, 0)
+		viewport.first.scroll.x = clamp(viewport.first.scroll.x, -viewport.first.calc_size.x + viewport.calc_size.x, 0)
 	}
 
 	ui_push_parent(viewport)

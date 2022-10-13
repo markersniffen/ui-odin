@@ -1,5 +1,7 @@
 package ui
 
+import tracy "../../../odin-tracy"
+
 import stb "vendor:stb/truetype"
 import "core:os"
 import "core:mem"
@@ -65,6 +67,8 @@ ui_init_font :: proc() {
 	state.debug.text = from_string("xxxxx-----")
 	state.debug.para = from_string("Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.")
 	file_memory, ok := os.read_entire_file("./assets/temp.txt")
+	// file_memory, ok := os.read_entire_file("C:\\Users\\marxn\\Desktop\\dumb.csv")
+	
 	state.debug.lorem.mem = file_memory
 	state.debug.lorem.len = len(file_memory)
 
@@ -301,6 +305,7 @@ draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Q
 }
 
 draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}, clip:Quad) {
+	tracy.ZoneNC("Draw Text", 0x00aaaa)
 	using stb
 	
 	left_align: f32 = quad.l
@@ -438,29 +443,49 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 
 // TODO Redo this whole thing, based of of []u8
 draw_text_multiline :: proc(value:any, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
+	tracy.ZoneNC("Draw multiline text", 0xff0000)
 	assert(value.id == V_String)	
 	text : string = "FAILED TO LOAD TEXT"
-	v_string : V_String
+	val : V_String
 	
 	if value.id == V_String {
-		v_string = (cast(^V_String)value.data)^
-		text = string(v_string.mem)
+		val = (cast(^V_String)value.data)^
+		text = string(val.mem)
 	}
 
-	max_width := quad.r - quad.l
-	start : int
-	lines : int
-	width :f32= 0
-	for char, index in text { //text[v_string.index:clamp(v_string.index+1000, 0, v_string.len)] {
-		if char == '\n' {
+	lines := 0
+	last_space := 0
+	start := 0
+	width : f32 = 0
+	i : int = 0
+	for i < len(val.mem) {
+		char := val.mem[i]
+		if char == ' ' do last_space = i
+		return_break := (char == '\n')
+		width_break := (width >= val.width-30)
+		last_char := (i == len(val.mem)-1)
+
+		if return_break || width_break || last_char {
 			jump := f32(lines) * (state.ui.line_space-4)
-			draw_text(text[start:index], {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font, clip)
-			start = index+1
-			lines += 1
+			if width_break {
+				if last_space > start do i = last_space+1
+			}
+			text_slice := text[start:i]
+			if last_char do text_slice = text[start:]
+			if lines >= val.current_line-5 && lines <= val.last_line+5 {
+				draw_text(fmt.tprintf("%v | %v", lines, text_slice), {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font, clip)
+			} else if lines > val.last_line+5 {
+				return
+			}
+			if val.mem[i] == ' ' do i += 1
+			start = i
 			width = 0
+			lines += 1
 		} else {
 			width += state.ui.fonts.regular.char_data[rune(char)].advance
 		}
+		i += 1
+
 	}
 }
 

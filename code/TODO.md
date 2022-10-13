@@ -8,7 +8,7 @@
 [X] editable text
   [X] adding space at begining or with no text crashes (?)
   [X] select any and backspace() calculates len wrong
-[ ] large viewable text
+[O] large viewable text
 [ ] large editable text
 [X] font weights
 [ ] different colored text

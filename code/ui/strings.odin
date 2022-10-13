@@ -34,11 +34,15 @@ String :: struct {
 V_String :: struct {
 	mem: []u8,
 	len: int,
-	index: int,
 	width: f32,
+
 	lines: int,
-	start: int,
-	end: int,
+	current_line: int,
+	last_line: int,
+	current_char: int,
+	// index: int,
+	// start: int,
+	// end: int,
 }
 
 to_string :: proc(es: ^String) -> string {
