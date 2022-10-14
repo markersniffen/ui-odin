@@ -136,14 +136,14 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 		box = ui_generate_box(key)
 		box.frame_created = state.ui.frame
 		if .FLOATING in flags {
-			box.offset = state.mouse.pos
+			box.offset = state.input.mouse.pos
 		}	else if .MENU in flags {
 			if state.ui.boxes.active != nil {
 				offset := state.ui.boxes.active.offset
 				offset.y += state.ui.boxes.active.calc_size.y
 				box.offset = offset
 			} else {
-				box.offset = state.mouse.pos
+				box.offset = state.input.mouse.pos
 			}
 		}
 	}
@@ -364,14 +364,14 @@ ui_calc_boxes :: proc(root: ^Box) {
 	for box := root; box != nil; box = box.hash_next	{
 		if .DRAGGABLE in box.flags {
 			if box.ops.dragging {
-				box.panel.box.offset += state.mouse.delta
+				box.panel.box.offset += state.input.mouse.delta
 			}
 		} else if !(.ROOT in box.flags) {
 			if box.prev == nil {
 				if box.parent != nil {
 					if .VIEWSCROLL in box.parent.flags {
 						if mouse_in_quad(box.parent.parent.quad) {
-							box.scroll = box.scroll + (state.mouse.scroll*20)
+							box.scroll = box.scroll + (state.input.mouse.scroll*20)
 						}
 						box.scroll.y = clamp(box.scroll.y, -box.parent.sum_children.y + box.parent.calc_size.y, 0)
 						box.scroll.x = clamp(box.scroll.x, box.parent.calc_size.x - box.calc_size.x, 0)

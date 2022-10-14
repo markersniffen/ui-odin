@@ -23,7 +23,7 @@ Panel :: struct {
 	quad: Quad,
 	bar: Quad,
 
-	content: Panel_Content,
+	content: proc(),
 	box: ^Box,
 }
 
@@ -34,7 +34,7 @@ Panel_Type :: enum {
 	FLOATING,
 }
 
-ui_queue_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:Panel_Content=.DEBUG, size:f32, quad:Quad={0,0,0,0})
+ui_queue_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0})
 {
 	state.ui.panels.queued.axis = axis
 	state.ui.panels.queued.type = type
@@ -44,7 +44,7 @@ ui_queue_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, conte
 	state.ui.panels.queued_parent = current
 }
 
-ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:Panel_Content=.DEBUG, size:f32, quad:Quad={0,0,0,0}) -> ^Panel
+ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0}) -> ^Panel
 {
 	// current := state.ui.ctx.panel
 	panel := cast(^Panel)pool_alloc(&state.ui.panels.pool)
@@ -137,13 +137,13 @@ ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
 				if state.ui.panels.active == panel {
 					cb := panel.child_b
 					if panel.axis == .X {
-						panel.size = (f32(state.mouse.pos.x) - quad.l) * (1 / (quad.r - quad.l))
+						panel.size = (f32(state.input.mouse.pos.x) - quad.l) * (1 / (quad.r - quad.l))
 						if panel.axis == cb.axis {
 							old_child_bar_center := cb.bar.l + ((cb.bar.r - cb.bar.l) / 2)
 							panel.child_b.size = (old_child_bar_center - b.l) * (1 / (b.r - b.l))
 						}
 					} else {
-						panel.size = (f32(state.mouse.pos.y) - quad.t) * (1 / (quad.b - quad.t))
+						panel.size = (f32(state.input.mouse.pos.y) - quad.t) * (1 / (quad.b - quad.t))
 						if panel.axis == cb.axis {
 							old_child_bar_center := cb.bar.t + ((cb.bar.b - cb.bar.t) / 2)
 							panel.child_b.size = (old_child_bar_center - b.t) * (1 / (b.b - b.t))

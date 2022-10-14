@@ -303,11 +303,11 @@ ui_slider :: proc(label:string, value:^f32) -> Box_Ops {
 	}, any(value))
 
 	if box.ops.clicked {
-		state.mouse.delta_temp = state.mouse.pos - linear(value^, 0, 1, 0, box.calc_size.x)
+		state.input.mouse.delta_temp = state.input.mouse.pos - linear(value^, 0, 1, 0, box.calc_size.x)
 	}
 
 	if box.ops.pressed {
-		value^ = clamp(linear(state.mouse.pos.x-state.mouse.delta_temp.x, 0, box.calc_size.x, 0, 1), 0, 1)
+		value^ = clamp(linear(state.input.mouse.pos.x-state.input.mouse.delta_temp.x, 0, box.calc_size.x, 0, 1), 0, 1)
 	}
 	
 	ui_push_parent(box)
@@ -517,9 +517,9 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 
 			if y_handle.ops.pressed {
 				if y_handle.ops.clicked {
-					state.mouse.delta_temp.y = state.mouse.pos.y * (scr_range.y/db_range.y) + viewport.first.offset.y
+					state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/db_range.y) + viewport.first.offset.y
 				}
-				viewport.first.scroll.y = ((state.mouse.pos.y*(scr_range.y/db_range.y)) - state.mouse.delta_temp.y) * -1
+				viewport.first.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/db_range.y)) - state.input.mouse.delta_temp.y) * -1
 			}
 		}
 		if x {
@@ -536,17 +536,17 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 
 			if x_handle.ops.pressed {
 				if x_handle.ops.clicked {
-					state.mouse.delta_temp.x = state.mouse.pos.x * (scr_range.x/db_range.x) + viewport.first.offset.x
+					state.input.mouse.delta_temp.x = state.input.mouse.pos.x * (scr_range.x/db_range.x) + viewport.first.offset.x
 				}
-				viewport.first.scroll.x = ((state.mouse.pos.x*(scr_range.x/db_range.x)) - state.mouse.delta_temp.x) * -1
+				viewport.first.scroll.x = ((state.input.mouse.pos.x*(scr_range.x/db_range.x)) - state.input.mouse.delta_temp.x) * -1
 			}
 		}
 
 		if viewport.ops.middle_dragged {
 			if viewport.ops.middle_clicked {
-				state.mouse.delta_temp = state.mouse.pos - viewport.first.offset
+				state.input.mouse.delta_temp = state.input.mouse.pos - viewport.first.offset
 			}
-			viewport.first.scroll = state.mouse.pos - state.mouse.delta_temp
+			viewport.first.scroll = state.input.mouse.pos - state.input.mouse.delta_temp
 		}
 
 		viewport.first.scroll.y = clamp(viewport.first.scroll.y, -viewport.first.calc_size.y + viewport.calc_size.y, 0)
@@ -565,7 +565,7 @@ ui_sizebar_y :: proc() -> ^Box {
 	ui_size(.PCT_PARENT, 1, .PIXELS, 4)
 	box := ui_create_box("sizebar_y", { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
 	if box.ops.pressed {
-		box.parent.expand.y += f32(state.mouse.delta.y)
+		box.parent.expand.y += f32(state.input.mouse.delta.y)
 	}
 	if box.ops.hovering do cursor_size(box.axis)
 	return box

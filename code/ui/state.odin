@@ -9,7 +9,6 @@ import "core:os"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
 
-
 when ODIN_OS == .Windows {
 	import win "core:sys/windows"
 }
@@ -28,26 +27,18 @@ v2i :: [2]i32
 v3i :: [3]i32
 v4i :: [4]i32
 
-state: ^State
+state : ^State
 
 State :: struct {
+	debug: 		Debug,
 
-	uid: Uid,
-	window: Window,
-	quit: bool,
-
-	start_time: time.Time,
-	prev_time: time.Time,
-	delta_time: f64,
-	fps: f64,
-
-	render: Gl,
-	ui: Ui,
-	mouse: Mouse,
-	keys: Keys,
-	mode: Mode,
-
-	debug: Debug,
+	quit: 		bool,
+	uid: 			Uid,
+	window: 		Window,
+	ui: 			Ui,
+	render: 		Gl,
+	stats: 		Stats,
+	input: 		Input,
 }
 
 Window :: struct {
@@ -57,9 +48,16 @@ Window :: struct {
 	quad: Quad,
 }
 
-Mode :: enum {
-	EDIT,
-	TYPE,
+Stats :: struct {
+	start_time: time.Time,
+	prev_time: time.Time,
+	delta_time: f64,
+	fps: f64,
+}
+
+Input :: struct {
+	mouse: Mouse,
+	keys: Keys,
 }
 
 Mouse :: struct {
@@ -132,12 +130,14 @@ Keys :: struct {
 	v: bool,
 }
 
-init :: proc() -> bool {
+init :: proc() -> (^State, bool) {
+	state = new(State)
+
 	fmt.println(context.temp_allocator)
 	if !bool(glfw.Init())
 	{
 		fmt.eprintln("GLFW has failed to load.")
-		return false
+		return state, false
 	}
 	
 	if ODIN_OS == .Darwin {
@@ -152,7 +152,7 @@ init :: proc() -> bool {
 	if state.window.handle == nil
 	{
 		fmt.eprintln("GLFW has failed to load the window.")
-		return false
+		return state, false
 	}
 
 	glfw.SetWindowPos(state.window.handle, 500,200)
@@ -164,25 +164,25 @@ init :: proc() -> bool {
 	// glfw.SetWindowSizeCallback(state.window.handle, cast(glfw.WindowSizeProc)size_callback)
 	glfw.SetWindowUserPointer(state.window.handle, state)
 
-	state.mouse.cursor.arrow = glfw.CreateStandardCursor(glfw.ARROW_CURSOR)
-	state.mouse.cursor.text = glfw.CreateStandardCursor(glfw.IBEAM_CURSOR)
-	state.mouse.cursor.cross = glfw.CreateStandardCursor(glfw.CROSSHAIR_CURSOR)
-	state.mouse.cursor.hand = glfw.CreateStandardCursor(glfw.HAND_CURSOR)
-	state.mouse.cursor.x = glfw.CreateStandardCursor(glfw.HRESIZE_CURSOR)
-	state.mouse.cursor.y = glfw.CreateStandardCursor(glfw.VRESIZE_CURSOR)
+	state.input.mouse.cursor.arrow = glfw.CreateStandardCursor(glfw.ARROW_CURSOR)
+	state.input.mouse.cursor.text = glfw.CreateStandardCursor(glfw.IBEAM_CURSOR)
+	state.input.mouse.cursor.cross = glfw.CreateStandardCursor(glfw.CROSSHAIR_CURSOR)
+	state.input.mouse.cursor.hand = glfw.CreateStandardCursor(glfw.HAND_CURSOR)
+	state.input.mouse.cursor.x = glfw.CreateStandardCursor(glfw.HRESIZE_CURSOR)
+	state.input.mouse.cursor.y = glfw.CreateStandardCursor(glfw.VRESIZE_CURSOR)
 	
 	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
 	
 	opengl_init()
 	ui_init()
 
-	return true
+	return state, true
 }
 
 update :: proc() {
-	state.start_time = time.now()
-	state.delta_time = time.duration_milliseconds(time.diff(state.prev_time, state.start_time))
-	state.fps = 1000 / state.delta_time
+	state.stats.start_time = time.now()
+	state.stats.delta_time = time.duration_milliseconds(time.diff(state.stats.prev_time, state.stats.start_time))
+	state.stats.fps = 1000 / state.stats.delta_time
 
 	state.quit = bool(glfw.WindowShouldClose(state.window.handle))
 	if state.quit do return
@@ -197,27 +197,27 @@ update :: proc() {
 	state.window.framebuffer = {framebuffer_width, framebuffer_height}
 	
 	mouseX, mouseY := glfw.GetCursorPos(state.window.handle)
-	old_mouse := state.mouse.pos
-	state.mouse.pos = {f32(mouseX), f32(mouseY)}
-	state.mouse.delta = (state.mouse.pos - old_mouse) / 2
+	old_mouse := state.input.mouse.pos
+	state.input.mouse.pos = {f32(mouseX), f32(mouseY)}
+	state.input.mouse.delta = (state.input.mouse.pos - old_mouse) / 2
 	
 	ui_update()
 	opengl_render()
 
 	// frame_goal : time.Duration = 16665000
 	frame_goal : time.Duration = 8332500
-	time_so_far := time.diff(state.start_time, time.now())
+	time_so_far := time.diff(state.stats.start_time, time.now())
 	sleep_for:= frame_goal - time_so_far
 
 	time.accurate_sleep(sleep_for)
 
-	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }
+	mouse_buttons: [3]^Button = { &state.input.mouse.left, &state.input.mouse.right, &state.input.mouse.middle }
 	for mouse_button, index in mouse_buttons {
 		if mouse_button^ == .CLICK do mouse_button^ = .DRAG
 		if mouse_button^ == .RELEASE do mouse_button^ = .UP
 	}
-	state.mouse.scroll = {0,0}
-	state.prev_time = state.start_time
+	state.input.mouse.scroll = {0,0}
+	state.stats.prev_time = state.stats.start_time
 	
 }
 
@@ -231,9 +231,9 @@ quit :: proc() {
 // size_callback :: proc(Window: glfw.WindowHandle) {
 // }
 
-shift :: proc() -> bool { return state.keys.shift }
-alt :: proc() -> bool { return state.keys.alt }
-ctrl :: proc() -> bool { return state.keys.ctrl }
+shift :: proc() -> bool { return state.input.keys.shift }
+alt :: proc() -> bool { return state.input.keys.alt }
+ctrl :: proc() -> bool { return state.input.keys.ctrl }
 
 read_key :: proc(key: ^bool) -> bool {
 	if key^ {
@@ -266,39 +266,39 @@ process_keyboard_input :: proc(action: int, key_state: ^bool, repeat: bool) {
 keyboard_callback :: proc(Window: glfw.WindowHandle, key: int, scancode: int, action: int, mods: int) {
 	switch key
 	{
-		case glfw.KEY_LEFT:				process_keyboard_input(action, &state.keys.left, true)
-		case glfw.KEY_RIGHT:			process_keyboard_input(action, &state.keys.right, true)
-		case glfw.KEY_UP:				process_keyboard_input(action, &state.keys.up, true)
-		case glfw.KEY_DOWN:				process_keyboard_input(action, &state.keys.down, true)
+		case glfw.KEY_LEFT:				process_keyboard_input(action, &state.input.keys.left, true)
+		case glfw.KEY_RIGHT:			process_keyboard_input(action, &state.input.keys.right, true)
+		case glfw.KEY_UP:				process_keyboard_input(action, &state.input.keys.up, true)
+		case glfw.KEY_DOWN:				process_keyboard_input(action, &state.input.keys.down, true)
 		
-		case glfw.KEY_ESCAPE:			process_keyboard_input(action, &state.keys.escape, true)
-		case glfw.KEY_TAB:				process_keyboard_input(action, &state.keys.tab, false)
-		case glfw.KEY_ENTER:		 	process_keyboard_input(action, &state.keys.enter, true)
-		case glfw.KEY_SPACE:			process_keyboard_input(action, &state.keys.space, true)
-		case glfw.KEY_BACKSPACE:		process_keyboard_input(action, &state.keys.backspace, true)
-		case glfw.KEY_DELETE:			process_keyboard_input(action, &state.keys.delete, true)
-		case glfw.KEY_HOME:				process_keyboard_input(action, &state.keys.home, true)
-	 	case glfw.KEY_END:				process_keyboard_input(action, &state.keys.end, true)
+		case glfw.KEY_ESCAPE:			process_keyboard_input(action, &state.input.keys.escape, true)
+		case glfw.KEY_TAB:				process_keyboard_input(action, &state.input.keys.tab, false)
+		case glfw.KEY_ENTER:		 	process_keyboard_input(action, &state.input.keys.enter, true)
+		case glfw.KEY_SPACE:			process_keyboard_input(action, &state.input.keys.space, true)
+		case glfw.KEY_BACKSPACE:		process_keyboard_input(action, &state.input.keys.backspace, true)
+		case glfw.KEY_DELETE:			process_keyboard_input(action, &state.input.keys.delete, true)
+		case glfw.KEY_HOME:				process_keyboard_input(action, &state.input.keys.home, true)
+	 	case glfw.KEY_END:				process_keyboard_input(action, &state.input.keys.end, true)
 
-		case glfw.KEY_KP_ENTER:			process_keyboard_input(action, &state.keys.enter, true)
-		case glfw.KEY_KP_SUBTRACT:		process_keyboard_input(action, &state.keys.n_minus, false)
-		case glfw.KEY_KP_ADD:			process_keyboard_input(action, &state.keys.n_plus, false)
+		case glfw.KEY_KP_ENTER:			process_keyboard_input(action, &state.input.keys.enter, true)
+		case glfw.KEY_KP_SUBTRACT:		process_keyboard_input(action, &state.input.keys.n_minus, false)
+		case glfw.KEY_KP_ADD:			process_keyboard_input(action, &state.input.keys.n_plus, false)
 		
-		case glfw.KEY_LEFT_ALT:			process_keyboard_input(action, &state.keys.alt, false)
-		case glfw.KEY_RIGHT_ALT:		process_keyboard_input(action, &state.keys.alt, false)
+		case glfw.KEY_LEFT_ALT:			process_keyboard_input(action, &state.input.keys.alt, false)
+		case glfw.KEY_RIGHT_ALT:		process_keyboard_input(action, &state.input.keys.alt, false)
 		
-		case glfw.KEY_LEFT_CONTROL:		process_keyboard_input(action, &state.keys.ctrl, false)
-		case glfw.KEY_RIGHT_CONTROL:	process_keyboard_input(action, &state.keys.ctrl, false)
+		case glfw.KEY_LEFT_CONTROL:		process_keyboard_input(action, &state.input.keys.ctrl, false)
+		case glfw.KEY_RIGHT_CONTROL:	process_keyboard_input(action, &state.input.keys.ctrl, false)
 		
-		case glfw.KEY_LEFT_SHIFT:		process_keyboard_input(action, &state.keys.shift, false)
-		case glfw.KEY_RIGHT_SHIFT:		process_keyboard_input(action, &state.keys.shift, false)
+		case glfw.KEY_LEFT_SHIFT:		process_keyboard_input(action, &state.input.keys.shift, false)
+		case glfw.KEY_RIGHT_SHIFT:		process_keyboard_input(action, &state.input.keys.shift, false)
 
-		case glfw.KEY_A:					process_keyboard_input(action, &state.keys.a, false)
+		case glfw.KEY_A:					process_keyboard_input(action, &state.input.keys.a, false)
 	}
 }
 
 typing_callback :: proc(window: glfw.WindowHandle, codepoint: u32) {
-	if !state.keys.ctrl && !state.keys.alt {
+	if !state.input.keys.ctrl && !state.input.keys.alt {
 		state.ui.last_char = rune(codepoint)
 	} else {
 		state.ui.last_char = -1
@@ -307,9 +307,9 @@ typing_callback :: proc(window: glfw.WindowHandle, codepoint: u32) {
 
 scroll_callback :: proc(window: glfw.WindowHandle, x: f64, y: f64) {
 	if shift() {
-		state.mouse.scroll = {f32(y), 0}
+		state.input.mouse.scroll = {f32(y), 0}
 	} else {
-		state.mouse.scroll = {f32(x),f32(y)}
+		state.input.mouse.scroll = {f32(x),f32(y)}
 	}
 }
 
@@ -317,65 +317,65 @@ mouse_button :: proc(button: Button, type: Button) -> bool {
 	return (button == type)
 }
 
-lmb_click :: proc() -> bool { return mouse_button(state.mouse.left, .CLICK) }
-lmb_drag :: proc() -> bool { return mouse_button(state.mouse.left, .DRAG) }
+lmb_click :: proc() -> bool { return mouse_button(state.input.mouse.left, .CLICK) }
+lmb_drag :: proc() -> bool { return mouse_button(state.input.mouse.left, .DRAG) }
 lmb_click_drag :: proc() -> bool { return lmb_click() || lmb_drag() }
-lmb_release :: proc() -> bool { return mouse_button(state.mouse.left, .RELEASE) }
-lmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.left, .RELEASE) || mouse_button(state.mouse.left, .UP)) }
-lmb_up :: proc() -> bool { return mouse_button(state.mouse.left, .UP) }
+lmb_release :: proc() -> bool { return mouse_button(state.input.mouse.left, .RELEASE) }
+lmb_release_up :: proc() -> bool { return (mouse_button(state.input.mouse.left, .RELEASE) || mouse_button(state.input.mouse.left, .UP)) }
+lmb_up :: proc() -> bool { return mouse_button(state.input.mouse.left, .UP) }
 
-rmb_click :: proc() -> bool { return mouse_button(state.mouse.right, .CLICK) }
-rmb_drag :: proc() -> bool { return mouse_button(state.mouse.right, .DRAG) }
+rmb_click :: proc() -> bool { return mouse_button(state.input.mouse.right, .CLICK) }
+rmb_drag :: proc() -> bool { return mouse_button(state.input.mouse.right, .DRAG) }
 rmb_click_drag :: proc() -> bool { return rmb_click() || rmb_drag() }
-rmb_release :: proc() -> bool { return mouse_button(state.mouse.right, .RELEASE) }
-rmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.right, .RELEASE) || mouse_button(state.mouse.right, .UP)) }
-rmb_up :: proc() -> bool { return mouse_button(state.mouse.right, .UP) }
+rmb_release :: proc() -> bool { return mouse_button(state.input.mouse.right, .RELEASE) }
+rmb_release_up :: proc() -> bool { return (mouse_button(state.input.mouse.right, .RELEASE) || mouse_button(state.input.mouse.right, .UP)) }
+rmb_up :: proc() -> bool { return mouse_button(state.input.mouse.right, .UP) }
 
-mmb_click :: proc() -> bool { return mouse_button(state.mouse.middle, .CLICK) }
-mmb_drag :: proc() -> bool { return mouse_button(state.mouse.middle, .DRAG) }
+mmb_click :: proc() -> bool { return mouse_button(state.input.mouse.middle, .CLICK) }
+mmb_drag :: proc() -> bool { return mouse_button(state.input.mouse.middle, .DRAG) }
 mmb_click_drag :: proc() -> bool { return mmb_click() || mmb_drag() }
-mmb_release :: proc() -> bool { return mouse_button(state.mouse.middle, .RELEASE) }
-mmb_release_up :: proc() -> bool { return (mouse_button(state.mouse.middle, .RELEASE) || mouse_button(state.mouse.middle, .UP)) }
-mmb_up :: proc() -> bool { return mouse_button(state.mouse.middle, .UP) }
+mmb_release :: proc() -> bool { return mouse_button(state.input.mouse.middle, .RELEASE) }
+mmb_release_up :: proc() -> bool { return (mouse_button(state.input.mouse.middle, .RELEASE) || mouse_button(state.input.mouse.middle, .UP)) }
+mmb_up :: proc() -> bool { return mouse_button(state.input.mouse.middle, .UP) }
 
 set_cursor :: proc() {
 	cursor:glfw.CursorHandle
-	#partial switch state.mouse.cursor.type {
+	#partial switch state.input.mouse.cursor.type {
 		case .NULL:
 		cursor = nil
 		case .ARROW:
-		cursor = state.mouse.cursor.arrow
+		cursor = state.input.mouse.cursor.arrow
 		case .TEXT:
-		cursor = state.mouse.cursor.text
+		cursor = state.input.mouse.cursor.text
 		case .CROSS:
-		cursor = state.mouse.cursor.cross
+		cursor = state.input.mouse.cursor.cross
 		case .HAND:
-		cursor = state.mouse.cursor.hand
+		cursor = state.input.mouse.cursor.hand
 		case .X:
-		cursor = state.mouse.cursor.x
+		cursor = state.input.mouse.cursor.x
 		case .Y:
-		cursor = state.mouse.cursor.y
+		cursor = state.input.mouse.cursor.y
 	}
-	if state.mouse.cursor.active != cursor {
+	if state.input.mouse.cursor.active != cursor {
 		glfw.SetCursor(state.window.handle, cursor)
-		state.mouse.cursor.active = cursor
+		state.input.mouse.cursor.active = cursor
 	}
 }
 
 cursor :: proc(type: Cursor_Type) {
-	state.mouse.cursor.type = type
+	state.input.mouse.cursor.type = type
 }
 
 cursor_size :: proc(axis: Axis) {
 	if axis == .X {
-		state.mouse.cursor.type = .X
+		state.input.mouse.cursor.type = .X
 	} else {
-		state.mouse.cursor.type = .Y
+		state.input.mouse.cursor.type = .Y
 	}
 }
 
 mouse_callback :: proc(window: glfw.WindowHandle, button: int, action: int, mods: int) {
-	mouse_buttons: [3]^Button = { &state.mouse.left, &state.mouse.right, &state.mouse.middle }
+	mouse_buttons: [3]^Button = { &state.input.mouse.left, &state.input.mouse.right, &state.input.mouse.middle }
 	for mouse_button, index in mouse_buttons
 	{
 		if button == index {

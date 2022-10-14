@@ -1,55 +1,21 @@
-package ui
+package demo
+
+import "../ui"
 
 import "core:fmt"
 
-Panel_Content :: enum {
-	NONE,
-	FILE_MENU,
-	MENU_FILE,
-	MENU_EDIT,
-	MENU_VIEW,
-	CTX_PANEL,
-	PANEL_LIST,
-	DEBUG,
-	PROPERTIES,
-	BOXLIST,
-	TABTEST,
-	COLORS,
-	LOREM,
-}
-
-build_panel_content :: proc(content: Panel_Content) {
-	#partial switch content
-	{
-		case .DEBUG: 		ui_panel_debug()
-		case .FILE_MENU: 	ui_panel_file_menu()
-		case .PANEL_LIST: 	ui_panel_pick_panel()
-
-		case .MENU_FILE:	ui_file_menu()
-		case .MENU_EDIT:	ui_edit_menu()
-		case .MENU_VIEW:	ui_view_menu()
-
-		case .CTX_PANEL:    ui_ctx_panel()
-		// PANELS AFTER THIS ARE SWAPPABLE //
-		case .PROPERTIES: 	ui_panel_properties()
-		case .BOXLIST: 		ui_panel_boxlist()
- 		case .TABTEST:		ui_panel_tab_test()
-		case .COLORS:		ui_panel_colors()
-		case .LOREM:		ui_lorem()
-	}
-}
-
 ui_panel_file_menu :: proc() {
+	using ui
 	ui_begin()
 	ui_size(.TEXT, 1, .TEXT, 1)
 	ui_axis(.X)
-	if ui_button("File").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .MENU_FILE, 1.0, state.ui.ctx.panel.quad)
-	if ui_button("Edit").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .MENU_EDIT, 1.0, state.ui.ctx.panel.quad)
-	if ui_button("View").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .MENU_VIEW, 1.0, state.ui.ctx.panel.quad)
+	if ui_button("File").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, ui_file_menu, 1.0, state.ui.ctx.panel.quad)
+	if ui_button("Edit").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, ui_edit_menu, 1.0, state.ui.ctx.panel.quad)
+	if ui_button("View").clicked do ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, ui_view_menu, 1.0, state.ui.ctx.panel.quad)
 	ui_spacer_fill()
-	ui_value("scroll:", state.mouse.scroll)
+	ui_value("scroll:", state.input.mouse.scroll)
 	ui_label("|")
-	ui_value("mouse pos:", state.mouse.pos)
+	ui_value("mouse pos:", state.input.mouse.pos)
 	ui_label("|")
 	ui_value("window width:", state.window.size.x)
 	ui_label("|")
@@ -61,14 +27,15 @@ ui_panel_file_menu :: proc() {
 	ui_value("panels:", state.ui.panels.pool.nodes_used)
 	ui_value("/", state.ui.panels.pool.chunk_count)
 	ui_label("|")
-	ui_value("fps:", state.fps)
+	ui_value("fps:", state.stats.fps)
 	ui_label("|")
-	ui_value("dt:", state.delta_time)
+	ui_value("dt:", state.stats.delta_time)
 	ui_spacer_pixels(6)
 	ui_end()
 }
 
 ui_file_menu :: proc() {
+	using ui
 	panel := ui_begin_menu()
 	ui_axis(.Y)
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
@@ -83,6 +50,7 @@ ui_file_menu :: proc() {
 }
 
 ui_edit_menu :: proc() {
+	using ui
 	panel := ui_begin_menu()
 	ui_axis(.Y)
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
@@ -95,6 +63,7 @@ ui_edit_menu :: proc() {
 }
 
 ui_view_menu :: proc() {
+	using ui
 	panel := ui_begin_menu()
 	ui_axis(.Y)
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
@@ -107,6 +76,7 @@ ui_view_menu :: proc() {
 }
 
 ui_ctx_panel :: proc() {
+	using ui
 	panel := ui_begin_floating_menu()
 	ui_axis(.Y)
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
@@ -119,6 +89,7 @@ ui_ctx_panel :: proc() {
 }
 
 ui_panel_colors :: proc() {
+	using ui
 	ui_begin()
 	
 	ui_axis(.Y)
@@ -264,6 +235,7 @@ ui_panel_colors :: proc() {
 }
 
 ui_lorem :: proc() {
+	using ui
 	ui_begin()
 		ui_axis(.Y)
 		ui_size(.PCT_PARENT, 1, .TEXT, 1)
@@ -294,6 +266,7 @@ ui_lorem :: proc() {
 }
 
 ui_panel_tab_test :: proc() {
+	using ui
 	ui_begin()
 	tab_names : []string = {"First", "Second", "Third"}
 	tab, active := ui_tab(tab_names)
@@ -319,11 +292,11 @@ ui_panel_tab_test :: proc() {
 				ui_button("Tab three | Button 3")
 		}
 	}
-
 	ui_end()
 }
 
 ui_panel_boxlist :: proc() {
+	using ui
 	ui_begin()
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
@@ -331,7 +304,7 @@ ui_panel_boxlist :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
 		if ui_button("<#>p").released {
-			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, ui_panel_pick_panel, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
 	ui_axis(.Y)
@@ -356,6 +329,7 @@ ui_panel_boxlist :: proc() {
 }
 
 ui_panel_debug :: proc() {
+	using ui
 	ui_begin()
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
@@ -363,7 +337,7 @@ ui_panel_debug :: proc() {
 		ui_axis(.X)
 		ui_size(.TEXT, 1, .TEXT, 1)
 		if ui_button("<#>p").released {
-			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, .PANEL_LIST, 1.0, state.ui.ctx.panel.quad)
+			ui_queue_panel(state.ui.ctx.panel, .Y, .FLOATING, ui_panel_pick_panel, 1.0, state.ui.ctx.panel.quad)
 		}
 	ui_pop()
 
@@ -381,6 +355,7 @@ ui_panel_debug :: proc() {
 }
 
 ui_panel_properties :: proc() {
+	using ui
 	ui_begin()
 	ui_scrollbox()
 		ui_axis(.Y)
@@ -397,6 +372,7 @@ ui_panel_properties :: proc() {
 }
 
 ui_panel_pick_panel :: proc() {
+	using ui
 	panel := ui_begin_floating()
 	ui_axis(.Y)
 	ui_size(.SUM_CHILDREN, 1, .TEXT, 1)
@@ -417,21 +393,16 @@ ui_panel_pick_panel :: proc() {
 	ui_size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
 	ui_empty()
 		ui_size(.PCT_PARENT, 1, .TEXT, 1)
-		draw_button := false
-		for p, i in Panel_Content {
-			if p == .DEBUG do draw_button = true
-			if draw_button {
-				if ui_button(fmt.tprintf("%v", p)).released {
-					panel.parent.content = p
-					ui_delete_panel(panel)
-				}
-			}
+		if ui_button("ui_panel_pick_panel()").released {
+			panel.parent.content = ui_panel_pick_panel
+			ui_delete_panel(panel)
 		}
 	ui_pop()
 	ui_end()
 }
 
 ui_panel_floater :: proc() {
+	using ui
 	ui_begin_floating()
 	ui_size(.SUM_CHILDREN, 1, .SUM_CHILDREN, 1)
 	ui_empty()

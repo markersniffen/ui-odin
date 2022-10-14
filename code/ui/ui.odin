@@ -113,12 +113,7 @@ ui_init :: proc() {
 	
 	pool_init(&state.ui.panels.pool, size_of(Panel), MAX_PANELS, "Panels")
 	pool_init(&state.ui.boxes.pool, size_of(Box), MAX_BOXES, "Boxes")
-
-	ui_create_panel(nil, .Y, .STATIC, .FILE_MENU, 0.3)
-	ui_create_panel(state.ui.ctx.panel, .Y, .DYNAMIC, .COLORS, 0.1)
-	ui_create_panel(state.ui.ctx.panel, .X, .DYNAMIC, .LOREM, 0.5)
-	ui_create_panel(state.ui.ctx.panel, .Y, .DYNAMIC, .PROPERTIES, 0.3)
-
+	
 	// SET DEFAULT COLORS ------------------------------
 	state.ui.ctx.font_color = { 1, 1, 1, 1 }
 	state.ui.ctx.bg_color = state.ui.col.bg
@@ -131,7 +126,6 @@ ui_update :: proc() {
 	tracy.Zone()
 	set_cursor()
 	cursor(.NULL)
-
 
 	{
 		tracy.ZoneN("Keyboard input")
@@ -163,7 +157,7 @@ ui_update :: proc() {
 			}
 
 			// LEFT
-			if read_key(&state.keys.left) {
+			if read_key(&state.input.keys.left) {
 				if shift() {
 					if ctrl() {
 						es.end = editable_jump_left(es)
@@ -180,7 +174,7 @@ ui_update :: proc() {
 			}
 
 			// RIGHT
-			if read_key(&state.keys.right) {
+			if read_key(&state.input.keys.right) {
 				if shift() {
 					if ctrl() {
 						es.end = editable_jump_right(es)
@@ -198,14 +192,14 @@ ui_update :: proc() {
 
 			if es.len > 0 {
 		 		// BACKSPACE
-				if read_key(&state.keys.backspace) {
+				if read_key(&state.input.keys.backspace) {
 					if ctrl() {
 						es.start = editable_jump_left(es)
 					}
 					backspace(es)
 				}
 				// DELETE
-				if read_key(&state.keys.delete) {
+				if read_key(&state.input.keys.delete) {
 					if ctrl() {
 						es.end = editable_jump_right(es)
 					}
@@ -226,25 +220,25 @@ ui_update :: proc() {
 				}
 
 				// SELECT ALL
-				if ctrl() && read_key(&state.keys.a) {
+				if ctrl() && read_key(&state.input.keys.a) {
 					es.start = 0
 					es.end = es.len
 				}
 
 			}
 			// HOME
-			if read_key(&state.keys.home) {
+			if read_key(&state.input.keys.home) {
 				es.start = 0
 				es.end = 0
 			}
 
-			if read_key(&state.keys.end) {
+			if read_key(&state.input.keys.end) {
 				es.start = es.len
 				es.end = es.len
 			}
 
 			// ESCAPE
-			if read_key(&state.keys.escape) {
+			if read_key(&state.input.keys.escape) {
 				state.ui.boxes.editing.ops.editing = false
 				state.ui.boxes.editing = nil
 			}
@@ -299,11 +293,7 @@ ui_update :: proc() {
 	}
 	
 
-	if rmb_click() {
-		if state.ui.panels.hot.type != .NULL {
-			ui_queue_panel(state.ui.panels.hot, .Y, .FLOATING, .CTX_PANEL, 1.0, state.ui.ctx.panel.quad)
-		}
-	}
+
 
 	{
 	tracy.ZoneN("Build Boxes")
@@ -313,7 +303,8 @@ ui_update :: proc() {
 			if panel.type == .NULL {
 				push_quad_solid(panel.bar, state.ui.col.inactive, panel.quad)
 			} else {
-				build_panel_content(panel.content)
+				panel.content()
+				// build_panel_cntent(panel.content)
 			}
 		}
 	}
