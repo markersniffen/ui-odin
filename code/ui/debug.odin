@@ -7,5 +7,6 @@ Debug :: struct {
 
 	text: String,
 	para: String,
-	lorem: V_String,
+	lorem: Document,
+	path: String,
 }

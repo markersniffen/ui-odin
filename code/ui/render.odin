@@ -252,6 +252,7 @@ push_quad_border :: proc(quad: Quad, color:HSL, border: f32=2, clip: Quad) {
 }
 
 push_quad_font :: proc(quad: Quad, color:HSL, uv:Quad, font_icon:f32, clip: Quad) {
+	tracy.ZoneNC("quad font", 0x0000ff)
 	push_quad(quad,	color, color, color, color, 0, uv, font_icon, clip)
 }
 

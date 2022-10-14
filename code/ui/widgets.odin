@@ -245,8 +245,8 @@ ui_edit_text :: proc(editable: ^String) -> Box_Ops {
 }
 
 ui_paragraph :: proc(value: any) -> Box_Ops {
-	assert(value.id == V_String)
-	val := cast(^V_String)value.data
+	assert(value.id == Document)
+	val := cast(^Document)value.data
 	
 	sbox := ui_scrollbox()
 	
@@ -279,7 +279,7 @@ ui_paragraph :: proc(value: any) -> Box_Ops {
 	}
 	
 	ui_size(.PIXELS, val.width, .PIXELS, (state.ui.line_space-4) * f32(val.lines+1))
-	box := ui_create_box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH, .DEBUG }, value)
+	box := ui_create_box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH }, value)
 
 	val.current_line = clamp( (int( (-box.scroll.y / (box.calc_size.y)) * f32(val.lines+1) ) ), 0, val.lines)
 	val.last_line = clamp( val.current_line + int(sbox.calc_size.y/(state.ui.line_space-4)), 0, val.lines)

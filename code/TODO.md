@@ -9,7 +9,8 @@
   [X] adding space at begining or with no text crashes (?)
   [X] select any and backspace() calculates len wrong
 [O] large viewable text
-[ ] large editable text
+   [ ] switch to word wrap vs \n wrap
+   [ ] large editable text
 [X] font weights
 [ ] different colored text
 [ ] ctrl click editable text for values (e.g. buttons)
@@ -25,3 +26,4 @@
 [ ] render while resizing window
 [ ] copy/paste values
 [ ] load defaults from file
+[ ] set up as library and make an app with it

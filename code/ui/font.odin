@@ -66,12 +66,8 @@ ui_init_font :: proc() {
 	// TODO DEBUG
 	state.debug.text = from_string("xxxxx-----")
 	state.debug.para = from_string("Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.")
-	file_memory, ok := os.read_entire_file("./assets/temp.txt")
-	// file_memory, ok := os.read_entire_file("C:\\Users\\marxn\\Desktop\\dumb.csv")
-	
-	state.debug.lorem.mem = file_memory
-	state.debug.lorem.len = len(file_memory)
-
+	state.debug.path = from_string("C:/Users/marxn/Desktop/test2.txt")
+	load_doc(&state.debug.lorem, "./assets/temp.txt")
 }
 
 ui_load_font :: proc(font: ^Font) {
@@ -444,12 +440,12 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 // TODO Redo this whole thing, based of of []u8
 draw_text_multiline :: proc(value:any, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
 	tracy.ZoneNC("Draw multiline text", 0xff0000)
-	assert(value.id == V_String)	
+	assert(value.id == Document)	
 	text : string = "FAILED TO LOAD TEXT"
-	val : V_String
+	val : Document
 	
-	if value.id == V_String {
-		val = (cast(^V_String)value.data)^
+	if value.id == Document {
+		val = (cast(^Document)value.data)^
 		text = string(val.mem)
 	}
 
@@ -473,7 +469,7 @@ draw_text_multiline :: proc(value:any, quad:Quad, align:Text_Align=.LEFT, kernin
 			text_slice := text[start:i]
 			if last_char do text_slice = text[start:]
 			if lines >= val.current_line-5 && lines <= val.last_line+5 {
-				draw_text(fmt.tprintf("%v | %v", lines, text_slice), {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font, clip)
+				draw_text(text_slice, {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font, clip)
 			} else if lines > val.last_line+5 {
 				return
 			}

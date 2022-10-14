@@ -265,10 +265,31 @@ ui_panel_colors :: proc() {
 
 ui_lorem :: proc() {
 	ui_begin()
-	ui_axis(.Y)
-	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
-	ui_paragraph(state.debug.lorem)
-	ui_pop()
+		ui_axis(.Y)
+		ui_size(.PCT_PARENT, 1, .TEXT, 1)
+		ui_empty()
+			ui_axis(.X)
+			ui_size(.TEXT, 1, .TEXT, 1)
+			ui_label("Load text file:")
+		ui_pop()
+		ui_axis(.Y)
+		ui_size(.PCT_PARENT, 1, .TEXT, 1)
+		ui_empty()
+			ui_axis(.X)
+			ui_size(.MIN_SIBLINGS, 1, .TEXT, 1)
+			ui_edit_text(&state.debug.path)
+			ui_size(.TEXT, 1, .TEXT, 1)
+			if ui_button("Load").released {
+				load_doc(&state.debug.lorem, to_string(&state.debug.path))
+			}
+		ui_pop()
+		ui_axis(.Y)
+		ui_size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+		ui_empty()
+		ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
+			ui_paragraph(state.debug.lorem)
+			ui_pop()
+		ui_pop()
 	ui_end()
 }
 
