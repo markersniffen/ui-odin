@@ -58,38 +58,49 @@ opengl_init :: proc() {
 	gl.UseProgram(state.render.shader)
 
 	state.ui.fonts.regular.name = "Roboto-Regular"
+	state.ui.fonts.regular.path = "./Roboto-Regular.ttf"
+	state.ui.fonts.regular.default_info = &default_font_info
+	state.ui.fonts.regular.default_image = &default_font_image
 	state.ui.fonts.regular.label = "regular_texture"
-	state.ui.fonts.regular.texture_size = 512 // size of font bitmap
+	state.ui.fonts.regular.texture_size = 256 // size of font bitmap
 	state.ui.fonts.regular.texture_unit = 0
 	gl.GenTextures(1, &state.ui.fonts.regular.texture)
 
 	state.ui.fonts.bold.name = "Roboto-Bold"
+	state.ui.fonts.bold.path = "./fonts/Roboto-Bold.ttf"
+	state.ui.fonts.bold.default_info = &default_bold_info
+	state.ui.fonts.bold.default_image = &default_bold_image
 	state.ui.fonts.bold.label = "bold_texture"
-	state.ui.fonts.bold.texture_size = 512 // size of font bitmap
+	state.ui.fonts.bold.texture_size = 256 // size of font bitmap
 	state.ui.fonts.bold.texture_unit = 1
 	gl.GenTextures(1, &state.ui.fonts.bold.texture)
 
 	state.ui.fonts.italic.name = "Roboto-Italic"
+	state.ui.fonts.italic.path = "./fonts/Roboto-Italic.ttf"
+	state.ui.fonts.italic.default_info = &default_font_info
+	state.ui.fonts.italic.default_image = &default_font_image
 	state.ui.fonts.italic.label = "italic_texture"
-	state.ui.fonts.italic.texture_size = 512 // size of font bitmap
+	state.ui.fonts.italic.texture_size = 256 // size of font bitmap
 	state.ui.fonts.italic.texture_unit = 2
 	gl.GenTextures(1, &state.ui.fonts.italic.texture)
 
 	state.ui.fonts.light.name = "Roboto-Light"
+	state.ui.fonts.light.path = "./fonts/Roboto-Light.ttf"
+	state.ui.fonts.light.default_info = &default_font_info
+	state.ui.fonts.light.default_image = &default_font_image
 	state.ui.fonts.light.label = "light_texture"
-	state.ui.fonts.light.texture_size = 512 // size of font bitmap
+	state.ui.fonts.light.texture_size = 256 // size of font bitmap
 	state.ui.fonts.light.texture_unit = 3
 	gl.GenTextures(1, &state.ui.fonts.light.texture)
 
 	state.ui.fonts.icons.name = "ui_icons"
+	state.ui.fonts.icons.path = "./fonts/ui_icons.ttf"
+	state.ui.fonts.icons.default_info = &default_icons_info
+	state.ui.fonts.icons.default_image = &default_icons_image
 	state.ui.fonts.icons.label = "icon_texture"
-	state.ui.fonts.icons.texture_size = 512
+	state.ui.fonts.icons.texture_size = 256
 	state.ui.fonts.icons.texture_unit = 4
 	gl.GenTextures(1, &state.ui.fonts.icons.texture)
-
-	fmt.println(state.ui.fonts.regular)
-	fmt.println(state.ui.fonts.bold)
-	fmt.println(state.ui.fonts.icons)
 
 	gl.GenVertexArrays(1, &state.render.vao)
 	gl.BindVertexArray(state.render.vao)
@@ -101,7 +112,7 @@ opengl_init :: proc() {
 	gl.EnableVertexAttribArray(4)
 }
 
-opengl_load_texture :: proc(font: ^Font, image: rawptr) -> bool {
+opengl_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {
 	gl.ActiveTexture(gl.TEXTURE0 + font.texture_unit)
 	gl.BindTexture(gl.TEXTURE_2D, font.texture)
   	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, font.texture_size,font.texture_size, 0, gl.RED, gl.UNSIGNED_BYTE, image)
@@ -392,3 +403,4 @@ void main()
 	
 }
 `
+
