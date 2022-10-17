@@ -1,1 +1,1 @@
-odin build ../code --debug -out:./ui_demo.exe -define:TRACY_ENABLE=false
+odin build ../code --debug -define:TRACY_ENABLE=false

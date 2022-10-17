@@ -58,7 +58,7 @@ opengl_init :: proc() {
 	gl.UseProgram(state.render.shader)
 
 	state.ui.fonts.regular.name = "Roboto-Regular"
-	state.ui.fonts.regular.path = "./Roboto-Regular.ttf"
+	state.ui.fonts.regular.path = "../fonts/Roboto-Regular.ttf"
 	state.ui.fonts.regular.default_info = &default_font_info
 	state.ui.fonts.regular.default_image = &default_font_image
 	state.ui.fonts.regular.label = "regular_texture"
@@ -67,7 +67,7 @@ opengl_init :: proc() {
 	gl.GenTextures(1, &state.ui.fonts.regular.texture)
 
 	state.ui.fonts.bold.name = "Roboto-Bold"
-	state.ui.fonts.bold.path = "./fonts/Roboto-Bold.ttf"
+	state.ui.fonts.bold.path = "../fonts/Roboto-Bold.ttf"
 	state.ui.fonts.bold.default_info = &default_bold_info
 	state.ui.fonts.bold.default_image = &default_bold_image
 	state.ui.fonts.bold.label = "bold_texture"
@@ -76,7 +76,7 @@ opengl_init :: proc() {
 	gl.GenTextures(1, &state.ui.fonts.bold.texture)
 
 	state.ui.fonts.italic.name = "Roboto-Italic"
-	state.ui.fonts.italic.path = "./fonts/Roboto-Italic.ttf"
+	state.ui.fonts.italic.path = "../fonts/Roboto-Italic.ttf"
 	state.ui.fonts.italic.default_info = &default_font_info
 	state.ui.fonts.italic.default_image = &default_font_image
 	state.ui.fonts.italic.label = "italic_texture"
@@ -85,7 +85,7 @@ opengl_init :: proc() {
 	gl.GenTextures(1, &state.ui.fonts.italic.texture)
 
 	state.ui.fonts.light.name = "Roboto-Light"
-	state.ui.fonts.light.path = "./fonts/Roboto-Light.ttf"
+	state.ui.fonts.light.path = "../fonts/Roboto-Light.ttf"
 	state.ui.fonts.light.default_info = &default_font_info
 	state.ui.fonts.light.default_image = &default_font_image
 	state.ui.fonts.light.label = "light_texture"
@@ -94,7 +94,7 @@ opengl_init :: proc() {
 	gl.GenTextures(1, &state.ui.fonts.light.texture)
 
 	state.ui.fonts.icons.name = "ui_icons"
-	state.ui.fonts.icons.path = "./fonts/ui_icons.ttf"
+	state.ui.fonts.icons.path = "../fonts/ui_icons.ttf"
 	state.ui.fonts.icons.default_info = &default_icons_info
 	state.ui.fonts.icons.default_image = &default_icons_image
 	state.ui.fonts.icons.label = "icon_texture"
