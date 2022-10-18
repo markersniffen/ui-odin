@@ -63,6 +63,7 @@ ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, cont
 		state.ui.panels.root = panel
 	} else {
 		if type == .FLOATING {
+			if state.ui.panels.floating != nil do ui_delete_panel(state.ui.panels.floating)
 			assert(current.child_a == nil && current.child_b == nil)
 			if state.ui.panels.floating != nil {
 				if state.ui.panels.floating.content == content {

@@ -83,7 +83,7 @@ ui_init_font :: proc() {
 	load_doc(&state.debug.lorem, "./assets/temp.txt")
 }
 
-ui_load_font :: proc(font: ^Font) {
+ui_load_font :: proc(font: ^Font) -> bool {
 	using stb, mem, fmt
 	NUM_CHARS :: 96
 	
@@ -93,8 +93,7 @@ ui_load_font :: proc(font: ^Font) {
 	
 	if !data_ok {
 		fmt.println("failed to load font file:", font.name)
-		fmt.println("Loading default font instead...")
-		ui_load_default_font(font)
+		return false
 	} else {
 		image:= alloc(int(font.texture_size * font.texture_size))
 		defer free(image)
@@ -145,6 +144,8 @@ ui_load_font :: proc(font: ^Font) {
 		state.ui.margin = 4
 		state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
 	}
+	fmt.println("Loaded font file:", font.name)
+	return true
 }
 
 ui_load_default_font :: proc(font: ^Font) {
@@ -204,24 +205,42 @@ ui_load_default_font :: proc(font: ^Font) {
 ui_set_font_size :: proc(size: f32 = 18) {
 	state.ui.font_size = size
 
-	ui_load_font(&state.ui.fonts.regular)
-	ui_load_font(&state.ui.fonts.bold)
-	ui_load_font(&state.ui.fonts.italic)
-	ui_load_font(&state.ui.fonts.light)
-	ui_load_font(&state.ui.fonts.icons)
+	if !ui_load_font(&state.ui.fonts.regular) {
+		if !ui_set_font_regular("Arial", "C:/Windows/Fonts/ARIAL.ttf") {
+			ui_load_default_font(&state.ui.fonts.regular)
+		}
+	}
+	if !ui_load_font(&state.ui.fonts.bold) {
+		if !ui_set_font_bold("Arial", "C:/Windows/Fonts/ARIALBD.ttf") {
+			ui_load_default_font(&state.ui.fonts.bold)
+		}
+	}
+	if !ui_load_font(&state.ui.fonts.italic) {
+		if !ui_set_font_italic("Arial", "C:/Windows/Fonts/ARIALI.ttf") {
+			ui_load_default_font(&state.ui.fonts.italic)
+		}
+	}
+	if !ui_load_font(&state.ui.fonts.light) {
+		if !ui_set_font_light("Arial", "C:/Windows/Fonts/ARIALN.ttf") {
+			ui_load_default_font(&state.ui.fonts.light)
+		}
+	}
+	if !ui_load_font(&state.ui.fonts.icons) {
+		ui_load_default_font(&state.ui.fonts.icons)
+	}
 }
 
-ui_set_font :: proc(font: ^Font, name, path: string) {
+ui_set_font :: proc(font: ^Font, name, path: string) -> bool {
 	font.name = name
 	font.path = path
-	ui_load_font(font)
+	return ui_load_font(font)
 }
 
-ui_set_font_regular :: proc(name, path: string) { ui_set_font(&state.ui.fonts.regular, name, path) }
-ui_set_font_bold :: proc(name, path: string) { ui_set_font(&state.ui.fonts.bold, name, path) }
-ui_set_font_italic :: proc(name, path: string) { ui_set_font(&state.ui.fonts.italic, name, path) }
-ui_set_font_light :: proc(name, path: string) { ui_set_font(&state.ui.fonts.light, name, path) }
-ui_set_font_icons :: proc(name, path: string) { ui_set_font(&state.ui.fonts.icons, name, path) }
+ui_set_font_regular :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.regular, name, path) }
+ui_set_font_bold :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.bold, name, path) }
+ui_set_font_italic :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.italic, name, path) }
+ui_set_font_light :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.light, name, path) }
+ui_set_font_icons :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.icons, name, path) }
 
 draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}, clip:Quad) {
 	using stb

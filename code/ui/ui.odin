@@ -381,8 +381,8 @@ ui_update :: proc() {
  	{
 	 	tracy.ZoneN("DRAW Floating Box")
 		if state.ui.panels.floating != nil {
-			ui_draw_boxes(state.ui.panels.floating.box, state.ui.panels.floating.quad)
 			if state.ui.panels.floating.box.first != nil {
+				ui_draw_boxes(state.ui.panels.floating.box, state.ui.panels.floating.quad)
 			}
 		}
  	}

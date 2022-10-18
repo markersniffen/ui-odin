@@ -317,6 +317,8 @@ mouse_button :: proc(button: Button, type: Button) -> bool {
 	return (button == type)
 }
 
+enter :: proc() -> bool { return state.input.keys.enter }
+
 lmb_click :: proc() -> bool { return mouse_button(state.input.mouse.left, .CLICK) }
 lmb_drag :: proc() -> bool { return mouse_button(state.input.mouse.left, .DRAG) }
 lmb_click_drag :: proc() -> bool { return lmb_click() || lmb_drag() }
