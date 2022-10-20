@@ -199,7 +199,7 @@ update :: proc() {
 	mouseX, mouseY := glfw.GetCursorPos(state.window.handle)
 	old_mouse := state.input.mouse.pos
 	state.input.mouse.pos = {f32(mouseX), f32(mouseY)}
-	state.input.mouse.delta = (state.input.mouse.pos - old_mouse) / 2
+	state.input.mouse.delta = state.input.mouse.pos - old_mouse
 	
 	ui_update()
 	opengl_render()

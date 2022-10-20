@@ -35,6 +35,15 @@ to_string :: proc(es: ^String) -> string {
 	return string(es.mem[:es.len])
 }
 
+replace_string :: proc(es: ^String, text: string) {
+	new_len := len(text)
+	if new_len > es.len {
+		mem.zero(&es.mem[new_len], new_len-es.len)
+	}
+	es.len = new_len
+	copy(es.mem[:es.len], text)
+}
+
 from_string :: proc(text: string) -> String {
 	es : String
 	es.len = len(text)
