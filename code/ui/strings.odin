@@ -13,8 +13,9 @@ Key :: struct {
 
 string_to_key :: proc(text: string) -> Key {
 	key: Key
-	key.len = len(text)
-	assert(key.len <= KEY_LEN, text)
+	key.len = min(len(text), KEY_LEN)
+
+	// assert(key.len <= KEY_LEN, text)
 	copy(key.mem[:key.len], text)
 	return key
 }

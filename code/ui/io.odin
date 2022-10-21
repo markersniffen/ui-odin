@@ -9,7 +9,7 @@ load_doc :: proc(doc:^Document, filename:string) -> bool {
 	
 	fmt.println("trying to load doc:", filename)
 	doc_ok := false
-	doc.mem, doc_ok = os.read_entire_file(filename)
+		doc.mem, doc_ok = os.read_entire_file(filename)
 	if !doc_ok {
 		fmt.println("ERROR LOADING", filename)
 		return false
