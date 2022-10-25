@@ -1,6 +1,8 @@
 package ui
 
-import tracy "../../../odin-tracy"
+PROFILER :: false
+
+when PROFILER do import tracy "../../../odin-tracy"
 
 import "core:fmt"
 import "core:time"

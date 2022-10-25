@@ -1,6 +1,6 @@
 package ui
 
-import tracy "../../../odin-tracy"
+when PROFILER do import tracy "../../../odin-tracy"
 
 import stb "vendor:stb/truetype"
 import "core:os"
@@ -417,7 +417,7 @@ draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Q
 }
 
 draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}, clip:Quad) {
-	tracy.ZoneNC("Draw Text", 0x00aaaa)
+	when PROFILER do tracy.ZoneNC("Draw Text", 0x00aaaa)
 	using stb
 	
 	left_align: f32 = quad.l
@@ -555,7 +555,7 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 
 // TODO Redo this whole thing, based of of []u8
 draw_text_multiline :: proc(value:any, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
-	tracy.ZoneNC("Draw multiline text", 0xff0000)
+	when PROFILER do tracy.ZoneNC("Draw multiline text", 0xff0000)
 	assert(value.id == Document)	
 	text : string = "FAILED TO LOAD TEXT"
 	val : Document

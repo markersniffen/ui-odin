@@ -1,6 +1,6 @@
 package ui
 
-import tracy "../../../odin-tracy"
+when PROFILER do import tracy "../../../odin-tracy"
 
 import "core:fmt"
 
@@ -123,12 +123,12 @@ ui_init :: proc() {
 
 //______ UI UPDATE ______//
 ui_update :: proc() {
-	tracy.Zone()
+	when PROFILER do tracy.Zone()
 	set_cursor()
 	cursor(.NULL)
 
 	{
-		tracy.ZoneN("Keyboard input")
+		when PROFILER do tracy.ZoneN("Keyboard input")
 
 		// keyboard input for text editing
 		if state.ui.boxes.editing != nil {
@@ -296,7 +296,7 @@ ui_update :: proc() {
 
 
 	{
-	tracy.ZoneN("Build Boxes")
+	when PROFILER do tracy.ZoneN("Build Boxes")
 		// NOTE build boxes
 		for _, panel in state.ui.panels.all {
 			state.ui.ctx.panel = panel
@@ -310,7 +310,7 @@ ui_update :: proc() {
 	}
 
 	{
-		tracy.ZoneN("Prune Boxes")
+		when PROFILER do tracy.ZoneN("Prune Boxes")
 	  	// prune boxes that aren't used ------------------------------
 		box_index := 0
 		for _, box in state.ui.boxes.all {
@@ -340,7 +340,7 @@ ui_update :: proc() {
 	}
 	
 	{
-		tracy.ZoneN("CALC BOXES")
+		when PROFILER do tracy.ZoneN("CALC BOXES")
 		for panel in panels {
 			if panel != nil {
 				if panel.box != nil do ui_calc_boxes(panel.box)
@@ -369,17 +369,17 @@ ui_update :: proc() {
 	}
 
  	{
-		tracy.ZoneN("DRAW BOXES")
+		when PROFILER do tracy.ZoneN("DRAW BOXES")
 		for _, panel in state.ui.panels.all {
 			if panel.type != .FLOATING {
-				tracy.ZoneN(fmt.tprintf("Draw %v", panel.content))
+				when PROFILER do tracy.ZoneN(fmt.tprintf("Draw %v", panel.content))
 				ui_draw_boxes(panel.box, panel.quad)
 			}
 		}
  	}
 
  	{
-	 	tracy.ZoneN("DRAW Floating Box")
+	 	when PROFILER do tracy.ZoneN("DRAW Floating Box")
 		if state.ui.panels.floating != nil {
 			if state.ui.panels.floating.box.first != nil {
 				ui_draw_boxes(state.ui.panels.floating.box, state.ui.panels.floating.quad)
@@ -395,7 +395,7 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	if box != nil {
 		nme = to_string(&box.name)
 	}
-	tracy.ZoneN(nme)
+	when PROFILER do tracy.ZoneN(nme)
 	if box == nil do return
 	set_render_layer(box.render_layer)
 	

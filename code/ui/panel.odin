@@ -1,6 +1,6 @@
 package ui
 
-import tracy "../../../odin-tracy"
+when PROFILER do import tracy "../../../odin-tracy"
 
 import "core:fmt"
 
@@ -107,7 +107,7 @@ ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, cont
 }
 
 ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
-	tracy.Zone()
+	when PROFILER do tracy.Zone()
 	if panel != nil
 	{
 		panel.quad = quad

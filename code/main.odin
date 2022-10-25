@@ -1,6 +1,8 @@
 package main	
 
-import tracy "../../odin-tracy"
+PROFILER :: false
+
+when PROFILER do import tracy "../../odin-tracy"
 
 import "/demo"
 import "/ui"
@@ -10,7 +12,8 @@ state : ui.State
 main :: proc() {
 	using ui
 	using demo
-	tracy.SetThreadName("main")
+	
+	when PROFILER do tracy.SetThreadName("main")
 
 	ok := false	
 	state, ok = init()
@@ -25,7 +28,7 @@ main :: proc() {
 
 		for !state.quit
 		{
-			defer tracy.FrameMark()
+			when PROFILER do defer tracy.FrameMark()
 			update()
 
 			if rmb_click() {

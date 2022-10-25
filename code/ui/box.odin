@@ -1,6 +1,6 @@
 package ui
 
-import tracy "../../../odin-tracy"
+when PROFILER do import tracy "../../../odin-tracy"
 
 import "core:fmt"
 
@@ -281,7 +281,7 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 }
 
 ui_calc_boxes :: proc(root: ^Box) {
-	tracy.Zone()
+	when PROFILER do tracy.Zone()
 	// PIXEL SIZE / TEXT CONTENT SIZE ------------------------------
 	for _, box in state.ui.boxes.all {
 		// for each axis (x/y) ------------------------------

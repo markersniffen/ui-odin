@@ -1,6 +1,6 @@
 package ui
 
-import tracy "../../../odin-tracy"
+when PROFILER do import tracy "../../../odin-tracy"
 
 import "core:fmt"
 import "core:mem"
@@ -124,7 +124,7 @@ opengl_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {
 }
 
 opengl_render :: proc() {
-	tracy.Zone()
+	when PROFILER do tracy.Zone()
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 	bd := v4(lin.vector4_hsl_to_rgb(state.ui.col.backdrop.h, state.ui.col.backdrop.s, state.ui.col.backdrop.l, state.ui.col.backdrop.a))
 	gl.ClearColor(bd.r, bd.g, bd.b, bd.a)
@@ -263,7 +263,7 @@ push_quad_border :: proc(quad: Quad, color:HSL, border: f32=2, clip: Quad) {
 }
 
 push_quad_font :: proc(quad: Quad, color:HSL, uv:Quad, font_icon:f32, clip: Quad) {
-	tracy.ZoneNC("quad font", 0x0000ff)
+	when PROFILER do tracy.ZoneNC("quad font", 0x0000ff)
 	push_quad(quad,	color, color, color, color, 0, uv, font_icon, clip)
 }
 
