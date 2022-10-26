@@ -24,6 +24,7 @@ ui_begin :: proc() -> ^Panel {
 	quad := state.ui.ctx.panel.quad
 	ui_size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
 	box := ui_create_box("root", { .ROOT, .CLIP })
+	ui_process_ops(box)
 	box.offset = {quad.l, quad.t}
 	state.ui.ctx.panel.box = box
 	ui_push_parent(box)
@@ -43,6 +44,7 @@ ui_begin_floating :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLO
 	state.ui.ctx.parent = nil
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
 	box := ui_create_box("root_floating", flags)
+	ui_process_ops(box)
 	state.ui.ctx.panel.box = box
 	ui_push_parent(box)
 	return state.ui.ctx.panel
@@ -181,6 +183,7 @@ ui_empty :: proc(_name:string="") -> ^Box {
 	name := "empty"
 	if _name != "" do name = _name
 	box := ui_create_box(name, { })
+	ui_process_ops(box)
 	ui_push_parent(box)
 	return box
 }
@@ -193,6 +196,7 @@ ui_bar :: proc(color:HSL={}, axis:Axis=.Y) -> ^Box {
 		ui_size(.PIXELS, state.ui.margin, .PCT_PARENT, 1)
 	}
 	bar := ui_create_box("bar", { .DRAWBACKGROUND })
+	ui_process_ops(bar)
 
 	if color != {} do bar.bg_color = color
 
@@ -206,6 +210,7 @@ ui_color :: proc(color:HSL) -> ^Box {
 		.DRAWBACKGROUND,
 		.DRAWBORDER,
 	})
+	ui_process_ops(box)
 	box.bg_color = color
 	return box
 }
@@ -216,6 +221,7 @@ ui_color :: proc(color:HSL) -> ^Box {
 
 ui_label :: proc(key: string) -> Box_Ops {
 	box := ui_create_box(key, { .DRAWTEXT, })
+	ui_process_ops(box)
 	return box.ops
 }
 
@@ -225,12 +231,13 @@ ui_label :: proc(key: string) -> Box_Ops {
 
 ui_value :: proc(key: string, value: any) -> Box_Ops {
 	box := ui_create_box(key,{ .DISPLAYVALUE }, value)
+	ui_process_ops(box)
 	return box.ops	
 }
 
 // creates single line editable text
 
-ui_edit_text :: proc(editable: ^String) -> Box_Ops {
+ui_edit_text :: proc(key: string, editable: ^String) -> Box_Ops {
 	box := ui_create_box("editable_text", {
 		.CLICKABLE,
 		.HOVERABLE,
@@ -240,7 +247,23 @@ ui_edit_text :: proc(editable: ^String) -> Box_Ops {
 		.DRAWGRADIENT,
 	})
 	box.editable_string = editable
+	ui_process_ops(box)
 	return box.ops
+}
+
+ui_edit_value :: proc(key: string, ev: any) -> ^Box {
+	box := ui_create_box(key, {
+		.CLICKABLE,
+		.HOVERABLE,
+		.EDITVALUE,
+		.DRAWBACKGROUND,
+		.DRAWBORDER,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+	}, ev)
+	if box.ops.editing do excl(&box.flags, Box_Flags.HOVERABLE)
+	ui_process_ops(box)
+	return box
 }
 
 ui_paragraph :: proc(value: any) -> Box_Ops {
@@ -279,6 +302,7 @@ ui_paragraph :: proc(value: any) -> Box_Ops {
 	
 	ui_size(.PIXELS, val.width, .PIXELS, (state.ui.line_space-4) * f32(val.lines+1))
 	box := ui_create_box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH }, value)
+	ui_process_ops(box)
 
 	val.current_line = clamp( (int( (-box.scroll.y / (box.calc_size.y)) * f32(val.lines+1) ) ), 0, val.lines)
 	val.last_line = clamp( val.current_line + int(sbox.calc_size.y/(state.ui.line_space-4)), 0, val.lines)
@@ -289,7 +313,7 @@ ui_paragraph :: proc(value: any) -> Box_Ops {
 
 // creates a slider for editing float values
 
-ui_slider :: proc(label:string, value:^f32) -> Box_Ops {
+ui_slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 	old_size := state.ui.ctx.size
 	box := ui_create_box(label, {
 		.CLICKABLE,
@@ -299,16 +323,8 @@ ui_slider :: proc(label:string, value:^f32) -> Box_Ops {
 		.DRAWGRADIENT,
 		.HOTANIMATION,
 		// .ACTIVEANIMATION,
-	}, any(value))
+	}, any(value^))
 
-	if box.ops.clicked {
-		state.input.mouse.delta_temp = state.input.mouse.pos - linear(value^, 0, 1, 0, box.calc_size.x)
-	}
-
-	if box.ops.pressed {
-		value^ = clamp(linear(state.input.mouse.pos.x-state.input.mouse.delta_temp.x, 0, box.calc_size.x, 0, 1), 0, 1)
-	}
-	
 	ui_push_parent(box)
 	ui_size(.PCT_PARENT, value^, .PCT_PARENT, 1)
 	highlight := ui_create_box("highlight", {
@@ -324,9 +340,34 @@ ui_slider :: proc(label:string, value:^f32) -> Box_Ops {
 	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
 	display_value := ui_create_box("", {
 		.NO_OFFSET,
-		.DISPLAYVALUE,
+		.EDITVALUE,
+		// .DISPLAYVALUE,
 	}, value^)
-	
+	if display_value.ops.editing {
+		incl(&display_value.flags, Box_Flags.CLICKABLE)
+		excl(&box.flags, Box_Flags.HOVERABLE)
+		excl(&highlight.flags, Box_Flags.HOVERABLE)
+	}
+	ui_process_ops(box)
+	ui_process_ops(highlight)
+	ui_process_ops(display_value)
+
+	if box.ops.ctrl_clicked {
+		display_value.ops.editing = true
+		state.ui.boxes.editing = display_value
+		start_editing_value(display_value)
+	}
+
+	if !display_value.ops.editing {
+		if box.ops.clicked {
+			state.input.mouse.delta_temp = state.input.mouse.pos - linear(value^, min, max, 0, box.calc_size.x)
+		}
+
+		if box.ops.pressed {
+			value^ = clamp(linear(state.input.mouse.pos.x-state.input.mouse.delta_temp.x, 0, box.calc_size.x, min, max), min, max)
+		}
+	}
+
 	ui_pop()
 	state.ui.ctx.size = old_size
 	return box.ops
@@ -345,6 +386,7 @@ ui_button :: proc(key: string) -> Box_Ops {
 		.HOTANIMATION,
 		.ACTIVEANIMATION,
 	})
+	ui_process_ops(box)
 	box.text_align = .CENTER
 	return box.ops
 }
@@ -360,6 +402,7 @@ ui_menu_button :: proc(key: string) -> Box_Ops {
 		.DRAWGRADIENT,
 		.HOTANIMATION,
 	})
+	ui_process_ops(box)
 	box.text_align = .LEFT
 	return box.ops
 }
@@ -377,6 +420,7 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 		.HOTANIMATION,
 		.ACTIVEANIMATION,
 	})
+	ui_process_ops(box)
 	if box.ops.selected {
 		box.name = from_string(fmt.tprintf("<#>s<r> %v", key))
 	} else {
@@ -398,6 +442,7 @@ ui_radio :: proc(key: string) -> ^Box {
 		.HOTANIMATION,
 		.ACTIVEANIMATION,
 	})
+	ui_process_ops(box)
 	return box
 }
 
@@ -447,6 +492,7 @@ ui_spacer_fill :: proc() -> Box_Ops {
 	ui_size_x(.MIN_SIBLINGS, 1)
 	box := ui_create_box("spacer_fill", {
 	})
+	ui_process_ops(box)
 	ui_size_x(oldsize.type, oldsize.value)
 	return box.ops
 }
@@ -459,6 +505,7 @@ ui_spacer_pixels :: proc(pixels: f32) -> Box_Ops {
 	ui_size_x(.PIXELS, pixels)
 	box := ui_create_box("spacer_pixels", {
 	})
+	ui_process_ops(box)
 	ui_size_x(oldsize.type, oldsize.value)
 	return box.ops
 }
@@ -468,6 +515,7 @@ ui_spacer_pixels :: proc(pixels: f32) -> Box_Ops {
 
 ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 	scrollbox := ui_create_box("scrollbox", { })
+	ui_process_ops(scrollbox)
 	ui_push_parent(scrollbox)
 
 	bar_width :f32= 14
@@ -491,6 +539,7 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 	ui_axis(.X)
 	ui_size(.PIXELS, viewport_width, .PIXELS, viewport_height)
 	viewport := ui_create_box("viewport", { .CLIP, .VIEWSCROLL })
+	ui_process_ops(viewport)
 
 	if viewport.first != nil {
 		db_size := ((viewport.calc_size + viewport.expand) / viewport.first.calc_size) * (viewport.calc_size + viewport.expand)
@@ -504,12 +553,14 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 		if y {
 
 			ui_size(.PIXELS, bar_width, .PIXELS, viewport_height)
-			sby := ui_create_box("scrollbar_y", { .NO_OFFSET, .DRAWBACKGROUND })
+			sby := ui_create_box("scrollbar_y", { .NO_OFFSET, .DRAWBACKGROUND })\
+			ui_process_ops(sby)
 			sby.offset.x = viewport_width
 			ui_push_parent(sby)
 
 			ui_size(.PCT_PARENT, 1, .PIXELS, db_size.y)
 			y_handle := ui_create_box("y_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
+			ui_process_ops(y_handle)
 			y_handle.bg_color = state.ui.col.inactive
 			y_handle.offset.y = -db_value.y
 			ui_pop()
@@ -524,11 +575,13 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 		if x {
 			ui_size(.PIXELS, viewport_width, .PIXELS, bar_width)
 			sbx := ui_create_box("scrollbar_x", { .NO_OFFSET, .DRAWBACKGROUND })
+			ui_process_ops(sbx)
 			sbx.offset.y = viewport_height
 			ui_push_parent(sbx)
 
 			ui_size(.PIXELS, db_size.x, .PCT_PARENT, 1)
 			x_handle := ui_create_box("x_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+			ui_process_ops(x_handle)
 			x_handle.bg_color = state.ui.col.inactive
 			x_handle.offset.x = -db_value.x
 			ui_pop()
@@ -563,6 +616,7 @@ ui_sizebar_y :: proc() -> ^Box {
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .PIXELS, 4)
 	box := ui_create_box("sizebar_y", { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
+	ui_process_ops(box)
 	if box.ops.pressed {
 		box.parent.expand.y += f32(state.input.mouse.delta.y)
 	}
@@ -591,6 +645,7 @@ ui_drag_panel :: proc(label:string="") -> ^Box {
 			.DRAWTEXT,
 		})
 	}
+	ui_process_ops(box)
 	return box
 }
 

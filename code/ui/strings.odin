@@ -15,7 +15,7 @@ string_to_key :: proc(text: string) -> Key {
 	key: Key
 	key.len = min(len(text), KEY_LEN)
 
-	// assert(key.len <= KEY_LEN, text)
+	// assert(key.len <= KEY_LEN, "key length is too long")
 	copy(key.mem[:key.len], text)
 	return key
 }
@@ -33,6 +33,8 @@ String :: struct {
 }
 
 to_string :: proc(es: ^String) -> string {
+	if es.len == 0 do fmt.println(es)
+	assert(es.len != 0, "^String has zero length")
 	return string(es.mem[:es.len])
 }
 
@@ -48,8 +50,70 @@ replace_string :: proc(es: ^String, text: string) {
 from_string :: proc(text: string) -> String {
 	es : String
 	es.len = len(text)
+	assert(es.len <= LONG_STRING_LEN, text)
 	copy(es.mem[:es.len], text)
 	return es
+}
+
+string_len_assert :: proc(es: ^String) {
+	for letter, i in es.mem {
+		if letter == 0 {
+			assert(es.len == i, "Editable_Text len doesn't match number of characters.")
+			break
+		}
+	}
+}
+
+string_backspace :: proc(es: ^String) {
+	if es.start >= 0 { // TODO there might be a bug here
+		if es.start == es.end {
+			if es.start != 0 {
+				es.start-=1
+				es.end = es.start
+				if es.start >= es.len {
+					copy(es.mem[es.start-1:], es.mem[es.start:])
+				} else {
+					copy(es.mem[es.start:], es.mem[es.start+1:])
+				}
+				es.len -= 1
+			}
+		} else if es.start < es.end {
+			copy(es.mem[es.start:], es.mem[es.end:])
+			es.len = es.len - (es.end - es.start)
+			es.end = es.start
+		} else if es.end < es.start {
+			copy(es.mem[es.end:], es.mem[es.start:])
+			es.len -= (es.start - es.end)
+			es.start = es.end
+		}
+	}
+}
+
+string_backspace_all :: proc(es: ^String) {
+	es.start = editable_jump_left(es)
+	string_backspace(es)
+}
+
+string_delete :: proc (es: ^String) {
+	if es.start == es.end {
+		if es.start != es.len {
+			copy(es.mem[es.start:], es.mem[es.start+1:])
+			es.len -= 1
+		}
+	} else if es.end > es.start {
+		copy(es.mem[es.start:], es.mem[es.end:])
+		es.len -= (es.end - es.start)
+		es.end = es.start
+	} else {
+		copy(es.mem[es.end:], es.mem[es.start:])
+		es.len -= (es.start - es.end)
+		es.start = es.end
+	}
+}
+
+string_delete_all :: proc(es: ^String) {
+	es.end = editable_jump_right(es)
+	string_delete(es)
 }
 
 editable_jump_right :: proc(es: ^String) -> int {
@@ -96,29 +160,18 @@ editable_jump_left :: proc(es: ^String) -> int {
 	return 0
 }
 
-backspace :: proc(es: ^String) {
-	if es.start >= 0 { // TODO there might be a bug here
-		if es.start == es.end {
-			if es.start != 0 {
-				es.start-=1
-				es.end = es.start
-				if es.start >= es.len {
-					copy(es.mem[es.start-1:], es.mem[es.start:])
-				} else {
-					copy(es.mem[es.start:], es.mem[es.start+1:])
-				}
-				es.len -= 1
-			}
-		} else if es.start < es.end {
-			copy(es.mem[es.start:], es.mem[es.end:])
-			es.len = es.len - (es.end - es.start)
-			es.end = es.start
-		} else if es.end < es.start {
-			copy(es.mem[es.end:], es.mem[es.start:])
-			es.len -= (es.start - es.end)
-			es.start = es.end
-		}
-	}
+string_home :: proc(es: ^String) {
+	es.start = 0
+	es.end = 0
 }
 
+string_end :: proc(es: ^String) {
+	es.start = es.len
+	es.end = es.len
+}
+
+string_select_all :: proc(es: ^String) {
+	es.start = 0
+	es.end = es.len
+}
 

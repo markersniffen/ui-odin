@@ -3,8 +3,9 @@ package ui
 when PROFILER do import tracy "../../../odin-tracy"
 
 import "core:fmt"
+import "core:strconv"
 
-MAX_BOXES :: 4096
+MAX_BOXES :: 16384
 
 Box :: struct {
 	key: Key,
@@ -88,6 +89,7 @@ Box_Flags :: enum {
 	DRAWTEXT,
 	DRAWPARAGRAPH,
 	DISPLAYVALUE,
+	EDITVALUE,
 	DRAWBORDER,
 	DRAWBACKGROUND,
 	DRAWGRADIENT,
@@ -99,6 +101,7 @@ Box_Flags :: enum {
 
 Box_Ops :: struct {
   clicked: bool,
+  ctrl_clicked: bool,
   double_clicked: bool,
   right_clicked: bool,
   middle_clicked: bool,
@@ -111,8 +114,8 @@ Box_Ops :: struct {
   editing: bool,
 }
 
-ui_gen_key :: proc(name: string) -> Key {
-	text := fmt.tprintf("%v_%v_%v", name, state.ui.boxes.index, state.ui.ctx.panel.uid)
+ui_gen_key :: proc(name: string, id: string) -> Key {
+	text := fmt.tprintf("%v_%v_%v_%v", name, id, state.ui.boxes.index, state.ui.ctx.panel.uid)
 	key := string_to_key(text)
 	return key
 }
@@ -126,8 +129,18 @@ ui_generate_box :: proc(key: Key) -> ^Box {
 	return box
 }
 
-ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -> ^Box {
-	key := ui_gen_key(name)
+ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -> ^Box {
+	name := _name
+	id := "_"
+	for letter, index in _name {
+		if letter == '#' {
+			if _name[index:min(index+3, len(_name)-1)] == "###" {
+				name = _name[:index]
+				id = _name[index+3:]
+			}
+		}
+	}
+	key := ui_gen_key(name, id)
 	box, box_ok := state.ui.boxes.all[key]
 	parent := state.ui.ctx.parent
 	
@@ -146,6 +159,10 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 				box.offset = state.input.mouse.pos
 			}
 		}
+	}
+
+	if box.key.len == 0 && box.key.mem[0] != 0 {
+		assert(0 == 1, "key len == 0 and mem is non zero")
 	}
 
 	assert(box != nil)
@@ -191,6 +208,13 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	}
 	state.ui.ctx.box = box
 
+	box.last_frame_touched = state.ui.frame
+	state.ui.boxes.index += 1
+	return(box)
+}
+
+ui_process_ops :: proc(box: ^Box) {
+
 	// PROCESS OPS ------------------------------
 	mouse_over := mouse_in_quad(box.clip)
 	box.ops.clicked = false
@@ -210,19 +234,25 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 	}
 
 	if .CLICKABLE in box.flags {
-		if mouse_over {
 
+		if mouse_over {
 			if lmb_click() {
-				if .EDITTEXT in box.flags {
+				if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
 					box.ops.editing = true
 					state.ui.boxes.editing = box
+					if .EDITVALUE in box.flags do start_editing_value(box)
 				}
 				box.ops.pressed = true
 				box.ops.clicked = true
+				if ctrl() do box.ops.ctrl_clicked = true
 				state.ui.boxes.active = box
+
 			} else {
-				box.ops.clicked = false				
+
+				box.ops.clicked = false
+				box.ops.ctrl_clicked = false
 			}
+
 			if lmb_release() {
 				if box.ops.pressed {
 					
@@ -235,13 +265,21 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 			if lmb_up() {
 				box.ops.pressed = false
 			}
-		} else {
+
+		} else { // !mouse_over
+
 			if lmb_release_up() {
 				box.ops.pressed = false
 			}
 			if lmb_click() {
-				box.ops.editing = false
-				if state.ui.boxes.editing == box do state.ui.boxes.editing = nil
+				if box.ops.editing {
+					fmt.println("outside and eed")
+					box.ops.editing = false
+					if state.ui.boxes.editing == box {
+						state.ui.boxes.editing = nil
+						if .EDITVALUE in box.flags do end_editing_value(box)
+					}
+				}
 			}
 		}
 	}
@@ -275,9 +313,138 @@ ui_create_box :: proc(name: string, flags:bit_set[Box_Flags]={}, value: any=0) -
 		}
 	}
 
-	box.last_frame_touched = state.ui.frame
-	state.ui.boxes.index += 1
-	return(box)
+	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
+		if state.ui.boxes.editing == box {
+			string_editing(box)
+		}
+	}
+}
+
+string_editing :: proc(box: ^Box) {
+	es := box.editable_string
+	// TYPE LETTERS
+	if state.ui.last_char > 0 {
+		if es.end-es.start != 0 {
+			string_backspace(es)
+		}
+		if !(es.len+1 > LONG_STRING_LEN) {
+			if es.start >= es.len {
+				es.mem[es.len] = u8(state.ui.last_char)
+			} else {
+				copy(es.mem[clamp(es.start+1, 0, es.len):], es.mem[es.start:es.len])
+				es.mem[es.start] = u8(state.ui.last_char)
+			}
+			es.start +=	1
+			es.end = es.start
+			es.len += 1
+			state.ui.last_char = -1
+		} else {
+			fmt.println("MAX STRING LENGTH REACHED")
+		}
+	}
+
+	// LEFT
+	if read_key(&state.input.keys.left) {
+		if shift() {
+			if ctrl() {
+				es.end = editable_jump_left(es)
+			} else {
+				es.end = clamp(es.end - 1, 0, es.len)
+			}
+		} else if ctrl() {
+			es.start = editable_jump_left(es)
+			es.end = es.start
+		} else {
+			es.start = clamp(es.start - 1, 0, LONG_STRING_LEN)
+			es.end = es.start
+		}
+	}
+
+	// RIGHT
+	if read_key(&state.input.keys.right) {
+		if shift() {
+			if ctrl() {
+				es.end = editable_jump_right(es)
+			} else {
+				es.end = clamp(es.end + 1, 0, es.len+1)
+			}
+		} else if ctrl() {
+			es.start = editable_jump_right(es)
+			es.end = es.start
+		} else {
+			es.start = clamp(es.start + 1, 0, es.len)
+			es.end = es.start
+		}
+	}
+
+	if es.len > 0 {
+ 		// BACKSPACE
+		if read_key(&state.input.keys.backspace) {
+			if ctrl() {
+				string_backspace_all(es)
+			} else {
+				string_backspace(es)
+			}
+		}
+		// DELETE
+		if read_key(&state.input.keys.delete) {
+			if ctrl() {
+				string_delete_all(es)
+			} else {
+				string_delete(es)
+			}
+		}
+
+		// SELECT ALL
+		if ctrl() && read_key(&state.input.keys.a) do string_select_all(es)
+
+	}
+	// HOME
+	if read_key(&state.input.keys.home) do string_home(es)
+	if read_key(&state.input.keys.end) do string_end(es)
+
+	// ENTER
+	if read_key(&state.input.keys.enter) {
+		state.ui.boxes.editing.ops.editing = false
+		state.ui.boxes.editing = nil
+		if .EDITVALUE in box.flags do end_editing_value(box)
+	}
+
+	// ESCAPE
+	if read_key(&state.input.keys.escape) {
+		state.ui.boxes.editing.ops.editing = false
+		state.ui.boxes.editing = nil
+		if .EDITVALUE in box.flags do end_editing_value(box)
+	}
+
+
+	// MOUSE SELECTION
+	quad := box.quad
+	quad.r = quad.l
+	quad.t = box.panel.quad.t
+	quad.b = box.panel.quad.b
+	if lmb_click_drag() {
+		cursor(.TEXT)
+		for i in 0..=es.len {
+			if i < es.len {
+				quad.r += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
+			} else {
+				quad.r = box.quad.r
+			}
+			if mouse_in_quad(quad) {
+				if lmb_click() {
+					es.start = i
+					break
+				} else {
+					es.end = i
+					break
+				}
+			}
+			quad.l += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
+		}
+	}
+	
+	string_len_assert(es)
 }
 
 ui_calc_boxes :: proc(root: ^Box) {
@@ -292,7 +459,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 			} else if size.type == .TEXT || size.type == .MAX_SIBLING {
 				if axis == X {
 					calc_size^ = ui_text_size(X, &box.name) + (state.ui.margin*2)
-					if .DISPLAYVALUE in box.flags do calc_size^ += ui_text_string_size(X, fmt.tprintf("%v", box.value))
+					if .DISPLAYVALUE in box.flags do calc_size^ = ui_text_string_size(X, fmt.tprintf(" %v ", box.value))
 					if .EDITTEXT in box.flags do calc_size^ = ui_String_size(X, box.editable_string) + state.ui.margin*2
 				} else if axis == Y {
 					calc_size^ = ui_text_size(Y, &box.name) * size.value
@@ -376,8 +543,9 @@ ui_calc_boxes :: proc(root: ^Box) {
 						box.scroll.y = clamp(box.scroll.y, -box.parent.sum_children.y + box.parent.calc_size.y, 0)
 						box.scroll.x = clamp(box.scroll.x, box.parent.calc_size.x - box.calc_size.x, 0)
 						if box.scroll != box.offset {
-							to_go := (box.scroll - box.offset)/1.5
-							box.offset = box.offset + to_go
+							// to_go := (box.scroll - box.offset)/2
+							// box.offset = box.offset + to_go
+							box.offset = box.scroll
 						}
 					} else {
 						box.scroll = {0,0}

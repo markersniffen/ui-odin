@@ -249,7 +249,7 @@ ui_lorem :: proc() {
 		ui_empty()
 			ui_axis(.X)
 			ui_size(.MIN_SIBLINGS, 1, .TEXT, 1)
-			ui_edit_text(&state.debug.path)
+			ui_edit_text("edit text", &state.debug.path)
 			ui_size(.TEXT, 1, .TEXT, 1)
 			if ui_button("Load").released {
 				load_doc(&state.debug.lorem, to_string(&state.debug.path))
@@ -344,7 +344,7 @@ ui_panel_debug :: proc() {
 	ui_size(.PCT_PARENT,0.5, .TEXT,1)
 	ui_axis(.Y)
 	ui_label("Editable Text:")
-	ui_edit_text(&state.debug.text)
+	ui_edit_text("editable text", &state.debug.text)
 	ui_value("TEXT", state.debug.text.mem)
 	ui_value("LEN", state.debug.text.len)
 	ui_value("START", state.debug.text.start)
@@ -362,7 +362,8 @@ ui_panel_properties :: proc() {
 		ui_size(.PCT_PARENT, 1, .SUM_CHILDREN, 1 )
 		ui_empty()
 		ui_size(.PCT_PARENT, 1, .TEXT, 1)
-		ui_label("WHEE")
+		// ui_label("WHEE")
+		ui_edit_value("Float", state.debug.float)
 		for i in 0..=22 {
 			label := fmt.tprintf("Label %v", i)
 			ui_button(label)

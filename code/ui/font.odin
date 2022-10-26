@@ -71,8 +71,6 @@ Text_Align :: enum {
 	RIGHT,
 }
 
-
-
 ui_init_font :: proc() {
 	ui_set_font_size()
 
@@ -80,6 +78,7 @@ ui_init_font :: proc() {
 	state.debug.text = from_string("xxxxx-----")
 	state.debug.para = from_string("Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.")
 	state.debug.path = from_string("C:/Users/marxn/Desktop/test2.txt")
+	state.debug.float = 3.534
 	load_doc(&state.debug.lorem, "./assets/temp.txt")
 }
 
