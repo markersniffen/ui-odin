@@ -167,7 +167,8 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 
 	assert(box != nil)
 	box.name = from_string(name)
-	box.flags = flags
+	box.flags = state.ui.ctx.flags + flags
+	state.ui.ctx.flags = {}
 	box.value = value
 	box.size = state.ui.ctx.size
 	box.axis = state.ui.ctx.axis

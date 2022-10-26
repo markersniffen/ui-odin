@@ -443,7 +443,7 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 		if align == .CENTER {
 			left_align = (left_align - text_width / 2) + ((quad.r - quad.l) / 2)
 		} else if align == .RIGHT {
-			left_align -= text_width + state.ui.margin
+			left_align = quad.r - text_width - state.ui.margin
 		}
 	} else {
 		left_align += state.ui.margin

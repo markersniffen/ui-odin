@@ -8,12 +8,12 @@
 [X] editable text
   [X] adding space at begining or with no text crashes (?)
   [X] select any and backspace() calculates len wrong
-[O] large viewable text
+[X] large viewable text
    [ ] switch to word wrap vs \n wrap
    [ ] large editable text
 [X] font weights
 [ ] different colored text
-[ ] ctrl click editable text for values (e.g. buttons)
+[X] ctrl click editable text for values (e.g. buttons)
 [O] context menu
   [ ] hover over other menu buttons?
 [ ] checkbox
@@ -26,5 +26,5 @@
 [ ] render while resizing window
 [ ] copy/paste values
 [ ] load defaults from file
-[ ] set up as library and make an app with it
-!!
+[X] set up as library and make an app with it
+[ ] have boxes adjust size dynamically if too big to fit on screen?

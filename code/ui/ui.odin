@@ -74,6 +74,7 @@ UI_Context :: struct {
 	font_color: HSL,
 	border: f32,
 	text_align: Text_Align,
+	flags: bit_set[Box_Flags],
 }
 
 HSL :: struct {
@@ -255,10 +256,10 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 			push_quad_solid(quad, box.bg_color, box.clip)
 			if box.ops.selected {
 				push_quad_gradient_v(quad, state.ui.col.active, state.ui.col.active, box.clip)
-			}
+			} 
 		}
 		if .DRAWBORDER in box.flags {
-			push_quad_border(quad, state.ui.col.border, box.border, box.clip)
+			push_quad_border(quad, box.border_color, box.border, box.clip)
 		}
 		if .HOTANIMATION in box.flags {
 			hot := state.ui.col.hot

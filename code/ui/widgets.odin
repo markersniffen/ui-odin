@@ -149,6 +149,10 @@ ui_set_border_color 	:: proc(color: HSL) 		{ state.ui.ctx.border_color = color }
 
 ui_set_border_thickness :: proc(value: f32)		{ state.ui.ctx.border = value }
 
+// sets extra flags to add to next box (gets reset by ui_create_box())
+
+ui_extra_flags :: proc(flags:bit_set[Box_Flags]) { state.ui.ctx.flags = flags }
+
 //______ WIDGETS ______//
 //
 //
@@ -215,14 +219,13 @@ ui_color :: proc(color:HSL) -> ^Box {
 	return box
 }
 
-
 // creates a box that draws static text
 // don't use this for values that change
 
-ui_label :: proc(key: string) -> Box_Ops {
+ui_label :: proc(key: string) -> ^Box {
 	box := ui_create_box(key, { .DRAWTEXT, })
 	ui_process_ops(box)
-	return box.ops
+	return box
 }
 
 // creates a box that draws text that is
