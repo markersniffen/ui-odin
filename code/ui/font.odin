@@ -86,7 +86,7 @@ ui_load_font :: proc(font: ^Font) -> bool {
 	using stb, mem, fmt
 	NUM_CHARS :: 96
 	
-	fmt.println(fmt.tprintf("trying to load %v", font.path ))
+	fmt.println(fmt.tprint("trying to load", font.path))
 	data, data_ok := os.read_entire_file(font.path)
 	defer delete(data)
 	
@@ -122,7 +122,7 @@ ui_load_font :: proc(font: ^Font) -> bool {
 		}
 
 		if opengl_load_font_texture(font, image) {
-			fmt.println(fmt.tprintf("Font loaded: %v", font.name))
+			fmt.println(fmt.tprint("Font loaded:", font.name))
 		}
 
 		// fmt.println("------- FOR PRINTING FONT INFO --------")
@@ -133,7 +133,7 @@ ui_load_font :: proc(font: ^Font) -> bool {
 
 		// fmt.println("--------- FOR PRINTING IMAGE INFO ----------")
 		// for i in 0..<int(font.texture_size * font.texture_size) {
-		// 	fmt.print(fmt.tprintf("%v%v", (cast([^]u8)image)[i], ','))
+		// 	fmt.print(fmt.tprint("%v%v", (cast([^]u8)image)[i], ','))
 		// }
 	}
 	
@@ -197,7 +197,7 @@ ui_load_default_font :: proc(font: ^Font) {
 	}
 
 	if opengl_load_font_texture(font, font.default_image) {
-		fmt.println(fmt.tprintf("DEFAULT Font loaded: %v", font.name))
+		fmt.println(fmt.tprint("DEFAULT Font loaded:", font.name))
 	}	
 }
 

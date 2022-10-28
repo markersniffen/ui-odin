@@ -230,7 +230,7 @@ ui_label :: proc(key: string) -> ^Box {
 
 // creates a box that draws text that is
 // attached to a value and is dynamic.
-// uses fmt.tprintf() to convert value to text
+// uses fmt.tprint() to convert value to text
 
 ui_value :: proc(key: string, value: any) -> Box_Ops {
 	box := ui_create_box(key,{ .DISPLAYVALUE }, value)
@@ -425,9 +425,9 @@ ui_dropdown :: proc(key: string) -> Box_Ops {
 	})
 	ui_process_ops(box)
 	if box.ops.selected {
-		box.name = from_string(fmt.tprintf("<#>s<r> %v", key))
+		box.name = from_string(fmt.tprint("<#>s<r>", key))
 	} else {
-		box.name = from_string(fmt.tprintf("<#>d<r> %v", key))
+		box.name = from_string(fmt.tprint("<#>d<r>", key))
 	}
 	box.text_align = .LEFT
 	return box.ops

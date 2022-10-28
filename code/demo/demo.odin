@@ -319,9 +319,9 @@ ui_panel_boxlist :: proc() {
 		ui_label("Panel List:")
 		for key, panel in state.ui.panels.all {
 			if panel.box != nil {
-				ui_button(fmt.tprintf("%v | %v <#>d %v", panel.uid, panel.content, panel.box.key.len))
+				ui_button(fmt.tprint(panel.uid, " | ", panel.content, "<#>d ", panel.box.key.len))
 			} else {
-				ui_button(fmt.tprintf("%v | %v", panel.uid, panel.content))
+				ui_button(fmt.tprint(panel.uid, " | ", panel.content))
 			}
 		}
 		ui_pop()
@@ -365,7 +365,7 @@ ui_panel_properties :: proc() {
 		// ui_label("WHEE")
 		ui_edit_value("Float", state.debug.float)
 		for i in 0..=22 {
-			label := fmt.tprintf("Label %v", i)
+			label := fmt.tprint("Label", i)
 			ui_button(label)
 		}
 		ui_pop()

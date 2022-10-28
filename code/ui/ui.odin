@@ -220,7 +220,7 @@ ui_update :: proc() {
 		when PROFILER do tracy.ZoneN("DRAW BOXES")
 		for _, panel in state.ui.panels.all {
 			if panel.type != .FLOATING {
-				when PROFILER do tracy.ZoneN(fmt.tprintf("Draw %v", panel.content))
+				when PROFILER do tracy.ZoneN(fmt.tprint("Draw", panel.content))
 				ui_draw_boxes(panel.box, panel.quad)
 			}
 		}
@@ -287,14 +287,14 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 				draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 			} else {
 				val := cast(^f32)box.value.data
-				text := fmt.tprintf("%v", val^)
+				text := fmt.tprint(val^)
 				draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 			}
 		} else if .DRAWPARAGRAPH in box.flags {
 			draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
 		}
 		if .DISPLAYVALUE in box.flags {
-			text := fmt.tprintf("%v", box.value)
+			text := fmt.tprint(box.value)
 			draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		}
 

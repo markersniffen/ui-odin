@@ -115,7 +115,7 @@ Box_Ops :: struct {
 }
 
 ui_gen_key :: proc(name: string, id: string) -> Key {
-	text := fmt.tprintf("%v_%v_%v_%v", name, id, state.ui.boxes.index, state.ui.ctx.panel.uid)
+	text := fmt.tprint(args={name, id, state.ui.boxes.index, state.ui.ctx.panel.uid}, sep="_")
 	key := string_to_key(text)
 	return key
 }
@@ -460,7 +460,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 			} else if size.type == .TEXT || size.type == .MAX_SIBLING {
 				if axis == X {
 					calc_size^ = ui_text_size(X, &box.name) + (state.ui.margin*2)
-					if .DISPLAYVALUE in box.flags do calc_size^ = ui_text_string_size(X, fmt.tprintf(" %v ", box.value))
+					if .DISPLAYVALUE in box.flags do calc_size^ = ui_text_string_size(X, fmt.tprint(" ", box.value, " "))
 					if .EDITTEXT in box.flags do calc_size^ = ui_String_size(X, box.editable_string) + state.ui.margin*2
 				} else if axis == Y {
 					calc_size^ = ui_text_size(Y, &box.name) * size.value
