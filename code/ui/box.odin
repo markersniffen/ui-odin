@@ -528,7 +528,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 		}
 	}
 
-	// RELATIVE POSITION & QUAD ----------------------
+	// CALC OFFSET & QUAD ----------------------
 	for box := root; box != nil; box = box.hash_next	{
 		if .DRAGGABLE in box.flags {
 			if box.ops.dragging {

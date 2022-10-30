@@ -196,7 +196,7 @@ ui_update :: proc() {
 		}
 	}
 
-	// advance frame / reset box index for keys ------------------------------
+	// advance frame / reset box index for keys -----------------------------
 	state.ui.frame += 1
 
 	// queue panels/boxes for rendering ------------------------------
