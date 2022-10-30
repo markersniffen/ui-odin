@@ -195,7 +195,12 @@ ui_load_default_font :: proc(font: ^Font) {
 			start = index + 1
 		}
 	}
-
+	if font.label == "regular_texture" {
+		letter_data := state.ui.fonts.regular.char_data['W']
+		state.ui.font_offset_y = math.round((state.ui.font_size - letter_data.height) * 0.5)
+		state.ui.margin = 4
+		state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
+	}
 	if opengl_load_font_texture(font, font.default_image) {
 		fmt.println(fmt.tprint("DEFAULT Font loaded:", font.name))
 	}	
