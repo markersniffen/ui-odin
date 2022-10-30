@@ -79,7 +79,7 @@ pool_free :: proc(pool: ^Pool, ptr: rawptr) -> bool
 {
 	node : ^Node
 	
-	start := &pool.memory
+	start := &pool.memory[0]
 	length := (pool.chunk_size * pool.chunk_count) - 1
 	end := &pool.memory[length]
 	
