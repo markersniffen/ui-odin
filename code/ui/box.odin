@@ -115,7 +115,7 @@ Box_Ops :: struct {
 }
 
 ui_gen_key :: proc(name: string, id: string) -> Key {
-	text := fmt.tprint(args={name, id, state.ui.boxes.index, state.ui.ctx.panel.uid}, sep="_")
+	text := fmt.tprint(args={name, id, state.ui.ctx.panel.uid}, sep="_") //state.ui.boxes.index,
 	key := string_to_key(text)
 	return key
 }
@@ -131,7 +131,8 @@ ui_generate_box :: proc(key: Key) -> ^Box {
 
 ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -> ^Box {
 	name := _name
-	id := "_"
+	id := fmt.tprint(state.ui.boxes.index)
+	// check if "###" exists in string, and use the left half for name, right half for the ID
 	for letter, index in _name {
 		if letter == '#' {
 			if _name[index:min(index+3, len(_name)-1)] == "###" {
@@ -140,6 +141,7 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 			}
 		}
 	}
+
 	key := ui_gen_key(name, id)
 	box, box_ok := state.ui.boxes.all[key]
 	parent := state.ui.ctx.parent
@@ -161,6 +163,8 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 		}
 	}
 
+
+
 	if box.key.len == 0 && box.key.mem[0] != 0 {
 		assert(0 == 1, "key len == 0 and mem is non zero")
 	}
@@ -180,13 +184,22 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 	box.render_layer = state.ui.ctx.render_layer
 	box.panel = state.ui.ctx.panel
 
+	if to_string(&box.name) == "empty1" {
+		num_children := 0
+		for child := box.first; child != nil ; child = child.next {
+			num_children += 1
+		}
+		if num_children == 1 {
+			state.debug.pause = true
+		}
+	}
+
 	if .ROOT in flags {
 		parent = nil
 		box.border = 1
 		box.border_color = {1,0,1,1}
 	} else {
 		box.parent = parent
-
 		// try adding as first child first
 		if parent != nil {
 			if parent.first == nil || parent.first == box {
@@ -209,8 +222,8 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 	}
 	state.ui.ctx.box = box
 
-	box.last_frame_touched = state.ui.frame
 	state.ui.boxes.index += 1
+	box.last_frame_touched = state.ui.frame
 	return(box)
 }
 
@@ -514,9 +527,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 				if size.type == .SUM_CHILDREN do calc_size^ = 0
 				box.sum_children = 0
 				for child := box.first; child != nil ; child = child.next {
-					if size.type == .SUM_CHILDREN {
-						calc_size^ += child.calc_size[axis]
-					}
+					if size.type == .SUM_CHILDREN do calc_size^ += child.calc_size[axis]
 					box.sum_children[axis] += child.calc_size[axis]
 				}
 			} else if size.type == .MAX_CHILD {
@@ -527,6 +538,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 			}
 		}
 	}
+
 
 	// CALC OFFSET & QUAD ----------------------
 	for box := root; box != nil; box = box.hash_next	{

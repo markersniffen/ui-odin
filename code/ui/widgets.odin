@@ -541,7 +541,7 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 
 	ui_axis(.X)
 	ui_size(.PIXELS, viewport_width, .PIXELS, viewport_height)
-	viewport := ui_create_box("viewport", { .CLIP, .VIEWSCROLL })
+	viewport := ui_create_box("viewport", { .CLIP, .VIEWSCROLL  })
 	ui_process_ops(viewport)
 
 	if viewport.first != nil {
@@ -604,8 +604,11 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 			viewport.first.scroll = state.input.mouse.pos - state.input.mouse.delta_temp
 		}
 
-		viewport.first.scroll.y = clamp(viewport.first.scroll.y, -viewport.first.calc_size.y + viewport.calc_size.y, 0)
-		viewport.first.scroll.x = clamp(viewport.first.scroll.x, -viewport.first.calc_size.x + viewport.calc_size.x, 0)
+		// viewport.first.scroll.y = clamp(viewport.first.scroll.y, -viewport.first.calc_size.y + viewport_height, 0)
+		// viewport.first.scroll.x = clamp(viewport.first.scroll.x, -viewport.first.calc_size.x + viewport_width, 0)
+
+		// viewport.first.scroll.y = clamp(viewport.first.scroll.y, -viewport.first.calc_size.y + viewport.calc_size.y, 0)
+		// viewport.first.scroll.x = clamp(viewport.first.scroll.x, -viewport.first.calc_size.x + viewport.calc_size.x, 0)
 	}
 
 	ui_push_parent(viewport)
@@ -622,6 +625,19 @@ ui_sizebar_y :: proc() -> ^Box {
 	ui_process_ops(box)
 	if box.ops.pressed {
 		box.parent.expand.y += f32(state.input.mouse.delta.y)
+	}
+	if box.ops.hovering do cursor_size(box.axis)
+	return box
+}
+
+ui_sizebar_x :: proc() -> ^Box {
+	ui_axis(.X)
+	ui_size(.PIXELS, 4, .PCT_PARENT, 1)
+	box := ui_create_box("sizebar_y", { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
+	ui_process_ops(box)
+	if box.ops.pressed {
+		box.prev.expand.x += f32(state.input.mouse.delta.x)
+		fmt.println("X PRESSED", box.parent.expand.x)
 	}
 	if box.ops.hovering do cursor_size(box.axis)
 	return box

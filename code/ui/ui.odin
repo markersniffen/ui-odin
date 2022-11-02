@@ -152,7 +152,6 @@ ui_update :: proc() {
 				push_quad_solid(panel.bar, state.ui.col.inactive, panel.quad)
 			} else {
 				panel.content()
-				// build_panel_cntent(panel.content)
 			}
 		}
 	}
@@ -165,7 +164,7 @@ ui_update :: proc() {
 			if state.ui.frame > box.last_frame_touched {
 				if box.key.len == 0 {
 					assert(0 != 0)
-				} 
+				}
 				state.ui.boxes.to_delete[box_index] = box
 				box_index += 1
 			}

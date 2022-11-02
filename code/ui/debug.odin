@@ -5,6 +5,8 @@ Debug :: struct {
 	box: ^Box,
 	swtch: bool,
 
+	pause: bool,
+
 	float: f32,
 
 	text: String,
