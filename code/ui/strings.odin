@@ -50,7 +50,7 @@ replace_string :: proc(es: ^String, text: string) {
 from_string :: proc(text: string) -> String {
 	es : String
 	es.len = len(text)
-	assert(es.len <= LONG_STRING_LEN, text)
+	assert(es.len <= LONG_STRING_LEN, fmt.tprint("es.len <= LONG_STRING_LEN", es.len, LONG_STRING_LEN, text))
 	copy(es.mem[:es.len], text)
 	return es
 }

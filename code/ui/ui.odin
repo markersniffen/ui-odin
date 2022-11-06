@@ -157,10 +157,14 @@ ui_update :: proc() {
 	}
 
 	{
-		when PROFILER do tracy.ZoneN("Prune Boxes")
+		when PROFILER do tracy.ZoneN("PRUNE BOXES")
 	  	// prune boxes that aren't used ------------------------------
 		box_index := 0
 		for _, box in state.ui.boxes.all {
+			if box.value !=  nil {
+			 fmt.println(">>>", to_string(&box.name))
+			 fmt.println("in prune boxes", fmt.tprint(box.value))
+			}
 			if state.ui.frame > box.last_frame_touched {
 				if box.key.len == 0 {
 					assert(0 != 0)
@@ -178,8 +182,9 @@ ui_update :: proc() {
 			}
 		}
 	}
-	panels : [MAX_PANELS]^Panel
 
+	// CALC BOXES ------------------------------------------------	
+	panels : [MAX_PANELS]^Panel
 	index:= 0
 	for _, panel in state.ui.panels.all {
 		panels[index] = panel
@@ -220,6 +225,8 @@ ui_update :: proc() {
 		for _, panel in state.ui.panels.all {
 			if panel.type != .FLOATING {
 				when PROFILER do tracy.ZoneN(fmt.tprint("Draw", panel.content))
+				// TODO fmt.tprint crashes in here
+				// if panel.box != nil do fmt.println("before first box draw:", fmt.tprint(panel.box.value))
 				ui_draw_boxes(panel.box, panel.quad)
 			}
 		}
@@ -285,9 +292,9 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 				push_quad_border(quad, state.ui.col.active, box.border, box.clip)
 				draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 			} else {
-				val := cast(^f32)box.value.data
-				text := fmt.tprint(val^)
-				draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+				// TODO this crashes
+				// text := fmt.tprint(box.value)
+				draw_text("gah", pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 			}
 		} else if .DRAWPARAGRAPH in box.flags {
 			draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
