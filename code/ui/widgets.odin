@@ -250,6 +250,17 @@ ui_edit_text :: proc(key: string, editable: ^String) -> Box_Ops {
 		.DRAWGRADIENT,
 	})
 	box.editable_string = editable
+
+	if box == state.ui.boxes.editing {
+		if box.ops.off_clicked || box.ops.right_clicked {
+			state.ui.boxes.editing = nil
+		}
+	} else {
+		if box.ops.clicked {
+			state.ui.boxes.editing = box
+		}
+	}
+
 	ui_process_ops(box)
 	return box.ops
 }
@@ -511,11 +522,10 @@ ui_spacer_fill :: proc() -> Box_Ops {
 // creates a spacer in the .X axis by pixels
 // TODO make this work for the .Y axis
 
-ui_spacer_pixels :: proc(pixels: f32) -> Box_Ops {
+ui_spacer_pixels :: proc(pixels: f32, name:="spacer_pixels") -> Box_Ops {
 	oldsize := state.ui.ctx.size.x
 	ui_size_x(.PIXELS, pixels)
-	box := ui_create_box("spacer_pixels", {
-	})
+	box := ui_create_box(name, {})
 	ui_process_ops(box)
 	ui_size_x(oldsize.type, oldsize.value)
 	return box.ops

@@ -111,6 +111,7 @@ Box_Ops :: struct {
   selected: bool,
   dragging: bool,
   hovering: bool,
+  editing: bool,
 }
 
 ui_gen_key :: proc(name: string, id: string) -> Key {
@@ -302,7 +303,8 @@ ui_process_ops :: proc(box: ^Box) {
 	}
 
 	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
-		if box == state.ui.boxes.editing do string_editing(box)
+		box.ops.editing = (box == state.ui.boxes.editing)
+		if box.ops.editing do string_editing(box)
 	}
 
 }
