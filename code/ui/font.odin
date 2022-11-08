@@ -122,7 +122,7 @@ ui_load_font :: proc(font: ^Font) -> bool {
 		}
 
 		if opengl_load_font_texture(font, image) {
-			fmt.println(fmt.tprint("Font loaded:", font.name))
+			fmt.println("Font loaded:", font.name)
 		}
 
 		// fmt.println("------- FOR PRINTING FONT INFO --------")

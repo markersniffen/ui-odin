@@ -161,10 +161,6 @@ ui_update :: proc() {
 	  	// prune boxes that aren't used ------------------------------
 		box_index := 0
 		for _, box in state.ui.boxes.all {
-			if box.value !=  nil {
-			 fmt.println(">>>", to_string(&box.name))
-			 fmt.println("in prune boxes", fmt.tprint(box.value))
-			}
 			if state.ui.frame > box.last_frame_touched {
 				if box.key.len == 0 {
 					assert(0 != 0)
@@ -258,6 +254,8 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	// if .ROOT in box.flags do push_quad_border(quad, state.ui.col.backdrop, 1)
 
 	if clip_ok {
+		is_editing := (box == state.ui.boxes.editing)
+
 		if .DRAWBACKGROUND in box.flags {
 			push_quad_solid(quad, box.bg_color, box.clip)
 			if box.ops.selected {
@@ -276,7 +274,7 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 			push_quad_gradient_v(quad, {active.h, active.s, active.l, active.a * box.active_t}, {active.h, active.s, active.l, active.a * box.active_t}, box.clip)	
 		}
 		if .DRAWGRADIENT in box.flags {
-			if box.ops.editing {
+			if is_editing {
 				push_quad_gradient_v(quad, {0,0,0,0}, state.ui.col.gradient, box.clip)
 			} else {
 				push_quad_gradient_v(quad, state.ui.col.gradient, {0,0,0,0}, box.clip)
@@ -285,16 +283,15 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		if .DRAWTEXT in box.flags {
 			draw_text(to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		} else if .EDITTEXT in box.flags {
-			if box.ops.editing do push_quad_border(quad, state.ui.col.active, box.border, box.clip)
-			draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+			if is_editing do push_quad_border(quad, state.ui.col.active, box.border, box.clip)
+			draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		} else if .EDITVALUE in box.flags {
-			if box.ops.editing {
+			if is_editing {
 				push_quad_border(quad, state.ui.col.active, box.border, box.clip)
-				draw_editable_text(box.ops.editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+				assert(box.editable_string != nil, "trying to draw editable text from nil ES")
+				draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 			} else {
-				// TODO this crashes
-				// text := fmt.tprint(box.value)
-				draw_text("gah", pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+				draw_text(fmt.tprint(box.value), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 			}
 		} else if .DRAWPARAGRAPH in box.flags {
 			draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)

@@ -20,7 +20,6 @@ Box :: struct {
 	last: ^Box,		// last child
 	next: ^Box,		// next sibling
 	prev: ^Box,		// prev sibling
-
 	hash_next: ^Box,
 	hash_prev: ^Box,
 
@@ -101,6 +100,7 @@ Box_Flags :: enum {
 
 Box_Ops :: struct {
   clicked: bool,
+  off_clicked: bool,
   ctrl_clicked: bool,
   double_clicked: bool,
   right_clicked: bool,
@@ -111,7 +111,6 @@ Box_Ops :: struct {
   selected: bool,
   dragging: bool,
   hovering: bool,
-  editing: bool,
 }
 
 ui_gen_key :: proc(name: string, id: string) -> Key {
@@ -184,16 +183,6 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 	box.render_layer = state.ui.ctx.render_layer
 	box.panel = state.ui.ctx.panel
 
-	if to_string(&box.name) == "empty1" {
-		num_children := 0
-		for child := box.first; child != nil ; child = child.next {
-			num_children += 1
-		}
-		if num_children == 1 {
-			state.debug.pause = true
-		}
-	}
-
 	if .ROOT in flags {
 		parent = nil
 		box.border = 1
@@ -233,12 +222,13 @@ ui_process_ops :: proc(box: ^Box) {
 	mouse_over := mouse_in_quad(box.clip)
 	box.ops.clicked = false
 	box.ops.released = false
+	box.ops.off_clicked = false
 
 	if .HOVERABLE in box.flags {
 		if mouse_over && !lmb_drag() {
 			box.ops.hovering = true
 			state.ui.boxes.hot = box
-			if .EDITTEXT in box.flags {
+			if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
 				cursor(.TEXT)
 			}
 		} else {
@@ -248,28 +238,19 @@ ui_process_ops :: proc(box: ^Box) {
 	}
 
 	if .CLICKABLE in box.flags {
-
 		if mouse_over {
 			if lmb_click() {
-				if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
-					box.ops.editing = true
-					state.ui.boxes.editing = box
-					if .EDITVALUE in box.flags do start_editing_value(box)
-				}
 				box.ops.pressed = true
 				box.ops.clicked = true
 				if ctrl() do box.ops.ctrl_clicked = true
 				state.ui.boxes.active = box
-
 			} else {
-
 				box.ops.clicked = false
 				box.ops.ctrl_clicked = false
 			}
 
 			if lmb_release() {
 				if box.ops.pressed {
-					
 					if .SELECTABLE in box.flags {
 						box.ops.selected = !box.ops.selected
 					}
@@ -281,19 +262,12 @@ ui_process_ops :: proc(box: ^Box) {
 			}
 
 		} else { // !mouse_over
-
 			if lmb_release_up() {
 				box.ops.pressed = false
 			}
-			if lmb_click() {
-				if box.ops.editing {
-					fmt.println("outside and eed")
-					box.ops.editing = false
-					if state.ui.boxes.editing == box {
-						state.ui.boxes.editing = nil
-						if .EDITVALUE in box.flags do end_editing_value(box)
-					}
-				}
+
+			if lmb_click() || rmb_click() || mmb_click() {
+				box.ops.off_clicked = true
 			}
 		}
 	}
@@ -328,10 +302,9 @@ ui_process_ops :: proc(box: ^Box) {
 	}
 
 	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
-		if state.ui.boxes.editing == box {
-			string_editing(box)
-		}
+		if box == state.ui.boxes.editing do string_editing(box)
 	}
+
 }
 
 string_editing :: proc(box: ^Box) {
@@ -419,15 +392,11 @@ string_editing :: proc(box: ^Box) {
 
 	// ENTER
 	if read_key(&state.input.keys.enter) {
-		state.ui.boxes.editing.ops.editing = false
-		state.ui.boxes.editing = nil
 		if .EDITVALUE in box.flags do end_editing_value(box)
 	}
 
 	// ESCAPE
 	if read_key(&state.input.keys.escape) {
-		state.ui.boxes.editing.ops.editing = false
-		state.ui.boxes.editing = nil
 		if .EDITVALUE in box.flags do end_editing_value(box)
 	}
 

@@ -264,8 +264,16 @@ ui_edit_value :: proc(key: string, ev: any) -> ^Box {
 		.DRAWGRADIENT,
 		.HOTANIMATION,
 	}, ev)
-	if box.ops.editing do excl(&box.flags, Box_Flags.HOVERABLE)
+
+	if box == state.ui.boxes.editing {
+		excl(&box.flags, Box_Flags.HOTANIMATION)
+		if box.ops.off_clicked || box.ops.right_clicked do end_editing_value(box)
+	} else {
+		if box.ops.clicked do start_editing_value(box)
+	}
+
 	ui_process_ops(box)
+
 	return box
 }
 
@@ -346,7 +354,7 @@ ui_slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 		.EDITVALUE,
 		// .DISPLAYVALUE,
 	}, value^)
-	if display_value.ops.editing {
+	if display_value == state.ui.boxes.editing {
 		incl(&display_value.flags, Box_Flags.CLICKABLE)
 		excl(&box.flags, Box_Flags.HOVERABLE)
 		excl(&highlight.flags, Box_Flags.HOVERABLE)
@@ -356,12 +364,12 @@ ui_slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 	ui_process_ops(display_value)
 
 	if box.ops.ctrl_clicked {
-		display_value.ops.editing = true
+		// display_value.ops.editing = true
 		state.ui.boxes.editing = display_value
-		start_editing_value(display_value)
+		// start_editing_value(display_value)
 	}
 
-	if !display_value.ops.editing {
+	if display_value != state.ui.boxes.editing {
 		if box.ops.clicked {
 			state.input.mouse.delta_temp = state.input.mouse.pos - linear(value^, min, max, 0, box.calc_size.x)
 		}
