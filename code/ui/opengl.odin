@@ -21,8 +21,8 @@ opengl_init :: proc() {
 
 	// NOTE create render layers
 	for layer, i in state.render.layers {
-		state.render.layers[i].vertices = make_slice([]f32, mem.Megabyte * 2)
-		state.render.layers[i].indices = make([]u32, mem.Megabyte * 2)
+		state.render.layers[i].vertices = make([^]f32, mem.Megabyte * 2)
+		state.render.layers[i].indices = make([^]u32, mem.Megabyte * 2)
 	}
 
 	shader_success : bool
@@ -151,6 +151,7 @@ opengl_push_quad :: 	proc(
 							clip:			Quad,
 							)
 {
+
 	vertex_arrays: [4][56]f32
 
 	cA : v4 = v4(lin.vector4_hsl_to_rgb(_cA.h, _cA.s, _cA.l, _cA.a))

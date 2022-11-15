@@ -27,6 +27,7 @@ state : ^State
 State :: struct {
 	debug: 		Debug,
 
+	sokol:		Sokol,
 	quit: 		bool,
 	uid: 		Uid,
 	window: 	Window,
@@ -96,14 +97,14 @@ Keys :: struct {
 
 init :: proc() -> (^State, bool) {
 	state = new(State)
-	loaded := glfw_init()
+	// loaded := glfw_init()
 
 	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
 	
-	ui_render_init()
+	// ui_render_init()
 	ui_init()
 
-	return state, loaded
+	return state, true
 }
 
 update :: proc() {
@@ -113,10 +114,10 @@ update :: proc() {
 
 	if state.quit do return
 	
-	glfw_update()
+	// glfw_update()
 
 	ui_update()
-	ui_render()
+	// ui_render()
 
 	// frame_goal : time.Duration = 16665000
 	frame_goal : time.Duration = 8332500
@@ -177,7 +178,9 @@ mmb_release_up :: proc() -> bool { return (mouse_button(state.input.mouse.middle
 mmb_up :: proc() -> bool { return mouse_button(state.input.mouse.middle, .UP) }
 
 set_cursor :: proc() { glfw_set_cursor() }
-cursor :: proc(type: Cursor_Type) {	state.window.cursor.type = type }
+
+// cursor :: proc(type: Cursor_Type) {	state.window.cursor.type = type }
+
 cursor_size :: proc(axis: Axis) {
 	if axis == .X {
 		state.window.cursor.type = .X

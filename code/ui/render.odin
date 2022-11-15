@@ -13,9 +13,9 @@ Render :: struct {
 }
 
 Layer :: struct {
-	vertices: []f32,
+	vertices: [^]f32,
 	v_index: int,
-	indices: []u32,
+	indices: [^]u32,
 	i_index: int,
 	quad_index: int,
 }
@@ -49,7 +49,8 @@ push_quad :: proc(quad:Quad,
 						texture_id:	f32=	0.0,
 						clip:			Quad= {0,0,0,0},
 					) {
-	opengl_push_quad(quad, cA, cB, cC, cD,border, uv, texture_id,	clip)
+	// opengl_push_quad(quad, cA, cB, cC, cD,border, uv, texture_id,	clip)
+	sokol_push_quad(quad, cA, cB, cC, cD,border, uv, texture_id,	clip)
 }
 
 push_quad_solid :: proc(quad: Quad, color:HSL, clip: Quad) {
