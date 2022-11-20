@@ -103,6 +103,7 @@ init :: proc() -> (^State, bool) {
 	
 	// ui_render_init()
 	ui_init()
+	sokol()
 
 	return state, true
 }

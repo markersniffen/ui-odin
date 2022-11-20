@@ -1,28 +1,53 @@
 package main	
 
-PROFILER :: false
-
-when PROFILER do import tracy "../../odin-tracy"
-
 // import "/demo"
 import "/ui"
 
-state : ui.State
+state : ^ui.State
+
+/*
+
+// GLFW METHOD
+
+init()
+ - ui_init()
+	 - sets colors
+	 - create memory pools
+ - glfw_init()
+	 - creates window
+	 - sets callbacks for input
+ - ui_render_init()
+ 	 - opengl_init()
+	 	 - set's font stuff???
+
+update()
+ - time stuff
+ - ui_update()
+ - glfw_update()
+	 - poll events
+	 - gets input state
+ - ui_render()
+
+
+// SOKOL METHOD
+
+	init()
+	
+*/
+
 
 main :: proc() {
 	using ui
-	// using demo
 
 	ok := false
-	state, ok = init()
-	sokol()
+	state, ok = ui.init()
 
 	if ok
 	{
 		//					parent			 	   direction	type			content						size
-		// ui_create_panel(nil, 					.Y,			.STATIC, 	ui_panel_file_menu, 		0.3)
-		// ui_create_panel(state.ui.ctx.panel, .Y,			.DYNAMIC, 	ui_panel_colors, 			0.1)
-		// ui_create_panel(state.ui.ctx.panel, .X,			.DYNAMIC, 	ui_lorem, 					0.5)
+		ui_create_panel(nil, 					.Y,			.STATIC, 	ui_panel_file_menu, 		0.3)
+		ui_create_panel(state.ui.ctx.panel, .Y,			.DYNAMIC, 	ui_panel_colors, 			0.1)
+		ui_create_panel(state.ui.ctx.panel, .X,			.DYNAMIC, 	ui_lorem, 					0.5)
 		// ui_create_panel(state.ui.ctx.panel, .Y,			.DYNAMIC, 	ui_panel_tab_test, 	0.3)
 	}
 
@@ -32,8 +57,6 @@ main :: proc() {
 // 	using ui
 // 	using demo
 	
-// 	when PROFILER do tracy.SetThreadName("main")
-
 // 	ok := false	
 // 	state, ok = init()
 
@@ -47,7 +70,6 @@ main :: proc() {
 
 // 		for !state.quit
 // 		{
-// 			when PROFILER do defer tracy.FrameMark()
 // 			update()
 
 // 			if rmb_click() {

@@ -11,20 +11,26 @@ import "core:mem"
 import "core:fmt"
 import lin "core:math/linalg"
 
+MAX_VERTICES :: 8 * 2048
+MAX_INDICES :: 6 * 2048
+
 Sokol :: struct {
+    pass_action: sg.Pass_Action,
     pip: sg.Pipeline,
     bind: sg.Bindings,
-    pass_action: sg.Pass_Action,
-    vertices: [^]f32,
-    indices: [^]u32,
-    index: int,
+	vertices: []f32,
+	indices: []u32,
+	vindex: u32,
+	iindex: u32,
+	qindex: u32,
+	vs_params: Vs_Params,
 }
 
 sokol :: proc() {
 	sapp.run({
-		init_cb = sinit,
+		init_cb = sokol_init,
 		frame_cb = frame,
-		event_cb = event,
+		event_cb = sokol_event,
 		cleanup_cb = cleanup,
 		width = WIDTH,
 		height = HEIGHT,
@@ -33,51 +39,46 @@ sokol :: proc() {
 	})
 }
 
-sinit :: proc "c" () {
+sokol_init :: proc "c" () {
 	context = runtime.default_context()
 
-	sg.setup({ ctx = sglue.ctx() })
+	state.sokol.vertices = make([]f32, MAX_VERTICES)
+	state.sokol.indices = make([]u32, MAX_INDICES)
 	
-	// a vertex buffer
+	sg.setup({ ctx = sglue.ctx() })
+
 	state.sokol.bind.vertex_buffers[0] = sg.make_buffer({
-		size = mem.Megabyte * 2,
+		size = size_of(f32) * MAX_VERTICES,
 		usage = .DYNAMIC,
-	})
+    })
+    state.sokol.bind.index_buffer = sg.make_buffer({
+        type = .INDEXBUFFER,
+    	size = size_of(u32) * MAX_INDICES,
+        usage = .DYNAMIC,
+    })
 
-	// an index buffer
-	state.sokol.bind.index_buffer = sg.make_buffer({
-		type = .INDEXBUFFER,
-		size = mem.Megabyte * 2,
-		usage = .DYNAMIC,
-	})
+    state.sokol.pip = sg.make_pipeline({
+        shader = sg.make_shader(quad_shader_desc(sg.query_backend())),
+        index_type = .UINT32,
+        layout = {
+            attrs = {
+                ATTR_vs_position = { format = .FLOAT2 },
+            }
+        }
+    })
 
-	// a shader and pipeline object
-	state.sokol.pip = sg.make_pipeline({
-		shader = sg.make_shader(quad_shader_desc(sg.query_backend())),
-		index_type = .UINT32,
-		layout = {
-		   attrs = {
-				ATTR_vs_position = { format = .FLOAT3 },
-				ATTR_vs_uv = { format = .FLOAT2 },
-				ATTR_vs_color = { format = .FLOAT4 },
-				ATTR_vs_texID = { format = .FLOAT },
-				ATTR_vs__clip = { format = .FLOAT4 }
-		   }
-		}
-	})
+    // default pass action
+    state.sokol.pass_action = {
+        colors = {
+            0 = { action = .CLEAR, value = { 0, 0.1, 0.1, 1 }}
+        }
+    }
 
-	// default pass action
-	state.sokol.pass_action = {
-		colors = {
-		   0 = { action = .CLEAR, value = { 0, 0.1, 0.1, 1 }}
-		}
-	}
-
-	//					parent			 	   direction	type			content						size
-	ui_create_panel(nil, 					.Y,			.STATIC, 	ui_panel_file_menu, 		0.3)
+	//					parent			direction	type		content						size
+	ui_create_panel(nil, 				.Y,			.STATIC, 	ui_panel_file_menu, 		0.3)
 	ui_create_panel(state.ui.ctx.panel, .Y,			.DYNAMIC, 	ui_panel_colors, 			0.1)
 	ui_create_panel(state.ui.ctx.panel, .X,			.DYNAMIC, 	ui_lorem, 					0.5)
-	// ui_create_panel(state.ui.ctx.panel, .Y,			.DYNAMIC, 	ui_panel_tab_test, 	0.3)
+	// ui_create_panel(state.ui.ctx.panel, .Y,			.DYNAMIC, 	ui_panel_tab_test, 			0.3)
 }
 
 frame :: proc "c" () {
@@ -90,36 +91,37 @@ frame :: proc "c" () {
 	state.window.framebuffer.x = sapp.width()
 	state.window.framebuffer.y = sapp.height()
 
-	update()
+	ui_update()
+	// draw_some_quads()
+	
+	state.sokol.vs_params.framebuffer = {f32(state.window.size.x/2), f32(state.window.size.y/2)}
 
-	if state.render.layers[0].v_index > 0 && state.render.layers[0].i_index > 0 {
-		sg.update_buffer(state.sokol.bind.vertex_buffers[0], { ptr = state.render.layers[0].vertices, size = size_of(f32) * u64(state.render.layers[0].v_index) } )
-		sg.update_buffer(state.sokol.bind.index_buffer, { ptr = state.render.layers[0].indices, size = size_of(u32) * u64(state.render.layers[0].i_index) } )
-	}
+	sg.update_buffer(state.sokol.bind.vertex_buffers[0], {
+		ptr = raw_data(state.sokol.vertices),
+		size = size_of(f32) * u64(state.sokol.vindex),
+	})
 
-	vs_params : Vs_Params 
-	vs_params.framebuffer_res = {f32(state.window.framebuffer.x), f32(state.window.framebuffer.x)}
-	x := f32(state.window.framebuffer.x / state.window.size.x)
-	y := f32(state.window.framebuffer.y / state.window.size.y)
-	vs_params.multiplier = {x,y}
+	sg.update_buffer(state.sokol.bind.index_buffer, {
+		ptr = raw_data(state.sokol.indices),
+		size = size_of(u32) * u64(state.sokol.iindex),
+	})
+	
 
-	// fmt.println(state.render.layers[0].vertices[:48])
+	// RENDER HERE
+    sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
+    sg.apply_pipeline(state.sokol.pip)
+    sg.apply_bindings(state.sokol.bind)
+    sg.apply_uniforms(.VS, SLOT_vs_params, { ptr = &state.sokol.vs_params, size = size_of(state.sokol.vs_params) })
+    sg.draw(0, state.sokol.iindex, 1)
+    sg.end_pass()
+    sg.commit()
 
-	sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
-	sg.apply_pipeline(state.sokol.pip)
-	sg.apply_bindings(state.sokol.bind)
-	sg.draw(0, state.render.layers[0].i_index, 1)
-	sg.end_pass()
-	sg.commit()
-
-	for i in 0..=1 {
-		state.render.layers[i].v_index = 0
-		state.render.layers[i].i_index = 0
-		state.render.layers[i].quad_index = 0
-	}
+	state.sokol.vindex = 0
+	state.sokol.iindex = 0
+	state.sokol.qindex = 0
 }
 
-event :: proc "c" (e: ^sapp.Event) {
+sokol_event :: proc "c" (e: ^sapp.Event) {
 	context = runtime.default_context()
 	old_mouse := state.input.mouse.pos
 	state.input.mouse.pos = {e.mouse_x, e.mouse_y}
@@ -151,7 +153,7 @@ cursor :: proc(type: Cursor_Type) {
 	}
 }
 
-sokol_push_quadx :: proc(quad:Quad,
+sokol_push_quad :: proc(quad:Quad,
 						cA:			HSL=	{1,1,1,1},
 						cB:			HSL=	{1,1,1,1},
 						cC:			HSL=	{1,1,1,1},
@@ -160,100 +162,37 @@ sokol_push_quadx :: proc(quad:Quad,
 						uv:			Quad=	{0,0,0,0},
 						texture_id:	f32=	0.0,
 						clip:			Quad= {0,0,0,0},
-					)
+					) 
 {
-	vertices := [?]f32 {
-        // positions         // colors
-        -0.5,  0.5, 0.5,     1.0, 0.0, 0.0, 1.0,
-         0.5,  0.5, 0.5,     0.0, 1.0, 0.0, 1.0,
-         0.5, -0.5, 0.5,     0.0, 0.0, 1.0, 1.0,
-        -0.5, -0.5, 0.5,     1.0, 1.0, 0.0, 1.0,
-    }
+	if border == 0 {
 
-	indices := [?]u32 { 0, 1, 2,  0, 2, 3 }
+		q := quad
+		vertices := [8]f32{ q.l, q.t,	q.r, q.t,	q.r, q.b,	q.l, q.b }
+		copy(state.sokol.vertices[ state.sokol.vindex : state.sokol.vindex+8 ], vertices[:])
+		state.sokol.vindex += 8
 
-	copy(state.sokol.vertices[:len(vertices)], vertices[:])
-	copy(state.sokol.indices[:6], indices[:])
-
-	state.sokol.index = len(indices)
-
+		qi := state.sokol.qindex * 4
+		// qi = 0
+		indices := [6]u32{0+qi, 1+qi, 3+qi, 1+qi, 2+qi, 3+qi}
+		copy(state.sokol.indices[ state.sokol.iindex : state.sokol.iindex+6 ], indices[:])
+		state.sokol.iindex += 6
+		state.sokol.qindex += 1
+	}
 }
 
-sokol_push_quad :: 	proc(
-							quad:Quad,
-							_cA:			HSL,
-							_cB:			HSL,
-							_cC:			HSL,
-							_cD:			HSL,
-							border: 		f32, 
-							uv:			Quad,
-							texture_id:	f32,
-							clip:			Quad,
-							)
-{
 
-	vertex_arrays: [4][56]f32
+draw_some_quads :: proc() {
+	qx : Quad = {state.input.mouse.pos.x, state.input.mouse.pos.y, state.input.mouse.pos.x + 50, state.input.mouse.pos.y + 50}
+	q : Quad
+	
+	fb : v2 = { f32(state.window.size.x)/2, f32(state.window.size.y)/2 }
 
-	cA : v4 = v4(lin.vector4_hsl_to_rgb(_cA.h, _cA.s, _cA.l, _cA.a))
-	cB : v4 = v4(lin.vector4_hsl_to_rgb(_cB.h, _cB.s, _cB.l, _cB.a))
-	cC : v4 = v4(lin.vector4_hsl_to_rgb(_cC.h, _cC.s, _cC.l, _cC.a))
-	cD : v4 = v4(lin.vector4_hsl_to_rgb(_cD.h, _cD.s, _cD.l, _cD.a))
+	q.l = (qx.l - fb.x) / fb.x
+	q.t = (qx.t - fb.y) / -fb.y
+	q.r = (qx.r - fb.x) / fb.x
+	q.b = (qx.b - fb.y) / -fb.y
 
-	if border == 0
-	{
-		vertex_arrays[0]  = { 
-				quad.l,quad.t,0,	uv.l,uv.t,	cA[0],cA[1],cA[2],cA[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				quad.r,quad.t,0,	uv.r,uv.t,	cB[0],cB[1],cB[2],cB[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				quad.r,quad.b,0,	uv.r,uv.b,	cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				quad.l,quad.b,0,	uv.l,uv.b,	cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-		}
-	} else {
 
-		inner: Quad = {quad.l + border,quad.t + border,quad.r - border,quad.b - border,}
-
-		vertex_arrays = {
-			{ 
-				quad.l,quad.t,0, 		0,0, cA[0],cA[1],cA[2],cA[3], texture_id, clip.l,clip.t,clip.r,clip.b,
-				quad.r,quad.t,0, 		0,0, cB[0],cB[1],cB[2],cB[3], texture_id, clip.l,clip.t,clip.r,clip.b,
-				inner.r,inner.t,0, 	0,0, cB[0],cB[1],cB[2],cB[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				inner.l,inner.t,0, 	0,0, cA[0],cA[1],cA[2],cA[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-			},
-			{ 
-				quad.r,quad.t,0, 		0,0, cB[0],cB[1],cB[2],cB[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				quad.r,quad.b,0, 		0,0, cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				inner.r,inner.b,0, 	0,0, cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				inner.r,inner.t,0, 	0,0, cB[0],cB[1],cB[2],cB[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-			},
-			{ 
-				quad.r,quad.b,0, 		0,0, cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				quad.l,quad.b,0, 		0,0, cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				inner.l,inner.b,0, 	0,0, cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				inner.r,inner.b,0, 	0,0, cD[0],cD[1],cD[2],cD[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-			},
-			{ 
-				quad.l,quad.b,0, 		0,0, cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				quad.l,quad.t,0, 		0,0, cA[0],cA[1],cA[2],cA[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				inner.l,inner.t,0, 	0,0, cA[0],cA[1],cA[2],cA[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-				inner.l,inner.b,0, 	0,0, cC[0],cC[1],cC[2],cC[3],	texture_id, clip.l,clip.t,clip.r,clip.b,
-			},
-		}
-	}
-		
-	for vertex_array, i in &vertex_arrays
-	{
-		if border == 0 && i > 0 do break
-	   layer := &state.render.layers[state.render.layer_index]
-
-		quad_index := u32(layer.quad_index * 4)
-		indices :[6]u32 = {0+quad_index, 1+quad_index, 3+quad_index, 1+quad_index, 2+quad_index, 3+quad_index}
-		
-		copy(layer.vertices[layer.v_index:layer.v_index+56], vertex_array[:])
-		layer.v_index += 56
-		
-		copy(layer.indices[layer.i_index:layer.i_index+6], indices[:])
-		layer.i_index += 6
-		layer.quad_index += 1
-	}
-
-	fmt.println("UPDATING", state.render.layers[state.render.layer_index].quad_index)
+	sokol_push_quad({0,0,60,60})
+	sokol_push_quad(qx)
 }
