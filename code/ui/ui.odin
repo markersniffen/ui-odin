@@ -37,6 +37,7 @@ UI_Panels :: struct {
 	floating: ^Panel,
 	active: ^Panel,
 	hot: ^Panel,
+	locked: bool,
 }
 
 UI_Boxes :: struct {
@@ -130,7 +131,8 @@ ui_init :: proc() {
 //______ UI UPDATE ______//
 ui_update :: proc() {
 	when PROFILER do tracy.Zone()
-
+	
+	fmt.println(state.ui.panels.locked)
 	// create queued panel
 	if state.ui.panels.queued != {} {
 		q := state.ui.panels.queued

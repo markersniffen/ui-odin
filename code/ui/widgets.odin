@@ -583,10 +583,13 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 			ui_pop()
 
 			if y_handle.ops.pressed {
+				state.ui.panels.locked = true
 				if y_handle.ops.clicked {
 					state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/db_range.y) + viewport.first.offset.y
 				}
 				viewport.first.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/db_range.y)) - state.input.mouse.delta_temp.y) * -1
+			} else {
+				state.ui.panels.locked = false
 			}
 		}
 		if x {
@@ -617,12 +620,6 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 			}
 			viewport.first.scroll = state.input.mouse.pos - state.input.mouse.delta_temp
 		}
-
-		// viewport.first.scroll.y = clamp(viewport.first.scroll.y, -viewport.first.calc_size.y + viewport_height, 0)
-		// viewport.first.scroll.x = clamp(viewport.first.scroll.x, -viewport.first.calc_size.x + viewport_width, 0)
-
-		// viewport.first.scroll.y = clamp(viewport.first.scroll.y, -viewport.first.calc_size.y + viewport.calc_size.y, 0)
-		// viewport.first.scroll.x = clamp(viewport.first.scroll.x, -viewport.first.calc_size.x + viewport.calc_size.x, 0)
 	}
 
 	ui_push_parent(viewport)

@@ -279,7 +279,15 @@ ui_process_ops :: proc(box: ^Box) {
 		if mouse_over {
 			cursor(.HAND)
 		}
-		box.ops.dragging = box.ops.pressed
+		if lmb_release_up() {
+			box.ops.dragging = false
+			state.ui.panels.locked = false
+		}
+		
+		if box.ops.clicked {
+			box.ops.dragging = true
+			state.ui.panels.locked = true
+		}
 	}
 
 	if .VIEWSCROLL in box.flags {
@@ -522,7 +530,6 @@ ui_calc_boxes :: proc(root: ^Box) {
 				}
 				if box.ops.dragging {
 					box.panel.box.offset = state.input.mouse.pos - state.input.mouse.delta_temp
-					// box.panel.box.offset += state.input.mouse.delta
 				}
 			}
 		} else if !(.ROOT in box.flags) {
@@ -539,8 +546,6 @@ ui_calc_boxes :: proc(root: ^Box) {
 							// box.offset = box.offset + to_go
 							box.offset = box.scroll
 						}
-					} else {
-						box.scroll = {0,0}
 					}
 				}
 			} else if !(.NO_OFFSET in box.flags) {
