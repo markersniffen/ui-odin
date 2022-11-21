@@ -71,15 +71,56 @@ Text_Align :: enum {
 	RIGHT,
 }
 
-ui_init_font :: proc() {
-	ui_set_font_size()
+ui_init_font :: proc(size:f32=18) {
+	state.ui.font_size = size
 
-	// TODO DEBUG
-	state.debug.text = from_string("xxxxx-----")
-	state.debug.para = from_string("Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.")
-	state.debug.path = from_string("C:/Users/marxn/Desktop/test2.txt")
-	state.debug.float = 3.534
-	load_doc(&state.debug.lorem, "./assets/temp.txt")
+	// set font default values
+
+	state.ui.fonts.regular.name = "Roboto-Regular"
+	state.ui.fonts.regular.path = "fonts/Roboto-Regular.ttf"
+	state.ui.fonts.regular.default_info = &default_font_info
+	state.ui.fonts.regular.default_image = &default_font_image
+	state.ui.fonts.regular.label = "regular_texture"
+	state.ui.fonts.regular.texture_size = 256 // size of font bitmap
+	state.ui.fonts.regular.texture_unit = 0
+
+	state.ui.fonts.bold.name = "Roboto-Bold"
+	state.ui.fonts.bold.path = "fonts/Roboto-Bold.ttf"
+	state.ui.fonts.bold.default_info = &default_bold_info
+	state.ui.fonts.bold.default_image = &default_bold_image
+	state.ui.fonts.bold.label = "bold_texture"
+	state.ui.fonts.bold.texture_size = 256 // size of font bitmap
+	state.ui.fonts.bold.texture_unit = 1
+
+	state.ui.fonts.italic.name = "Roboto-Italic"
+	state.ui.fonts.italic.path = "fonts/Roboto-Italic.ttf"
+	state.ui.fonts.italic.default_info = &default_font_info
+	state.ui.fonts.italic.default_image = &default_font_image
+	state.ui.fonts.italic.label = "italic_texture"
+	state.ui.fonts.italic.texture_size = 256 // size of font bitmap
+	state.ui.fonts.italic.texture_unit = 2
+
+	state.ui.fonts.light.name = "Roboto-Light"
+	state.ui.fonts.light.path = "fonts/Roboto-Light.ttf"
+	state.ui.fonts.light.default_info = &default_font_info
+	state.ui.fonts.light.default_image = &default_font_image
+	state.ui.fonts.light.label = "light_texture"
+	state.ui.fonts.light.texture_size = 256 // size of font bitmap
+	state.ui.fonts.light.texture_unit = 3
+
+	state.ui.fonts.icons.name = "ui_icons"
+	state.ui.fonts.icons.path = "fonts/ui_icons.ttf"
+	state.ui.fonts.icons.default_info = &default_icons_info
+	state.ui.fonts.icons.default_image = &default_icons_image
+	state.ui.fonts.icons.label = "icon_texture"
+	state.ui.fonts.icons.texture_size = 256
+	state.ui.fonts.icons.texture_unit = 4
+
+	ui_load_font(&state.ui.fonts.regular)
+	ui_load_font(&state.ui.fonts.bold)
+	ui_load_font(&state.ui.fonts.italic)
+	ui_load_font(&state.ui.fonts.light)
+	ui_load_font(&state.ui.fonts.icons)
 }
 
 ui_load_font :: proc(font: ^Font) -> bool {
@@ -102,6 +143,8 @@ ui_load_font :: proc(font: ^Font) -> bool {
 
 		BakeFontBitmap(raw_data(data), 0, state.ui.font_size, cast([^]u8)image, font.texture_size, font.texture_size, 32, NUM_CHARS, raw_data(stb_char_data))
 
+		imger := cast([^]u8)image
+
 		for b, i in stb_char_data
 		{
 			pixel_divider := 1.0 / f32(font.texture_size)
@@ -121,7 +164,7 @@ ui_load_font :: proc(font: ^Font) -> bool {
 			font.char_data[rune(i + 32)] = char_data
 		}
 
-		if opengl_load_font_texture(font, image) {
+		if sokol_load_font_texture(font, image) {
 			fmt.println("Font loaded:", font.name)
 		}
 
@@ -201,9 +244,9 @@ ui_load_default_font :: proc(font: ^Font) {
 		state.ui.margin = 4
 		state.ui.line_space = state.ui.font_size + (state.ui.margin * 2) // state.ui.margin * 2 + state.ui.font_size
 	}
-	if opengl_load_font_texture(font, font.default_image) {
-		fmt.println(fmt.tprint("DEFAULT Font loaded:", font.name))
-	}	
+	// if opengl_load_font_texture(font, font.default_image) {
+	// 	fmt.println(fmt.tprint("DEFAULT Font loaded:", font.name))
+	// }	
 }
 
 ui_set_font_size :: proc(size: f32 = 18) {

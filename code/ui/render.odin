@@ -2,16 +2,6 @@ package ui
 
 when PROFILER do import tracy "../../../odin-tracy"
 
-Render :: struct {
-	layers: [2]Layer,
-	layer_index: int,
-
-	shader: u32,
-	vao: u32,
-	vertex_buffer: u32,
-	index_buffer: u32,
-}
-
 Layer :: struct {
 	vertices: [^]f32,
 	v_index: int,
@@ -25,18 +15,6 @@ Quad :: struct {
 	t: f32,
 	r: f32,
 	b: f32,
-}
-
-ui_render_init :: proc() {
-	opengl_init()
-}
-
-ui_render :: proc() {
-	opengl_render()
-}
-
-set_render_layer :: proc(layer: int) {
-	state.render.layer_index = layer
 }
 
 push_quad :: proc(quad:Quad,

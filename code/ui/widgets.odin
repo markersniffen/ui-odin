@@ -137,10 +137,6 @@ ui_size_y :: proc(type: Box_Size_Type, value: f32) {
 	state.ui.ctx.size.y.value = value
 }
 
-// NOTE render layers are currently only used to keep floating panels on top
-
-ui_set_render_layer 	:: proc(layer: int) 	{ state.ui.ctx.render_layer = layer }
-
 // sets the border color
 
 ui_set_border_color 	:: proc(color: HSL) 		{ state.ui.ctx.border_color = color }
@@ -642,7 +638,10 @@ ui_sizebar_y :: proc() -> ^Box {
 	box := ui_create_box("sizebar_y", { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
 	ui_process_ops(box)
 	if box.ops.pressed {
-		box.parent.expand.y += f32(state.input.mouse.delta.y)
+		if box.ops.clicked {
+			state.input.mouse.delta_temp.y = state.input.mouse.pos.y - box.prev.expand.y
+		}
+		box.prev.expand.y = state.input.mouse.pos.y - state.input.mouse.delta_temp.y
 	}
 	if box.ops.hovering do cursor_size(box.axis)
 	return box
@@ -654,8 +653,10 @@ ui_sizebar_x :: proc() -> ^Box {
 	box := ui_create_box("sizebar_y", { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
 	ui_process_ops(box)
 	if box.ops.pressed {
-		box.prev.expand.x += f32(state.input.mouse.delta.x)
-		fmt.println("X PRESSED", box.parent.expand.x)
+		if box.ops.clicked {
+			state.input.mouse.delta_temp.x = state.input.mouse.pos.x - box.prev.expand.x
+		}
+		box.prev.expand.x = state.input.mouse.pos.x - state.input.mouse.delta_temp.x
 	}
 	if box.ops.hovering do cursor_size(box.axis)
 	return box
@@ -685,4 +686,3 @@ ui_drag_panel :: proc(label:string="") -> ^Box {
 	ui_process_ops(box)
 	return box
 }
-

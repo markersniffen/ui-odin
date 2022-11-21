@@ -3,14 +3,11 @@ package ui
 PROFILER :: false
 
 when PROFILER do import tracy "../../../odin-tracy"
+import sapp "../../../sokol-odin/sokol/app"
 
 import "core:time"
 
 when ODIN_OS == .Windows { import win "core:sys/windows" }
-
-WIDTH  	:: 1280
-HEIGHT 	:: 720
-TITLE 	:: "ui-odin"
 
 Uid :: u64
 
@@ -25,16 +22,16 @@ v4i :: [4]i32
 state : ^State
 
 State :: struct {
-	debug: 		Debug,
+	debug: 				Debug,
+	custom_panels: 	proc(),
 
-	sokol:		Sokol,
-	quit: 		bool,
-	uid: 		Uid,
-	window: 	Window,
-	ui: 		Ui,
-	render: 	Render,
-	stats: 		Stats,
-	input: 		Input,
+	sokol:				Sokol,
+	uid: 					Uid,
+	window: 				Window,
+	ui: 					Ui,
+	// render: 				Render,
+	stats: 				Stats,
+	input: 				Input,
 }
 
 Stats :: struct {
@@ -95,50 +92,20 @@ Keys :: struct {
 	v: bool,
 }
 
-init :: proc() -> (^State, bool) {
+init :: proc(custom_panels: proc(), title:string="My App", width:i32=1280, height:i32=720) -> (^State, bool) {
 	state = new(State)
-	// loaded := glfw_init()
+	state.custom_panels = custom_panels
+	state.window.title = title
+	state.window.size = {width, height}
 
-	when ODIN_OS == .Windows do win.timeBeginPeriod(1)
-	
-	// ui_render_init()
 	ui_init()
 	sokol()
 
 	return state, true
 }
 
-update :: proc() {
-	state.stats.start_time = time.now()
-	state.stats.delta_time = time.duration_milliseconds(time.diff(state.stats.prev_time, state.stats.start_time))
-	state.stats.fps = 1000 / state.stats.delta_time
-
-	if state.quit do return
-	
-	// glfw_update()
-
-	ui_update()
-	// ui_render()
-
-	// frame_goal : time.Duration = 16665000
-	frame_goal : time.Duration = 8332500
-	time_so_far := time.diff(state.stats.start_time, time.now())
-	sleep_for:= frame_goal - time_so_far
-
-	time.accurate_sleep(sleep_for)
-
-	mouse_buttons: [3]^Button = { &state.input.mouse.left, &state.input.mouse.right, &state.input.mouse.middle }
-	for mouse_button, index in mouse_buttons {
-		if mouse_button^ == .CLICK do mouse_button^ = .DRAG
-		if mouse_button^ == .RELEASE do mouse_button^ = .UP
-	}
-	state.input.mouse.scroll = {0,0}
-	state.stats.prev_time = state.stats.start_time
-}
-
 quit :: proc() {
-	glfw_quit()
-	free(state)
+	sapp.quit()
 }
 
 read_key :: proc(key: ^bool) -> bool {
@@ -177,15 +144,3 @@ mmb_click_drag :: proc() -> bool { return mmb_click() || mmb_drag() }
 mmb_release :: proc() -> bool { return mouse_button(state.input.mouse.middle, .RELEASE) }
 mmb_release_up :: proc() -> bool { return (mouse_button(state.input.mouse.middle, .RELEASE) || mouse_button(state.input.mouse.middle, .UP)) }
 mmb_up :: proc() -> bool { return mouse_button(state.input.mouse.middle, .UP) }
-
-set_cursor :: proc() { glfw_set_cursor() }
-
-// cursor :: proc(type: Cursor_Type) {	state.window.cursor.type = type }
-
-cursor_size :: proc(axis: Axis) {
-	if axis == .X {
-		state.window.cursor.type = .X
-	} else {
-		state.window.cursor.type = .Y
-	}
-}

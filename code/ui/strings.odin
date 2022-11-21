@@ -33,8 +33,7 @@ String :: struct {
 }
 
 to_string :: proc(es: ^String) -> string {
-	if es.len == 0 do fmt.println(es)
-	assert(es.len != 0, "^String has zero length")
+	if es.len == 0 do return ""
 	return string(es.mem[:es.len])
 }
 
@@ -65,6 +64,7 @@ string_len_assert :: proc(es: ^String) {
 }
 
 string_backspace :: proc(es: ^String) {
+	fmt.println("BACKSPACE")
 	if es.start >= 0 { // TODO there might be a bug here
 		if es.start == es.end {
 			if es.start != 0 {

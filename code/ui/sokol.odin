@@ -9,10 +9,12 @@ import demo "../demo"
 import "core:runtime"
 import "core:mem"
 import "core:fmt"
+import "core:os"
+import "core:strings"
 import lin "core:math/linalg"
 
-MAX_VERTICES :: 8 * 2048
-MAX_INDICES :: 6 * 2048
+MAX_VERTICES :: 8 * 2048 * 40
+MAX_INDICES :: 6 * 2048 * 40
 
 Sokol :: struct {
     pass_action: sg.Pass_Action,
@@ -26,16 +28,35 @@ Sokol :: struct {
 	vs_params: Vs_Params,
 }
 
+Window :: struct {
+	title: string,
+	size: v2i,
+	framebuffer: v2i,
+	quad: Quad,
+}
+
+Cursor_Type :: enum {
+	NULL,
+	ACTIVE,
+	ARROW,
+	TEXT,
+	HAND,
+	CROSS,
+	X,
+	Y,
+}
+
 sokol :: proc() {
 	sapp.run({
+		icon = { sokol_default = true },
+		width = state.window.size.x,
+		height = state.window.size.y,
+		window_title = strings.clone_to_cstring(state.window.title),
+
 		init_cb = sokol_init,
 		frame_cb = frame,
 		event_cb = sokol_event,
 		cleanup_cb = cleanup,
-		width = WIDTH,
-		height = HEIGHT,
-		window_title = "ui-odin demo",
-		icon = { sokol_default = true }
 	})
 }
 
@@ -63,36 +84,55 @@ sokol_init :: proc "c" () {
         layout = {
             attrs = {
                 ATTR_vs_position = { format = .FLOAT2 },
+                ATTR_vs_color = { format = .FLOAT4 },
+                ATTR_vs_uv = { format = .FLOAT2 },
+                ATTR_vs_tex_id = { format = .FLOAT },
+                ATTR_vs_clip_quad = { format = .FLOAT4 },
             }
+        },
+        cull_mode = .BACK,
+        depth = {
+        	compare = .LESS_EQUAL,
+        	write_enabled = true,
+        },
+        colors = {
+			0 = {
+				blend = {
+					enabled = true,
+					src_factor_rgb = .SRC_ALPHA,
+					src_factor_alpha = .SRC_ALPHA,
+					dst_factor_rgb = .ONE_MINUS_SRC_ALPHA,
+					dst_factor_alpha = .ONE_MINUS_SRC_ALPHA,
+				}
+			}
         }
     })
+
+	ui_init_font()
 
     // default pass action
     state.sokol.pass_action = {
         colors = {
-            0 = { action = .CLEAR, value = { 0, 0.1, 0.1, 1 }}
+            0 = { action = .CLEAR, value = { 0, 0, 0, 1 }}
         }
     }
 
-	//					parent			direction	type		content						size
-	ui_create_panel(nil, 				.Y,			.STATIC, 	ui_panel_file_menu, 		0.3)
-	ui_create_panel(state.ui.ctx.panel, .Y,			.DYNAMIC, 	ui_panel_colors, 			0.1)
-	ui_create_panel(state.ui.ctx.panel, .X,			.DYNAMIC, 	ui_lorem, 					0.5)
-	// ui_create_panel(state.ui.ctx.panel, .Y,			.DYNAMIC, 	ui_panel_tab_test, 			0.3)
+	state.custom_panels()
 }
 
 frame :: proc "c" () {
 	context = runtime.default_context()
 	
+	cursor(.ARROW)
+
 	state.window.size.x = sapp.width()
 	state.window.size.y = sapp.height()
 	state.window.quad = {0, 0, f32(sapp.width()), f32(sapp.height())}
 
-	state.window.framebuffer.x = sapp.width()
-	state.window.framebuffer.y = sapp.height()
-
+	// state.window.framebuffer.x = sapp.width()
+	// state.window.framebuffer.y = sapp.height()
+	
 	ui_update()
-	// draw_some_quads()
 	
 	state.sokol.vs_params.framebuffer = {f32(state.window.size.x/2), f32(state.window.size.y/2)}
 
@@ -105,7 +145,6 @@ frame :: proc "c" () {
 		ptr = raw_data(state.sokol.indices),
 		size = size_of(u32) * u64(state.sokol.iindex),
 	})
-	
 
 	// RENDER HERE
     sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
@@ -116,21 +155,92 @@ frame :: proc "c" () {
     sg.end_pass()
     sg.commit()
 
+	mouse_buttons: [3]^Button = { &state.input.mouse.left, &state.input.mouse.right, &state.input.mouse.middle }
+	for mouse_button, index in mouse_buttons {
+		if mouse_button^ == .CLICK do mouse_button^ = .DRAG
+		if mouse_button^ == .RELEASE do mouse_button^ = .UP
+	}
+	state.input.mouse.scroll = {0,0}
+
 	state.sokol.vindex = 0
 	state.sokol.iindex = 0
 	state.sokol.qindex = 0
+
+	state.ui.last_char = 0
 }
 
 sokol_event :: proc "c" (e: ^sapp.Event) {
 	context = runtime.default_context()
 	old_mouse := state.input.mouse.pos
 	state.input.mouse.pos = {e.mouse_x, e.mouse_y}
-	state.input.mouse.delta = state.input.mouse.pos - old_mouse
+	// state.input.mouse.delta = state.input.mouse.pos - old_mouse
+	state.input.mouse.delta = {e.mouse_dx, e.mouse_dy}
+
+	if e.type == .KEY_UP || e.type == .KEY_DOWN {
+		keystate : bool
+		if e.type == .KEY_UP {
+			keystate = false
+		} else {
+			keystate = true
+		}
+
+		#partial switch e.key_code {
+			case .LEFT:			state.input.keys.left = keystate
+			case .RIGHT:		state.input.keys.right = keystate
+			case .UP:			state.input.keys.up = keystate
+			case .DOWN:			state.input.keys.down = keystate
+			case .ESCAPE:		state.input.keys.escape = keystate
+			case .TAB:			state.input.keys.tab = keystate
+			case .ENTER:		state.input.keys.enter = keystate
+			case .SPACE:		state.input.keys.space = keystate
+			case .BACKSPACE:	state.input.keys.backspace = keystate
+			case .DELETE:		state.input.keys.delete = keystate
+			case .HOME:			state.input.keys.home = keystate
+			case .END:			state.input.keys.end = keystate
+			case .KP_ENTER:		state.input.keys.enter = keystate
+			case .KP_SUBTRACT:	state.input.keys.n_minus = keystate
+			case .KP_ADD:		state.input.keys.n_plus = keystate
+			case .LEFT_ALT:		state.input.keys.alt = keystate
+			case .RIGHT_ALT:	state.input.keys.alt = keystate
+			case .LEFT_CONTROL:	state.input.keys.ctrl = keystate
+			case .RIGHT_CONTROL:state.input.keys.ctrl = keystate
+			case .LEFT_SHIFT:	state.input.keys.shift = keystate
+			case .RIGHT_SHIFT:	state.input.keys.shift = keystate
+
+			case .A:			state.input.keys.a = keystate
+			case .C:			state.input.keys.c = keystate
+			case .X:			state.input.keys.x = keystate
+			case .V:			state.input.keys.v = keystate
+		}
+	} else if e.type == .MOUSE_DOWN || e.type == .MOUSE_UP {
+		button := &state.input.mouse.left
+		#partial switch e.mouse_button {
+			case .MIDDLE:
+				button = &state.input.mouse.middle
+			case .RIGHT:
+				button = &state.input.mouse.right
+		}
+
+		if e.type == .MOUSE_DOWN {
+			button^ = .CLICK
+		} else if e.type == .MOUSE_UP {
+			button^ = .RELEASE
+		}
+	} else if e.type == .MOUSE_SCROLL {
+		state.input.mouse.scroll = { e.scroll_x, e.scroll_y }
+	} else if e.type == .CHAR {
+		if !state.input.keys.ctrl && !state.input.keys.alt {
+			state.ui.last_char = rune(e.char_code)
+		} else {
+			state.ui.last_char = -1
+		}
+	}
 }
 
 cleanup :: proc "c" () {
     context = runtime.default_context()
     sg.shutdown()
+    free(state)
 }
 
 cursor :: proc(type: Cursor_Type) {
@@ -153,46 +263,92 @@ cursor :: proc(type: Cursor_Type) {
 	}
 }
 
+cursor_size :: proc(axis: Axis) {
+	if axis == .X {
+		cursor(.X)
+	} else {
+		cursor(.Y)
+	}
+}
+
 sokol_push_quad :: proc(quad:Quad,
-						cA:			HSL=	{1,1,1,1},
-						cB:			HSL=	{1,1,1,1},
-						cC:			HSL=	{1,1,1,1},
-						cD:			HSL=	{1,1,1,1},
+						_cA:			HSL=	{1,1,1,1},
+						_cB:			HSL=	{1,1,1,1},
+						_cC:			HSL=	{1,1,1,1},
+						_cD:			HSL=	{1,1,1,1},
 						border: 		f32=	0.0, 
 						uv:			Quad=	{0,0,0,0},
 						texture_id:	f32=	0.0,
 						clip:			Quad= {0,0,0,0},
 					) 
 {
-	if border == 0 {
+	NUM_ELEMENTS :: 52
+	if state.sokol.vindex < MAX_VERTICES-NUM_ELEMENTS {
+		vertex_arrays: [4][NUM_ELEMENTS]f32
 
-		q := quad
-		vertices := [8]f32{ q.l, q.t,	q.r, q.t,	q.r, q.b,	q.l, q.b }
-		copy(state.sokol.vertices[ state.sokol.vindex : state.sokol.vindex+8 ], vertices[:])
-		state.sokol.vindex += 8
+		cA : v4 = v4(lin.vector4_hsl_to_rgb(_cA.h, _cA.s, _cA.l, _cA.a))
+		cB : v4 = v4(lin.vector4_hsl_to_rgb(_cB.h, _cB.s, _cB.l, _cB.a))
+		cC : v4 = v4(lin.vector4_hsl_to_rgb(_cC.h, _cC.s, _cC.l, _cC.a))
+		cD : v4 = v4(lin.vector4_hsl_to_rgb(_cD.h, _cD.s, _cD.l, _cD.a))
+		
+		if border == 0 {
+			vertex_arrays[0]  = { 
+				quad.l, quad.t,	cA[0], cA[1], cA[2], cA[3], uv.l, uv.t, texture_id, clip.l, clip.t, clip.r, clip.b,
+				quad.r, quad.t,	cB[0], cB[1], cB[2], cB[3], uv.r, uv.t, texture_id, clip.l, clip.t, clip.r, clip.b,
+				quad.r, quad.b,	cC[0], cC[1], cC[2], cC[3], uv.r, uv.b, texture_id, clip.l, clip.t, clip.r, clip.b,
+				quad.l, quad.b,	cD[0], cD[1], cD[2], cD[3], uv.l, uv.b, texture_id, clip.l, clip.t, clip.r, clip.b,
+			}
+		} else {
+			inner: Quad = {quad.l + border,quad.t + border,quad.r - border,quad.b - border,}
+			vertex_arrays = {
+				{
+					quad.l,		quad.t,		cA[0], cA[1], cA[2], cA[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					quad.r,		quad.t,		cB[0], cB[1], cB[2], cB[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					inner.r,	inner.t,	cB[0], cB[1], cB[2], cB[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					inner.l,	inner.t,	cA[0], cA[1], cA[2], cA[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+				},
+				{
+					quad.r,		quad.t,		cB[0], cB[1], cB[2], cB[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					quad.r,		quad.b,		cD[0], cD[1], cD[2], cD[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					inner.r,	inner.b,	cD[0], cD[1], cD[2], cD[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					inner.r,	inner.t,	cB[0], cB[1], cB[2], cB[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+				},
+				{
+					quad.r,		quad.b,		cD[0], cD[1], cD[2], cD[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					quad.l,		quad.b,		cC[0], cC[1], cC[2], cC[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					inner.l,	inner.b,	cC[0], cC[1], cC[2], cC[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					inner.r,	inner.b,	cD[0], cD[1], cD[2], cD[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+				},
+				{
+					quad.l,		quad.b,		cC[0], cC[1], cC[2], cC[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					quad.l,		quad.t,		cA[0], cA[1], cA[2], cA[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					inner.l,	inner.t,	cA[0], cA[1], cA[2], cA[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+					inner.l,	inner.b,	cC[0], cC[1], cC[2], cC[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
+				}
+			}
+		}
 
-		qi := state.sokol.qindex * 4
-		// qi = 0
-		indices := [6]u32{0+qi, 1+qi, 3+qi, 1+qi, 2+qi, 3+qi}
-		copy(state.sokol.indices[ state.sokol.iindex : state.sokol.iindex+6 ], indices[:])
-		state.sokol.iindex += 6
-		state.sokol.qindex += 1
+		for vertex_array, i in &vertex_arrays {
+			if border == 0 && i >= 1 do break
+
+			copy(state.sokol.vertices[ state.sokol.vindex : state.sokol.vindex+NUM_ELEMENTS ], vertex_array[:])
+			state.sokol.vindex += NUM_ELEMENTS
+
+			qi := state.sokol.qindex * 4
+			indices := [6]u32{0+qi, 1+qi, 3+qi, 1+qi, 2+qi, 3+qi}
+			copy(state.sokol.indices[ state.sokol.iindex : state.sokol.iindex+6 ], indices[:])
+			state.sokol.iindex += 6
+			state.sokol.qindex += 1
+		}
 	}
 }
 
-
-draw_some_quads :: proc() {
-	qx : Quad = {state.input.mouse.pos.x, state.input.mouse.pos.y, state.input.mouse.pos.x + 50, state.input.mouse.pos.y + 50}
-	q : Quad
-	
-	fb : v2 = { f32(state.window.size.x)/2, f32(state.window.size.y)/2 }
-
-	q.l = (qx.l - fb.x) / fb.x
-	q.t = (qx.t - fb.y) / -fb.y
-	q.r = (qx.r - fb.x) / fb.x
-	q.b = (qx.b - fb.y) / -fb.y
-
-
-	sokol_push_quad({0,0,60,60})
-	sokol_push_quad(qx)
+sokol_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {
+	state.sokol.bind.fs_images[font.texture_unit] = sg.make_image({
+	    width = font.texture_size,
+	    height = font.texture_size,
+	    pixel_format = .R8,
+	    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } }
+	})
+	return true
 }

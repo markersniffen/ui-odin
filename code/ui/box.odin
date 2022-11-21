@@ -148,6 +148,7 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 	
 	// if box doesn't exist, create it
 	if !box_ok {
+		fmt.println("Creating new box:", _name)
 		box = ui_generate_box(key)
 		box.frame_created = state.ui.frame
 		if .FLOATING in flags {
@@ -162,8 +163,6 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 			}
 		}
 	}
-
-
 
 	if box.key.len == 0 && box.key.mem[0] != 0 {
 		assert(0 == 1, "key len == 0 and mem is non zero")
@@ -218,12 +217,15 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 }
 
 ui_process_ops :: proc(box: ^Box) {
-
 	// PROCESS OPS ------------------------------
-	mouse_over := mouse_in_quad(box.clip)
 	box.ops.clicked = false
 	box.ops.released = false
 	box.ops.off_clicked = false
+	
+	if box.panel != state.ui.panels.hot && box.panel != state.ui.panels.floating do return
+	
+	mouse_over := mouse_in_quad(box.clip)
+
 
 	if .HOVERABLE in box.flags {
 		if mouse_over && !lmb_drag() {
@@ -304,7 +306,7 @@ ui_process_ops :: proc(box: ^Box) {
 
 	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
 		box.ops.editing = (box == state.ui.boxes.editing)
-		if box.ops.editing do string_editing(box)
+		if box.ops.editing && box.editable_string != nil do string_editing(box)
 	}
 
 }
@@ -514,13 +516,19 @@ ui_calc_boxes :: proc(root: ^Box) {
 	// CALC OFFSET & QUAD ----------------------
 	for box := root; box != nil; box = box.hash_next	{
 		if .DRAGGABLE in box.flags {
-			if box.ops.dragging {
-				box.panel.box.offset += state.input.mouse.delta
+			if box.ops.pressed {
+				if box.ops.clicked {
+					state.input.mouse.delta_temp = state.input.mouse.pos - box.panel.box.offset
+				}
+				if box.ops.dragging {
+					box.panel.box.offset = state.input.mouse.pos - state.input.mouse.delta_temp
+					// box.panel.box.offset += state.input.mouse.delta
+				}
 			}
 		} else if !(.ROOT in box.flags) {
 			if box.prev == nil {
 				if box.parent != nil {
-					if .VIEWSCROLL in box.parent.flags {
+					if .VIEWSCROLL in box.parent.flags && box.panel == state.ui.panels.hot {
 						if mouse_in_quad(box.parent.parent.quad) {
 							box.scroll = box.scroll + (state.input.mouse.scroll*20)
 						}

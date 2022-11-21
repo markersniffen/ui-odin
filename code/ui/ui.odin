@@ -114,18 +114,12 @@ ui_init :: proc() {
 	state.ui.col.inactive   = {0.56,  .67,  0.34,  1.0}
 	state.ui.col.active 	= {0.56,  1,    0.41,  1.0}
 	state.ui.col.highlight 	= {0.56,  1,    0.17,  1.0}
-	// ui_init_font()
 	
 	state.ui.line_space = 20
 
 	pool_init(&state.ui.panels.pool, size_of(Panel), MAX_PANELS, "Panels")
 	pool_init(&state.ui.boxes.pool, size_of(Box), MAX_BOXES, "Boxes")
 	
-	for layer, i in state.render.layers {
-		state.render.layers[i].vertices = make([^]f32, mem.Megabyte * 2)
-		state.render.layers[i].indices = make([^]u32, mem.Megabyte * 2)
-	}
-
 	// SET DEFAULT COLORS ------------------------------
 	state.ui.ctx.font_color = { 1, 1, 1, 1 }
 	state.ui.ctx.bg_color = state.ui.col.bg
@@ -135,10 +129,7 @@ ui_init :: proc() {
 
 //______ UI UPDATE ______//
 ui_update :: proc() {
-	fmt.println("updating frame", state.ui.frame, len(state.ui.panels.all))
 	when PROFILER do tracy.Zone()
-	set_cursor()
-	cursor(.NULL)
 
 	// create queued panel
 	if state.ui.panels.queued != {} {
@@ -230,8 +221,6 @@ ui_update :: proc() {
 		for _, panel in state.ui.panels.all {
 			if panel.type != .FLOATING {
 				when PROFILER do tracy.ZoneN(fmt.tprint("Draw", panel.content))
-				// TODO fmt.tprint crashes in here
-				// if panel.box != nil do fmt.println("before first box draw:", fmt.tprint(panel.box.value))
 				ui_draw_boxes(panel.box, panel.quad)
 			}
 		}
@@ -241,6 +230,7 @@ ui_update :: proc() {
 	 	when PROFILER do tracy.ZoneN("DRAW Floating Box")
 		if state.ui.panels.floating != nil {
 			if state.ui.panels.floating.box.first != nil {
+				push_quad_gradient_v(state.ui.panels.root.quad, {0,0,0,0.4},{0,0,0,0.2}, state.ui.panels.root.quad)
 				ui_draw_boxes(state.ui.panels.floating.box, state.ui.panels.floating.quad)
 			}
 		}
@@ -252,7 +242,6 @@ ui_update :: proc() {
 // recursive draw boxes
 ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	if box == nil do return
-	set_render_layer(box.render_layer)
 	
 	quad := box.quad
 	clip_ok := true
@@ -290,24 +279,26 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 			}
 		}
 		if .DRAWTEXT in box.flags {
-			// draw_text(to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+			draw_text(to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		} else if .EDITTEXT in box.flags {
 			if is_editing do push_quad_border(quad, state.ui.col.active, box.border, box.clip)
-			// draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+			draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		} else if .EDITVALUE in box.flags {
 			if is_editing {
 				push_quad_border(quad, state.ui.col.active, box.border, box.clip)
-				assert(box.editable_string != nil, "trying to draw editable text from nil ES")
-				// draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+				// assert(box.editable_string != nil, "trying to draw editable text from nil ES")
+				if box.editable_string != nil {
+					draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+				}
 			} else {
-				// draw_text(fmt.tprint(box.value), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+				draw_text(fmt.tprint(box.value), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 			}
 		} else if .DRAWPARAGRAPH in box.flags {
-			// draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
+			draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
 		}
 		if .DISPLAYVALUE in box.flags {
-			// text := fmt.tprint(box.value)
-			// draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+			text := fmt.tprint(box.value)
+			draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		}
 
 		// TODO DEBUG
