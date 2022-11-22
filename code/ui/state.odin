@@ -23,7 +23,8 @@ state : ^State
 
 State :: struct {
 	debug: 				Debug,
-	custom_panels: 	proc(),
+	init:					proc(),
+	frame:				proc(),
 
 	sokol:				Sokol,
 	uid: 					Uid,
@@ -92,9 +93,10 @@ Keys :: struct {
 	v: bool,
 }
 
-init :: proc(custom_panels: proc(), title:string="My App", width:i32=1280, height:i32=720) -> (^State, bool) {
+init :: proc(init: proc() = nil, frame: proc() = nil, title:string="My App", width:i32=1280, height:i32=720) -> (^State, bool) {
 	state = new(State)
-	state.custom_panels = custom_panels
+	state.init = init
+	state.frame = frame
 	state.window.title = title
 	state.window.size = {width, height}
 

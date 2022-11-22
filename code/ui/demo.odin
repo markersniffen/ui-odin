@@ -259,15 +259,15 @@ ui_lorem :: proc() {
 ui_panel_tab_test :: proc() {
 	ui_begin()
 	tab_names : []string = {"First", "Second", "Third"}
-	tab, active := ui_tab(tab_names)
+	tabs, index := ui_tab(tab_names)
 	
 	ui_axis(.Y)
 	ui_size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
 	ui_empty()
 	ui_size(.TEXT, 1, .TEXT, 1)
 	ui_axis(.Y)
-	if active != nil {
-		switch string(active.name.mem[:active.name.len]) {
+	if len(tabs) > 0 {
+		switch to_string(&tabs[index].name) {
 			case "First":
 				ui_button("Tab one | Button 1")
 				ui_button("Tab one | Button 2")

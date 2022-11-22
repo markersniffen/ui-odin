@@ -148,7 +148,6 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 	
 	// if box doesn't exist, create it
 	if !box_ok {
-		fmt.println("Creating new box:", _name)
 		box = ui_generate_box(key)
 		box.frame_created = state.ui.frame
 		if .FLOATING in flags {
@@ -223,7 +222,8 @@ ui_process_ops :: proc(box: ^Box) {
 	box.ops.off_clicked = false
 	
 	if box.panel != state.ui.panels.hot && box.panel != state.ui.panels.floating do return
-	
+	if state.ui.panels.floating != nil && box.panel != state.ui.panels.floating do return
+
 	mouse_over := mouse_in_quad(box.clip)
 
 
@@ -263,7 +263,12 @@ ui_process_ops :: proc(box: ^Box) {
 			if lmb_up() {
 				box.ops.pressed = false
 			}
-
+			
+			if mmb_click() {
+				box.ops.middle_clicked = true
+			} else {
+				box.ops.middle_clicked = false
+			}
 		} else { // !mouse_over
 			if lmb_release_up() {
 				box.ops.pressed = false
@@ -273,6 +278,7 @@ ui_process_ops :: proc(box: ^Box) {
 				box.ops.off_clicked = true
 			}
 		}
+
 	}
 
 	if .DRAGGABLE in box.flags {

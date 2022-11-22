@@ -132,7 +132,6 @@ ui_init :: proc() {
 ui_update :: proc() {
 	when PROFILER do tracy.Zone()
 	
-	fmt.println(state.ui.panels.locked)
 	// create queued panel
 	if state.ui.panels.queued != {} {
 		q := state.ui.panels.queued
@@ -255,6 +254,8 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 
 	if clip_ok {
 		is_editing := (box == state.ui.boxes.editing)
+		value := "NO VALUE"
+		if box.value != nil do value = fmt.tprint(box.value)
 
 		if .DRAWBACKGROUND in box.flags {
 			push_quad_solid(quad, box.bg_color, box.clip)
@@ -293,14 +294,13 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 					draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 				}
 			} else {
-				draw_text(fmt.tprint(box.value), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+				draw_text(value, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 			}
 		} else if .DRAWPARAGRAPH in box.flags {
-			draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
+			if box.value != nil do draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
 		}
 		if .DISPLAYVALUE in box.flags {
-			text := fmt.tprint(box.value)
-			draw_text(text, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
+			draw_text(value, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		}
 
 		// TODO DEBUG

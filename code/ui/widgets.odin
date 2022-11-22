@@ -466,39 +466,43 @@ ui_radio :: proc(key: string) -> ^Box {
 
 // creates a tab
 
-ui_tab :: proc(names: []string) -> (^Box, ^Box) {
+ui_tab :: proc(names: []string, active:^int=nil) -> ([]^Box, int) {
 	ui_size(.PCT_PARENT, 1, .TEXT, 1)
 	tab := ui_empty()
-	ui_axis(.X)
-	ui_size(.TEXT, 1, .TEXT, 1)
-	selected : ^Box
+	tabs := make([]^Box, len(names), context.temp_allocator)
+
 	clicked := false
-	for name in names {
+	index := 0
+	if active != nil do index = active^
+
+	for name, i in names {
+		ui_axis(.X)
+		ui_size(.TEXT, 1, .TEXT, 1)
 		radio := ui_radio(name)
 		if radio.ops.clicked {
-			selected = radio
+			index = i
 			clicked = true
+		} else {
+			radio.ops.selected = false
 		}
+		tabs[i] = radio
 	}
+
 	if tab.first != nil {
 		if state.ui.frame - tab.first.frame_created <= 10 {
-			selected = tab.first
-			selected.ops.selected = true
+			tab.first.ops.selected = true
 		}
 	}
 
-	if clicked {
-		for child := tab.first; child != nil; child = child.next {
-			child.ops.selected = string(child.name.mem[:child.name.len]) == string(selected.name.mem[:selected.name.len])
-		}
+	if clicked == false && index < len(tabs) {
+		tabs[index].ops.selected = true
 	}
 
 	ui_pop()
 	ui_bar(state.ui.col.active)
-	for child := tab.first; child != nil; child = child.next {
-		if child.ops.selected do return tab, child
-	}
-	return tab, selected
+
+	active^ = index
+	return tabs, index
 }
 
 // creates a spacer that fills up the .X axis, subtracting the sum of siblings from the parent size

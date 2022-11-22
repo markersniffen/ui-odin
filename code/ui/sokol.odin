@@ -54,9 +54,9 @@ sokol :: proc() {
 		window_title = strings.clone_to_cstring(state.window.title),
 
 		init_cb = sokol_init,
-		frame_cb = frame,
+		frame_cb = sokol_frame,
 		event_cb = sokol_event,
-		cleanup_cb = cleanup,
+		cleanup_cb = sokol_cleanup,
 	})
 }
 
@@ -117,10 +117,10 @@ sokol_init :: proc "c" () {
         }
     }
 
-	state.custom_panels()
+	state.init()
 }
 
-frame :: proc "c" () {
+sokol_frame :: proc "c" () {
 	context = runtime.default_context()
 	
 	cursor(.ARROW)
@@ -167,6 +167,8 @@ frame :: proc "c" () {
 	state.sokol.qindex = 0
 
 	state.ui.last_char = 0
+
+	state.frame()
 }
 
 sokol_event :: proc "c" (e: ^sapp.Event) {
@@ -237,7 +239,7 @@ sokol_event :: proc "c" (e: ^sapp.Event) {
 	}
 }
 
-cleanup :: proc "c" () {
+sokol_cleanup :: proc "c" () {
     context = runtime.default_context()
     sg.shutdown()
     free(state)
