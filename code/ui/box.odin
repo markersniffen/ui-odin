@@ -327,6 +327,42 @@ ui_process_ops :: proc(box: ^Box) {
 
 string_editing :: proc(box: ^Box) {
 	es := box.editable_string
+
+	// MOUSE SELECTION
+	quad := box.quad
+	quad.r = quad.l
+	quad.t = box.panel.quad.t
+	quad.b = box.panel.quad.b
+
+	if box.parent.ops.clicked || lmb_drag() {
+		for i in 0..=es.len {
+			if i < es.len {
+				quad.r += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
+			} else {
+				quad.r = box.quad.r
+			}
+			if mouse_in_quad(quad) {
+				if box.parent.ops.clicked {
+					es.start = i
+					es.end = i
+					break
+				} else if lmb_drag() {
+					es.end = i
+					break
+				}
+			}
+			quad.l += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
+		}
+	}
+
+	pos := quad.l - box.quad.l + box.offset.x
+	width := box.parent.quad.r - box.parent.quad.l
+	fmt.println(width, pos) 
+
+	// if pos > width {
+	// 	box.scroll.x = width - pos
+	// }
+
 	// TYPE LETTERS
 	if state.ui.last_char > 0 {
 		if es.end-es.start != 0 {
@@ -418,33 +454,6 @@ string_editing :: proc(box: ^Box) {
 		if .EDITVALUE in box.flags do end_editing_value(box)
 	}
 
-
-	// MOUSE SELECTION
-	quad := box.quad
-	quad.r = quad.l
-	quad.t = box.panel.quad.t
-	quad.b = box.panel.quad.b
-	if lmb_click_drag() {
-		cursor(.TEXT)
-		for i in 0..=es.len {
-			if i < es.len {
-				quad.r += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
-			} else {
-				quad.r = box.quad.r
-			}
-			if mouse_in_quad(quad) {
-				if lmb_click() {
-					es.start = i
-					break
-				} else {
-					es.end = i
-					break
-				}
-			}
-			quad.l += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
-		}
-	}
-	
 	string_len_assert(es)
 }
 

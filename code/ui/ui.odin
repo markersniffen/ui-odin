@@ -284,11 +284,11 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		if .DRAWTEXT in box.flags {
 			draw_text(to_string(&box.name), pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		} else if .EDITTEXT in box.flags {
-			if is_editing do push_quad_border(quad, state.ui.col.active, box.border, box.clip)
+			if is_editing do push_quad_border(box.parent.quad, state.ui.col.active, box.border, box.parent.quad)
 			draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 		} else if .EDITVALUE in box.flags {
 			if is_editing {
-				push_quad_border(quad, state.ui.col.active, box.border, box.clip)
+				push_quad_border(box.parent.quad, state.ui.col.active, box.border, box.parent.quad)
 				// assert(box.editable_string != nil, "trying to draw editable text from nil ES")
 				if box.editable_string != nil {
 					draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)

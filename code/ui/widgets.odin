@@ -240,28 +240,90 @@ ui_edit_text :: proc(key: string, editable: ^String) -> Box_Ops {
 	box := ui_create_box("editable_text", {
 		.CLICKABLE,
 		.HOVERABLE,
-		.EDITTEXT,
 		.DRAWBACKGROUND,
 		.DRAWBORDER,
 		.DRAWGRADIENT,
+		.VIEWSCROLL,
+		.CLIP,
 	})
-	box.editable_string = editable
 
-	if box == state.ui.boxes.editing {
+	ui_push_parent(box)
+	ui_process_ops(box)
+
+	ui_size(.TEXT, 1, .PCT_PARENT, 1)
+	text_box := ui_create_box("editable_text_box", {
+		.EDITTEXT,
+	})
+	text_box.editable_string = editable
+
+	if text_box == state.ui.boxes.editing {
 		if box.ops.off_clicked || box.ops.right_clicked {
 			state.ui.boxes.editing = nil
 		}
 	} else {
 		if box.ops.clicked {
-			state.ui.boxes.editing = box
+			state.ui.boxes.editing = text_box
 		}
 	}
 
-	ui_process_ops(box)
+	ui_process_ops(text_box)
+
+	ui_pop()
+
+	if box.ops.middle_dragged {
+		if box.ops.middle_clicked {
+			state.input.mouse.delta_temp.x = state.input.mouse.pos.x - text_box.offset.x
+		}
+		text_box.scroll.x = state.input.mouse.pos.x - state.input.mouse.delta_temp.x
+	}
+
 	return box.ops
 }
 
-ui_edit_value :: proc(key: string, ev: any) -> ^Box {
+ui_edit_valuex :: proc(key: string, value: any) -> Box_Ops {
+	box := ui_create_box("editable_value", {
+		.CLICKABLE,
+		.HOVERABLE,
+		.DRAWBACKGROUND,
+		.DRAWBORDER,
+		.DRAWGRADIENT,
+		.VIEWSCROLL,
+		.CLIP,
+	})
+
+	ui_push_parent(box)
+	ui_process_ops(box)
+
+	ui_size(.TEXT, 1, .PCT_PARENT, 1)
+	value_box := ui_create_box("editable_value_box", {
+		.EDITVALUE,
+	}, value)
+
+	if value_box == state.ui.boxes.editing {
+		if box.ops.off_clicked || box.ops.right_clicked {
+			end_editing_value(value_box)
+		}
+	} else {
+		if box.ops.clicked {
+			start_editing_value(value_box)
+		}
+	}
+
+	ui_process_ops(value_box)
+
+	ui_pop()
+
+	if box.ops.middle_dragged {
+		if box.ops.middle_clicked {
+			state.input.mouse.delta_temp.x = state.input.mouse.pos.x - value_box.offset.x
+		}
+		value_box.scroll.x = state.input.mouse.pos.x - state.input.mouse.delta_temp.x
+	}
+
+	return box.ops
+}
+
+ui_edit_value:: proc(key: string, ev: any) -> ^Box {
 	box := ui_create_box(key, {
 		.CLICKABLE,
 		.HOVERABLE,
@@ -272,14 +334,16 @@ ui_edit_value :: proc(key: string, ev: any) -> ^Box {
 		.HOTANIMATION,
 	}, ev)
 
+
 	if box == state.ui.boxes.editing {
 		excl(&box.flags, Box_Flags.HOTANIMATION)
 		if box.ops.off_clicked || box.ops.right_clicked do end_editing_value(box)
 	} else {
-		if box.ops.clicked do start_editing_value(box)
 	}
 
 	ui_process_ops(box)
+
+	if box.ops.clicked && state.ui.boxes.editing == nil do start_editing_value(box)
 
 	return box
 }
@@ -501,7 +565,7 @@ ui_tab :: proc(names: []string, active:^int=nil) -> ([]^Box, int) {
 	ui_pop()
 	ui_bar(state.ui.col.active)
 
-	active^ = index
+	if active != nil do active^ = index
 	return tabs, index
 }
 
@@ -574,7 +638,7 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 		if y {
 
 			ui_size(.PIXELS, bar_width, .PIXELS, viewport_height)
-			sby := ui_create_box("scrollbar_y", { .NO_OFFSET, .DRAWBACKGROUND })\
+			sby := ui_create_box("scrollbar_y", { .NO_OFFSET, .DRAWBACKGROUND })
 			ui_process_ops(sby)
 			sby.offset.x = viewport_width
 			ui_push_parent(sby)

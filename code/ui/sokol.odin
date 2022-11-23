@@ -229,7 +229,11 @@ sokol_event :: proc "c" (e: ^sapp.Event) {
 			button^ = .RELEASE
 		}
 	} else if e.type == .MOUSE_SCROLL {
-		state.input.mouse.scroll = { e.scroll_x, e.scroll_y }
+		if shift() {
+			state.input.mouse.scroll = { e.scroll_y, 0 }
+		} else {
+			state.input.mouse.scroll = { e.scroll_x, e.scroll_y }
+		}
 	} else if e.type == .CHAR {
 		if !state.input.keys.ctrl && !state.input.keys.alt {
 			state.ui.last_char = rune(e.char_code)

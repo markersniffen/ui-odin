@@ -325,6 +325,9 @@ draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: 
 
 	if align == .LEFT {
 		left_align += state.ui.margin
+		// if cursor.r > quad.r - 20 {
+		// 	left_align -= cursor.r - quad.r + 20
+		// }
 	}
 
 	top_left : v2 = { left_align, top_align }
