@@ -603,6 +603,106 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 	ui_process_ops(scrollbox)
 	ui_push_parent(scrollbox)
 
+	// bar_width :f32= 14
+	// x := _x
+	// y := _y
+
+	// if scrollbox.first != nil {
+	// 	if scrollbox.first.first != nil {
+	// 		first := scrollbox.first.first
+	// 		x = (first.calc_size.x > scrollbox.first.calc_size.x)
+	// 		y = (first.calc_size.y > scrollbox.first.calc_size.y)
+	// 	}
+	// }
+
+	/*
+		scrollbox
+			viewport
+			bar_y
+				handle_y
+			bar_x
+				handle_x
+	*/
+	
+	// viewport_width := scrollbox.calc_size.x
+	// if y do viewport_width -= bar_width
+
+	// viewport_height := scrollbox.calc_size.y
+	// if x do viewport_height -= bar_width
+
+	ui_axis(.X)
+	ui_size(.NONE, 0, .NONE, 0)
+	viewport := ui_create_box("viewport", { .CLIP, .VIEWSCROLL, .SCROLLBOX, .NO_OFFSET })
+	ui_process_ops(viewport)
+
+	// handle_size := ((viewport.calc_size + viewport.expand) / viewport.first.calc_size) * (viewport.calc_size + viewport.expand)
+	// handle_size.x = max(handle_size.x, 40)
+	// handle_size.y = max(handle_size.y, 40)
+	// handle_range := (viewport.calc_size + viewport.expand) - handle_size
+	// scr_range := viewport.first.calc_size - (viewport.calc_size + viewport.expand)
+	// scr_value := viewport.first.offset
+	// mpl := scr_value / scr_range
+	// handle_value := handle_range * mpl
+
+	ui_size(.NONE, 0, .NONE, 0)
+	sby := ui_create_box("scrollbar_y", { .NO_OFFSET, .DRAWBACKGROUND })
+	ui_process_ops(sby)
+	// TODO sby.offset.x = viewport_width
+	ui_push_parent(sby)
+
+	ui_size(.NONE, 1, .NONE, 0)
+	y_handle := ui_create_box("y_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
+	ui_process_ops(y_handle)
+	y_handle.bg_color = state.ui.col.inactive
+	// TODO y_handle.offset.y = -handle_value.y 
+	ui_pop()
+
+	// if y_handle.ops.pressed {
+	// 	state.ui.panels.locked = true
+	// 	if y_handle.ops.clicked {
+	// 		state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/handle_range.y) + viewport.first.offset.y
+	// 	}
+	// 	viewport.first.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/handle_range.y)) - state.input.mouse.delta_temp.y) * -1
+	// } else {
+	// 	state.ui.panels.locked = false
+	// }
+
+	ui_size(.NONE, 0, .NONE, 0)
+	sbx := ui_create_box("scrollbar_x", { .NO_OFFSET, .DRAWBACKGROUND })
+	ui_process_ops(sbx)
+	// sbx.offset.y = viewport_height
+	ui_push_parent(sbx)
+
+	ui_size(.NONE, 0, .NONE, 0)
+	x_handle := ui_create_box("x_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+	ui_process_ops(x_handle)
+	x_handle.bg_color = state.ui.col.inactive
+	// x_handle.offset.x = -handle_value.x
+	ui_pop()
+
+	// if x_handle.ops.pressed {
+	// 	if x_handle.ops.clicked {
+	// 		state.input.mouse.delta_temp.x = state.input.mouse.pos.x * (scr_range.x/handle_range.x) + viewport.first.offset.x
+	// 	}
+	// 	viewport.first.scroll.x = ((state.input.mouse.pos.x*(scr_range.x/handle_range.x)) - state.input.mouse.delta_temp.x) * -1
+	// }
+
+	// if viewport.ops.middle_dragged {
+	// 	if viewport.ops.middle_clicked {
+	// 		state.input.mouse.delta_temp = state.input.mouse.pos - viewport.first.offset
+	// 	}
+	// 	viewport.first.scroll = state.input.mouse.pos - state.input.mouse.delta_temp
+	// }
+
+	ui_push_parent(viewport)
+	return viewport
+}
+
+ui_scrollbox_old :: proc(_x:bool=false, _y:bool=false) -> ^Box {
+	scrollbox := ui_create_box("scrollbox", { })
+	ui_process_ops(scrollbox)
+	ui_push_parent(scrollbox)
+
 	bar_width :f32= 14
 	x := _x
 	y := _y
@@ -636,7 +736,6 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 		mpl := scr_value / scr_range
 		db_value := db_range * mpl
 		if y {
-
 			ui_size(.PIXELS, bar_width, .PIXELS, viewport_height)
 			sby := ui_create_box("scrollbar_y", { .NO_OFFSET, .DRAWBACKGROUND })
 			ui_process_ops(sby)

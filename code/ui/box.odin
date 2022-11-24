@@ -53,6 +53,7 @@ Box :: struct {
 }
 
 Box_Size_Type :: enum {
+	NONE,
   PIXELS,
   TEXT,
   PCT_PARENT,
@@ -83,6 +84,7 @@ Box_Flags :: enum {
 	DRAGGABLE,
 	MIDDLEDRAGGABLE,
 	VIEWSCROLL,
+	SCROLLBOX,
 	EDITTEXT,
  
 	DRAWTEXT,
@@ -182,6 +184,32 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 	box.render_layer = state.ui.ctx.render_layer
 	box.panel = state.ui.ctx.panel
 
+
+	box.first = nil
+	// box.last = nil
+	box.next = nil
+	box.prev = nil
+	// box.hash_next = nil
+
+	// if .ROOT in flags {
+	// 	parent = nil
+	// 	box.border = 1
+	// 	box.border_color = {1,0,1,1}
+	// } else {
+	// 	box.parent = parent
+	// 	// try adding as first child first
+	// 	if parent != nil {
+	// 		if parent.first == nil {
+	// 			parent.first = box
+	// 		} else {
+	// 			assert(parent.last != nil)
+	// 			parent.last.next = box
+	// 			box.prev = parent.last
+	// 		}
+	// 		parent.last = box
+	// 	}
+	// }
+
 	if .ROOT in flags {
 		parent = nil
 		box.border = 1
@@ -192,7 +220,7 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 		if parent != nil {
 			if parent.first == nil || parent.first == box {
 				parent.first = box
-				box.prev = nil
+				// box.prev = nil
 			} else {
 				assert(parent.last != nil)
 				parent.last.next = box
@@ -202,6 +230,29 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 			box.next = nil
 		}
 	}
+
+	// linked list logic
+
+	/*
+	set parent
+	check if parent is nil
+
+	if parent == nil
+		do nothing
+	if parent != nil
+		if parent.first == nil
+			parent.first = box
+		if parent.first != nil
+			parent.last.next = box
+			box.prev = parent.last
+			parent.last = box
+			
+	parent.last = box
+
+
+
+	*/
+
 
 	// ADD BOX TO LINKED LIST ------------------------------
 	if !(.ROOT in box.flags) {
@@ -538,6 +589,73 @@ ui_calc_boxes :: proc(root: ^Box) {
 
 	// CALC OFFSET & QUAD ----------------------
 	for box := root; box != nil; box = box.hash_next	{
+		if box.parent != nil {
+			if .SCROLLBOX in box.parent.flags {
+				
+				viewport := box.parent
+				scrollbox := viewport.parent
+				sby := viewport.next
+				y_handle := sby.first
+				sbx := sby.next
+				x_handle := sbx.first
+
+				bar_width :f32= 14
+				x := (box.calc_size.x > scrollbox.calc_size.x)
+				y := (box.calc_size.y > scrollbox.calc_size.y)
+
+				viewport_width := scrollbox.calc_size.x
+				if y do viewport_width -= bar_width
+
+				viewport_height := scrollbox.calc_size.y
+				if x do viewport_height -= bar_width
+				
+				handle_size := ((viewport.calc_size + viewport.expand) / viewport.first.calc_size) * (viewport.calc_size + viewport.expand)
+				handle_size.x = max(handle_size.x, 40)
+				handle_size.y = max(handle_size.y, 40)
+				handle_range := (viewport.calc_size + viewport.expand) - handle_size
+				scr_range := viewport.first.calc_size - (viewport.calc_size + viewport.expand)
+				scr_value := viewport.first.offset
+				mpl := scr_value / scr_range
+				handle_value := handle_range * mpl
+				
+				if y_handle.ops.pressed {
+					state.ui.panels.locked = true
+					if y_handle.ops.clicked {
+						state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/handle_range.y) + box.offset.y
+					}
+					box.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/handle_range.y)) - state.input.mouse.delta_temp.y) * -1
+				} else {
+					state.ui.panels.locked = false
+				}
+
+				if x_handle.ops.pressed {
+					if x_handle.ops.clicked {
+						state.input.mouse.delta_temp.x = state.input.mouse.pos.x * (scr_range.x/handle_range.x) + box.offset.x
+					}
+					box.scroll.x = ((state.input.mouse.pos.x*(scr_range.x/handle_range.x)) - state.input.mouse.delta_temp.x) * -1
+				}
+
+				if viewport.ops.middle_dragged {
+					if viewport.ops.middle_clicked {
+						state.input.mouse.delta_temp = state.input.mouse.pos - box.offset
+					}
+					box.scroll = state.input.mouse.pos - state.input.mouse.delta_temp
+				}
+
+				viewport.calc_size = {viewport_width, viewport_height}
+				sby.calc_size = {bar_width, viewport_height}
+				sby.offset.x = viewport_width
+				sbx.calc_size = {viewport_width, bar_width}
+				sbx.offset.y = viewport_height
+				y_handle.calc_size = {sby.calc_size.x, handle_size.y}
+				y_handle.offset.y = -handle_value.y
+				x_handle.calc_size = {handle_size.x, sbx.calc_size.y}
+				x_handle.offset.x = -handle_value.x
+
+			}
+		}
+
+
 		if .DRAGGABLE in box.flags {
 			if box.ops.pressed {
 				if box.ops.clicked {
@@ -551,8 +669,16 @@ ui_calc_boxes :: proc(root: ^Box) {
 			if box.prev == nil {
 				if box.parent != nil {
 					if .VIEWSCROLL in box.parent.flags && box.panel == state.ui.panels.hot {
-						if mouse_in_quad(box.parent.parent.quad) {
+						 if mouse_in_quad(box.parent.parent.quad) {
 							box.scroll = box.scroll + (state.input.mouse.scroll*20)
+
+							if box.ops.middle_dragged {
+								if box.ops.middle_clicked {
+									fmt.println("MIDDLE CLICKED IN THING")
+									state.input.mouse.delta_temp = state.input.mouse.pos - box.offset
+								}
+								box.scroll = state.input.mouse.pos - state.input.mouse.delta_temp
+							}
 						}
 						box.scroll.y = clamp(box.scroll.y, -box.parent.sum_children.y + box.parent.calc_size.y, 0)
 						box.scroll.x = clamp(box.scroll.x, box.parent.calc_size.x - box.calc_size.x, 0)
@@ -567,6 +693,9 @@ ui_calc_boxes :: proc(root: ^Box) {
 				box.offset[box.axis] = box.prev.offset[box.axis] + box.prev.calc_size[box.axis]
 			}
 		}
+
+
+		// calc quad
 		if box.parent == nil {
 			box.quad = {box.offset.x, box.offset.y, box.offset.x + box.calc_size.x, box.offset.y + box.calc_size.y}
 		} else {
