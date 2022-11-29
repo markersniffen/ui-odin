@@ -740,7 +740,7 @@ ui_delete_box :: proc(box: ^Box) {
 		}
 		else if box.parent.first != box && box.parent.last == box
 		{
-			box.prev.next = nil
+			if box.prev != nil do box.prev.next = nil
 			box.parent.last = box.prev
 		}
 		else if box.parent.first != box && box.parent.last != box
@@ -753,24 +753,31 @@ ui_delete_box :: proc(box: ^Box) {
 			box.prev.next = box.next
 			box.next.prev = box.prev
 			
-			if box.parent != nil {
-				box.parent.first = nil
-				box.parent.last = nil
-			}
+			// TODO duplicate?
+			// if box.parent != nil {
+			// 	box.parent.first = nil
+			// 	box.parent.last = nil
+			// }
 		} else if box.prev != nil && box.next == nil {
 			box.prev.next = nil
 
-			if box.parent != nil {
-				box.parent.last = box.prev
-			}
+			// TODO not needed
+			// if box.parent != nil {
+			// 	box.parent.last = box.prev
+			// }
 		} else if box.prev == nil && box. next != nil {
 			box.next.prev = nil
 
-			if box.parent != nil {
-				box.parent.first = box.next
-			}
+			// TODO not needed
+			// if box.parent != nil {
+			// 	box.parent.first = box.next
+			// }
 		}
 	}
+	box.next = nil
+	box.prev = nil
+	box.first = nil
+	box.last = nil
 	assert(box != nil)
 	delete_key(&state.ui.boxes.all, box.key)
 	pool_free(&state.ui.boxes.pool, box)

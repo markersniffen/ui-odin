@@ -541,15 +541,24 @@ ui_tab :: proc(names: []string, active:^int=nil) -> ([]^Box, int) {
 
 	for name, i in names {
 		ui_axis(.X)
-		ui_size(.TEXT, 1, .TEXT, 1)
-		radio := ui_radio(name)
-		if radio.ops.clicked {
-			index = i
-			clicked = true
-		} else {
-			radio.ops.selected = false
-		}
-		tabs[i] = radio
+		ui_size(.SUM_CHILDREN, 1, .TEXT, 1)
+		radio := ui_radio(fmt.tprint("###radio", i))
+		ui_push_parent(radio)
+			ui_size(.TEXT, 1, .TEXT, 1)
+			label := ui_label(name)
+			
+			close := ui_button(fmt.tprint("<#>x###close", i))
+			excl(&state.ui.ctx.box.flags, Box_Flags.DRAWBACKGROUND, Box_Flags.DRAWGRADIENT, Box_Flags.DRAWBORDER)
+
+			if radio.ops.clicked {
+				index = i
+				clicked = true
+			} else {
+				radio.ops.selected = false
+			}
+			tabs[i] = radio
+			if close.released do radio.ops.middle_clicked = true
+		ui_pop()
 	}
 
 	if tab.first != nil {
