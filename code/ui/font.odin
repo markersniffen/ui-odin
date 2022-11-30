@@ -522,7 +522,6 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 				if ok  {
 					skip :f32= 1
 					push_quad_font(char_quad, color, font.char_data[letter].uv, f32(font.texture_unit+1), clamped_quad)
-
 				}
 			}
 			top_left.x += font.char_data[letter].advance

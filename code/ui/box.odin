@@ -370,7 +370,14 @@ ui_process_ops :: proc(box: ^Box) {
 	}
 
 	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
-		box.ops.editing = (box == state.ui.boxes.editing)
+		box_editing := (box == state.ui.boxes.editing)
+		if box_editing {
+			if box.key != state.ui.boxes.editing.key {
+				box_editing = false
+				state.ui.boxes.editing = nil
+			}
+		}
+		box.ops.editing = box_editing
 		if box.ops.editing && box.editable_string != nil do string_editing(box)
 	}
 
@@ -408,7 +415,6 @@ string_editing :: proc(box: ^Box) {
 
 	pos := quad.l - box.quad.l + box.offset.x
 	width := box.parent.quad.r - box.parent.quad.l
-	fmt.println(width, pos) 
 
 	// if pos > width {
 	// 	box.scroll.x = width - pos

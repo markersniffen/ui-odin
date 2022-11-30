@@ -155,6 +155,10 @@ ui_update :: proc() {
 				panel.content()
 			}
 		}
+
+		if state.ui.boxes.editing != nil {
+			if state.ui.boxes.editing.ops.editing == false do state.ui.boxes.editing = nil
+		}
 	}
 
 	{
@@ -289,7 +293,6 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		} else if .EDITVALUE in box.flags {
 			if is_editing {
 				push_quad_border(box.parent.quad, state.ui.col.active, box.border, box.parent.quad)
-				// assert(box.editable_string != nil, "trying to draw editable text from nil ES")
 				if box.editable_string != nil {
 					draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 				}
@@ -316,6 +319,8 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	ui_draw_boxes(box.next, clip_to)
 
 	clip_quad := clip_to
-	if .CLIP in box.flags do clip_quad = quad
-	ui_draw_boxes(box.first,clip_quad)
+	if .CLIP in box.flags {
+		clip_quad = quad
+	}
+	ui_draw_boxes(box.first, clip_quad)
 }

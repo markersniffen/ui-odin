@@ -10,14 +10,14 @@ start_editing_value :: proc(box: ^Box) {
 		end_editing_value(state.ui.boxes.editing)
 	}
 
-
 	state.ui.boxes.editing = box
+	box.ops.editing = true
 	box.editable_string = &state.ui.ctx.editable_string
 	box.editable_string^ = from_string(fmt.tprint(box.value))
 	string_select_all(box.editable_string)
 }
 
-end_editing_value :: proc(box: ^Box, commit:bool=false) {
+end_editing_value :: proc(box: ^Box, commit:bool=true) {
 	fmt.println("ending editing value. commit:", commit)
 	if commit {
 		switch box.value.id {

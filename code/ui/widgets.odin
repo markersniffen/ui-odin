@@ -244,7 +244,6 @@ ui_edit_text :: proc(key: string, editable: ^String) -> Box_Ops {
 		.DRAWBORDER,
 		.DRAWGRADIENT,
 		.VIEWSCROLL,
-		.CLIP,
 	})
 
 	ui_push_parent(box)
@@ -253,11 +252,13 @@ ui_edit_text :: proc(key: string, editable: ^String) -> Box_Ops {
 	ui_size(.TEXT, 1, .PCT_PARENT, 1)
 	text_box := ui_create_box("editable_text_box", {
 		.EDITTEXT,
+		.CLIP,
 	})
 	text_box.editable_string = editable
 
 	if text_box == state.ui.boxes.editing {
 		if box.ops.off_clicked || box.ops.right_clicked {
+
 			state.ui.boxes.editing = nil
 		}
 	} else {
@@ -280,71 +281,36 @@ ui_edit_text :: proc(key: string, editable: ^String) -> Box_Ops {
 	return box.ops
 }
 
-ui_edit_valuex :: proc(key: string, value: any) -> Box_Ops {
-	box := ui_create_box("editable_value", {
+ui_edit_value:: proc(key: string, ev: any) -> ^Box {
+	box := ui_create_box(key, {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWBACKGROUND,
 		.DRAWBORDER,
 		.DRAWGRADIENT,
-		.VIEWSCROLL,
-		.CLIP,
+		.HOTANIMATION,
 	})
 
 	ui_push_parent(box)
 	ui_process_ops(box)
 
-	ui_size(.TEXT, 1, .PCT_PARENT, 1)
-	value_box := ui_create_box("editable_value_box", {
+	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
+	text_box := ui_create_box(fmt.tprintf("etb", key), {
 		.EDITVALUE,
-	}, value)
-
-	if value_box == state.ui.boxes.editing {
-		if box.ops.off_clicked || box.ops.right_clicked {
-			end_editing_value(value_box)
-		}
-	} else {
-		if box.ops.clicked {
-			start_editing_value(value_box)
-		}
-	}
-
-	ui_process_ops(value_box)
-
-	ui_pop()
-
-	if box.ops.middle_dragged {
-		if box.ops.middle_clicked {
-			state.input.mouse.delta_temp.x = state.input.mouse.pos.x - value_box.offset.x
-		}
-		value_box.scroll.x = state.input.mouse.pos.x - state.input.mouse.delta_temp.x
-	}
-
-	return box.ops
-}
-
-ui_edit_value:: proc(key: string, ev: any) -> ^Box {
-	box := ui_create_box(key, {
-		.CLICKABLE,
-		.HOVERABLE,
-		.EDITVALUE,
-		.DRAWBACKGROUND,
-		.DRAWBORDER,
-		.DRAWGRADIENT,
-		.HOTANIMATION,
+		.CLIP,
 	}, ev)
 
-
-	if box == state.ui.boxes.editing {
+	if text_box == state.ui.boxes.editing {
 		excl(&box.flags, Box_Flags.HOTANIMATION)
-		if box.ops.off_clicked || box.ops.right_clicked do end_editing_value(box)
-	} else {
+		if box.ops.off_clicked || box.ops.right_clicked {
+			end_editing_value(text_box)
+		}
+	} else if box.ops.clicked && state.ui.boxes.editing == nil {
+		start_editing_value(text_box)
 	}
 
-	ui_process_ops(box)
-
-	if box.ops.clicked && state.ui.boxes.editing == nil do start_editing_value(box)
-
+	ui_process_ops(text_box)
+	ui_pop()
 	return box
 }
 
@@ -404,9 +370,9 @@ ui_slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 		.DRAWBORDER,
 		.DRAWGRADIENT,
 		.HOTANIMATION,
-		// .ACTIVEANIMATION,
 	}, any(value^))
 
+	ui_process_ops(box)
 	ui_push_parent(box)
 	ui_size(.PCT_PARENT, value^, .PCT_PARENT, 1)
 	highlight := ui_create_box("highlight", {
@@ -418,26 +384,27 @@ ui_slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 		.CLICKABLE,
 	})
 	highlight.bg_color = state.ui.col.highlight
+	ui_process_ops(highlight)
 	
 	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
-	display_value := ui_create_box("", {
-		.NO_OFFSET,
+	display_value := ui_create_box(fmt.tprint("disp val", label), {
 		.EDITVALUE,
-		// .DISPLAYVALUE,
+		.NO_OFFSET,
 	}, value^)
+
 	if display_value == state.ui.boxes.editing {
-		incl(&display_value.flags, Box_Flags.CLICKABLE)
 		excl(&box.flags, Box_Flags.HOVERABLE)
+		excl(&highlight.flags, Box_Flags.CLICKABLE)
+		excl(&highlight.flags, Box_Flags.ACTIVEANIMATION)
+		excl(&highlight.flags, Box_Flags.HOTANIMATION)
 		excl(&highlight.flags, Box_Flags.HOVERABLE)
 	}
-	ui_process_ops(box)
-	ui_process_ops(highlight)
 	ui_process_ops(display_value)
 
 	if box.ops.ctrl_clicked {
-		// display_value.ops.editing = true
-		state.ui.boxes.editing = display_value
-		// start_editing_value(display_value)
+		start_editing_value(display_value)
+	} else if state.ui.boxes.editing == display_value && box.ops.off_clicked {
+		end_editing_value(display_value)
 	}
 
 	if display_value != state.ui.boxes.editing {
