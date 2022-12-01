@@ -23,10 +23,6 @@ ui_panel_file_menu :: proc() {
 	ui_label("|")
 	ui_value("panels:", state.ui.panels.pool.nodes_used)
 	ui_value("/", state.ui.panels.pool.chunk_count)
-	ui_label("|")
-	ui_value("fps:", state.stats.fps)
-	ui_label("|")
-	ui_value("dt:", state.stats.delta_time)
 	ui_spacer_pixels(6)
 	ui_end()
 }
@@ -244,6 +240,12 @@ ui_lorem :: proc() {
 			ui_size(.TEXT, 1, .TEXT, 1)
 			if ui_button("Load").released {
 				load_doc(&state.debug.lorem, to_string(&state.debug.path))
+			}
+			ui_axis(.Y)
+			if state.ui.boxes.editing == {} {
+				ui_label("no editing...")
+			} else {
+				ui_label(key_to_string(&state.ui.boxes.editing))
 			}
 		ui_pop()
 		ui_axis(.Y)

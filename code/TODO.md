@@ -1,5 +1,13 @@
 // TODO //
 
+[ ] features to change?
+ - creating and deleting panels on the fly currently uses a queue
+ - render pipeline / calc pipeline
+ - clipping boxes?
+ - box state:
+   - active, editing, hot
+
+
 [X] fix blinking panel on add (used queue for creating new panels after startup)
 [X] add mouse cursor changes
 [X] fix clipping

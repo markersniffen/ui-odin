@@ -46,8 +46,8 @@ UI_Boxes :: struct {
 	to_delete: [MAX_BOXES]rawptr,
 	root: ^Box,
 	active: ^Box,
-	editing: ^Box,
 	hot: ^Box,
+	editing: Key,
 	index: int,
 }
 
@@ -67,7 +67,6 @@ UI_Context :: struct {
 
 	editable_string: String,
 
-	render_layer: int,
 	axis: Axis,
 	size: [XY]Box_Size,
 
@@ -155,10 +154,6 @@ ui_update :: proc() {
 				panel.content()
 			}
 		}
-
-		if state.ui.boxes.editing != nil {
-			if state.ui.boxes.editing.ops.editing == false do state.ui.boxes.editing = nil
-		}
 	}
 
 	{
@@ -182,6 +177,12 @@ ui_update :: proc() {
 				state.ui.boxes.to_delete[i] = nil
 			}
 		}
+	}
+
+	// TODO move this? check if .editing points to a real box, if not, delete it
+	if state.ui.boxes.editing != {} {
+		ebox, eok := state.ui.boxes.all[state.ui.boxes.editing]
+		if !eok do state.ui.boxes.editing = {}
 	}
 
 	// CALC BOXES ------------------------------------------------	
@@ -257,7 +258,9 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	// if .ROOT in box.flags do push_quad_border(quad, state.ui.col.backdrop, 1)
 
 	if clip_ok {
-		is_editing := (box == state.ui.boxes.editing)
+		// NOTE editing-check
+		
+		is_editing := box.ops.editing // (box.key == state.ui.boxes.editing)
 		value := "NO VALUE"
 		if box.value != nil do value = fmt.tprint(box.value)
 

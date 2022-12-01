@@ -8,10 +8,10 @@ import "core:strconv"
 MAX_BOXES :: 16384
 
 Box :: struct {
-	key: Key,
-	name: String,
-	value: any,
-	editable_string: ^String,
+	key: Key,									// unique ID
+	name: String,							// text displayed
+	value: any,								// external value that is displayed
+	editable_string: ^String,	// pointer to 
 
 	panel: ^Panel,
 
@@ -39,17 +39,16 @@ Box :: struct {
 	hot_t: f32,
 	active_t: f32,
 
-	size: [XY]Box_Size,
-	expand: v2,
-	sum_children: v2,
 	axis: Axis,
+	size: [XY]Box_Size,
 	calc_size: v2,
 	offset: v2,		// from parent
 	scroll: v2,
+	expand: v2,
+
 	quad: Quad,
 	clip: Quad,
-	bar: Quad,
-	render_layer: int,
+	sum_children: v2,
 }
 
 Box_Size_Type :: enum {
@@ -181,34 +180,13 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 	box.font_color = state.ui.ctx.font_color
 	box.border = state.ui.ctx.border
 	box.text_align = state.ui.ctx.text_align
-	box.render_layer = state.ui.ctx.render_layer
 	box.panel = state.ui.ctx.panel
-
 
 	box.first = nil
 	// box.last = nil
 	box.next = nil
 	box.prev = nil
 	// box.hash_next = nil
-
-	// if .ROOT in flags {
-	// 	parent = nil
-	// 	box.border = 1
-	// 	box.border_color = {1,0,1,1}
-	// } else {
-	// 	box.parent = parent
-	// 	// try adding as first child first
-	// 	if parent != nil {
-	// 		if parent.first == nil {
-	// 			parent.first = box
-	// 		} else {
-	// 			assert(parent.last != nil)
-	// 			parent.last.next = box
-	// 			box.prev = parent.last
-	// 		}
-	// 		parent.last = box
-	// 	}
-	// }
 
 	if .ROOT in flags {
 		parent = nil
@@ -231,29 +209,6 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 		}
 	}
 
-	// linked list logic
-
-	/*
-	set parent
-	check if parent is nil
-
-	if parent == nil
-		do nothing
-	if parent != nil
-		if parent.first == nil
-			parent.first = box
-		if parent.first != nil
-			parent.last.next = box
-			box.prev = parent.last
-			parent.last = box
-			
-	parent.last = box
-
-
-
-	*/
-
-
 	// ADD BOX TO LINKED LIST ------------------------------
 	if !(.ROOT in box.flags) {
 		box.hash_prev = state.ui.ctx.box
@@ -275,8 +230,11 @@ ui_process_ops :: proc(box: ^Box) {
 	if box.panel != state.ui.panels.hot && box.panel != state.ui.panels.floating do return
 	if state.ui.panels.floating != nil && box.panel != state.ui.panels.floating do return
 
-	mouse_over := mouse_in_quad(box.clip)
+	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
+		box.ops.editing = (box.key == state.ui.boxes.editing)
+	}
 
+	mouse_over := mouse_in_quad(box.clip)
 
 	if .HOVERABLE in box.flags {
 		if mouse_over && !lmb_drag() {
@@ -369,23 +327,12 @@ ui_process_ops :: proc(box: ^Box) {
 		}
 	}
 
-	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
-		box_editing := (box == state.ui.boxes.editing)
-		if box_editing {
-			if box.key != state.ui.boxes.editing.key {
-				box_editing = false
-				state.ui.boxes.editing = nil
-			}
-		}
-		box.ops.editing = box_editing
-		if box.ops.editing && box.editable_string != nil do string_editing(box)
-	}
-
+	if box.ops.editing do string_editing(box)
 }
 
 string_editing :: proc(box: ^Box) {
 	es := box.editable_string
-
+	if es == nil do return
 	// MOUSE SELECTION
 	quad := box.quad
 	quad.r = quad.l
@@ -415,10 +362,6 @@ string_editing :: proc(box: ^Box) {
 
 	pos := quad.l - box.quad.l + box.offset.x
 	width := box.parent.quad.r - box.parent.quad.l
-
-	// if pos > width {
-	// 	box.scroll.x = width - pos
-	// }
 
 	// TYPE LETTERS
 	if state.ui.last_char > 0 {
@@ -500,16 +443,6 @@ string_editing :: proc(box: ^Box) {
 	// HOME
 	if read_key(&state.input.keys.home) do string_home(es)
 	if read_key(&state.input.keys.end) do string_end(es)
-
-	// ENTER
-	if read_key(&state.input.keys.enter) {
-		if .EDITVALUE in box.flags do end_editing_value(box)
-	}
-
-	// ESCAPE
-	if read_key(&state.input.keys.escape) {
-		if .EDITVALUE in box.flags do end_editing_value(box)
-	}
 
 	string_len_assert(es)
 }

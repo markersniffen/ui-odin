@@ -6,12 +6,10 @@ import "core:strconv"
 start_editing_value :: proc(box: ^Box) {
 	fmt.println("starting editing value")
 	
-	if state.ui.boxes.editing != nil {
-		end_editing_value(state.ui.boxes.editing)
-	}
+	ebox, eok := state.ui.boxes.all[state.ui.boxes.editing]
+	if eok do end_editing_value(ebox)
 
-	state.ui.boxes.editing = box
-	box.ops.editing = true
+	state.ui.boxes.editing = box.key
 	box.editable_string = &state.ui.ctx.editable_string
 	box.editable_string^ = from_string(fmt.tprint(box.value))
 	string_select_all(box.editable_string)
@@ -38,6 +36,6 @@ end_editing_value :: proc(box: ^Box, commit:bool=true) {
 	}
 	box.editable_string = nil
 	state.ui.ctx.editable_string = {}
-	state.ui.boxes.editing = nil
-	fmt.println(box.value)
+	state.ui.boxes.editing = {}
+	fmt.println("box value", box.value)
 }

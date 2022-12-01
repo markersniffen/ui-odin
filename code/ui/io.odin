@@ -4,6 +4,23 @@ import "core:fmt"
 import "core:os"
 import "core:mem"
 
+Document :: struct {
+	mem: []u8,
+	len: int,
+
+	returns: []int,
+	return_count: int,
+
+	width: f32,
+	lines: int,
+	current_line: int,
+	last_line: int,
+	current_char: int,
+	// index: int,
+	// start: int,
+	// end: int,
+}
+
 load_doc :: proc(doc:^Document, filename:string) -> bool {
 	close_doc(doc)
 	
@@ -42,19 +59,3 @@ close_doc :: proc(doc: ^Document) -> bool {
 	return true
 }
 
-Document :: struct {
-	mem: []u8,
-	len: int,
-
-	returns: []int,
-	return_count: int,
-
-	width: f32,
-	lines: int,
-	current_line: int,
-	last_line: int,
-	current_char: int,
-	// index: int,
-	// start: int,
-	// end: int,
-}

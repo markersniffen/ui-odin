@@ -18,7 +18,6 @@ ui_reset_colors :: proc() {
 
 ui_begin :: proc() -> ^Panel {
 	ui_reset_colors()
-	state.ui.ctx.render_layer = 0
 	state.ui.ctx.box = nil
 	state.ui.ctx.parent = nil
 	quad := state.ui.ctx.panel.quad
@@ -39,7 +38,6 @@ ui_begin :: proc() -> ^Panel {
 //
 ui_begin_floating :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING}) -> ^Panel {
 	ui_reset_colors()
-	state.ui.ctx.render_layer = 1
 	state.ui.ctx.box = nil
 	state.ui.ctx.parent = nil
 	ui_size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
@@ -234,9 +232,46 @@ ui_value :: proc(key: string, value: any) -> Box_Ops {
 	return box.ops	
 }
 
+ui_edit_value:: proc(key: string, ev: any) -> ^Box {
+	box := ui_create_box(fmt.tprint("parent", key), {
+		.CLICKABLE,
+		.HOVERABLE,
+		.DRAWBACKGROUND,
+		.DRAWBORDER,
+		.DRAWGRADIENT,
+		.HOTANIMATION,
+	})
+
+	ui_push_parent(box)
+	ui_process_ops(box)
+
+	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
+	text_box := ui_create_box(key, {
+		.EDITVALUE,
+		.CLIP,
+	}, ev)
+
+	is_editing := (text_box.key == state.ui.boxes.editing)	
+
+	// NOTE editing-check
+	if is_editing {
+		excl(&box.flags, Box_Flags.HOTANIMATION)
+		if box.ops.off_clicked || box.ops.right_clicked || esc() || enter() {
+			end_editing_value(text_box)
+		}
+	// NOTE editing-check
+	} else if box.ops.clicked && state.ui.boxes.editing == {} {
+		start_editing_value(text_box)
+	}
+
+	ui_process_ops(text_box)
+	ui_pop()
+	return box
+}
+
 // creates single line editable text
 
-ui_edit_text :: proc(key: string, editable: ^String) -> Box_Ops {
+ui_edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 	box := ui_create_box("editable_text", {
 		.CLICKABLE,
 		.HOVERABLE,
@@ -254,17 +289,12 @@ ui_edit_text :: proc(key: string, editable: ^String) -> Box_Ops {
 		.EDITTEXT,
 		.CLIP,
 	})
-	text_box.editable_string = editable
+	text_box.editable_string = es
 
-	if text_box == state.ui.boxes.editing {
-		if box.ops.off_clicked || box.ops.right_clicked {
-
-			state.ui.boxes.editing = nil
-		}
-	} else {
-		if box.ops.clicked {
-			state.ui.boxes.editing = text_box
-		}
+	if box.ops.clicked {
+		state.ui.boxes.editing = text_box.key
+	} else if box.ops.off_clicked || box.ops.right_clicked {
+		state.ui.boxes.editing = {}
 	}
 
 	ui_process_ops(text_box)
@@ -281,38 +311,6 @@ ui_edit_text :: proc(key: string, editable: ^String) -> Box_Ops {
 	return box.ops
 }
 
-ui_edit_value:: proc(key: string, ev: any) -> ^Box {
-	box := ui_create_box(key, {
-		.CLICKABLE,
-		.HOVERABLE,
-		.DRAWBACKGROUND,
-		.DRAWBORDER,
-		.DRAWGRADIENT,
-		.HOTANIMATION,
-	})
-
-	ui_push_parent(box)
-	ui_process_ops(box)
-
-	ui_size(.PCT_PARENT, 1, .PCT_PARENT, 1)
-	text_box := ui_create_box(fmt.tprintf("etb", key), {
-		.EDITVALUE,
-		.CLIP,
-	}, ev)
-
-	if text_box == state.ui.boxes.editing {
-		excl(&box.flags, Box_Flags.HOTANIMATION)
-		if box.ops.off_clicked || box.ops.right_clicked {
-			end_editing_value(text_box)
-		}
-	} else if box.ops.clicked && state.ui.boxes.editing == nil {
-		start_editing_value(text_box)
-	}
-
-	ui_process_ops(text_box)
-	ui_pop()
-	return box
-}
 
 ui_paragraph :: proc(value: any) -> Box_Ops {
 	assert(value.id == Document)
@@ -392,7 +390,8 @@ ui_slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 		.NO_OFFSET,
 	}, value^)
 
-	if display_value == state.ui.boxes.editing {
+	// NOTE editing-check
+	if display_value.key == state.ui.boxes.editing {
 		excl(&box.flags, Box_Flags.HOVERABLE)
 		excl(&highlight.flags, Box_Flags.CLICKABLE)
 		excl(&highlight.flags, Box_Flags.ACTIVEANIMATION)
@@ -403,11 +402,17 @@ ui_slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 
 	if box.ops.ctrl_clicked {
 		start_editing_value(display_value)
-	} else if state.ui.boxes.editing == display_value && box.ops.off_clicked {
-		end_editing_value(display_value)
+	// NOTE editing-check
+	} else if state.ui.boxes.editing == display_value.key {
+		if box.ops.off_clicked || enter() {
+			end_editing_value(display_value)
+		} else if esc() {
+			end_editing_value(display_value, false)
+		}
 	}
 
-	if display_value != state.ui.boxes.editing {
+	// NOTE editing-check
+	if display_value.key != state.ui.boxes.editing {
 		if box.ops.clicked {
 			state.input.mouse.delta_temp = state.input.mouse.pos - linear(value^, min, max, 0, box.calc_size.x)
 		}
@@ -579,46 +584,10 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 	ui_process_ops(scrollbox)
 	ui_push_parent(scrollbox)
 
-	// bar_width :f32= 14
-	// x := _x
-	// y := _y
-
-	// if scrollbox.first != nil {
-	// 	if scrollbox.first.first != nil {
-	// 		first := scrollbox.first.first
-	// 		x = (first.calc_size.x > scrollbox.first.calc_size.x)
-	// 		y = (first.calc_size.y > scrollbox.first.calc_size.y)
-	// 	}
-	// }
-
-	/*
-		scrollbox
-			viewport
-			bar_y
-				handle_y
-			bar_x
-				handle_x
-	*/
-	
-	// viewport_width := scrollbox.calc_size.x
-	// if y do viewport_width -= bar_width
-
-	// viewport_height := scrollbox.calc_size.y
-	// if x do viewport_height -= bar_width
-
 	ui_axis(.X)
 	ui_size(.NONE, 0, .NONE, 0)
 	viewport := ui_create_box("viewport", { .CLIP, .VIEWSCROLL, .SCROLLBOX, .NO_OFFSET })
 	ui_process_ops(viewport)
-
-	// handle_size := ((viewport.calc_size + viewport.expand) / viewport.first.calc_size) * (viewport.calc_size + viewport.expand)
-	// handle_size.x = max(handle_size.x, 40)
-	// handle_size.y = max(handle_size.y, 40)
-	// handle_range := (viewport.calc_size + viewport.expand) - handle_size
-	// scr_range := viewport.first.calc_size - (viewport.calc_size + viewport.expand)
-	// scr_value := viewport.first.offset
-	// mpl := scr_value / scr_range
-	// handle_value := handle_range * mpl
 
 	ui_size(.NONE, 0, .NONE, 0)
 	sby := ui_create_box("scrollbar_y", { .NO_OFFSET, .DRAWBACKGROUND })
@@ -633,16 +602,6 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 	// TODO y_handle.offset.y = -handle_value.y 
 	ui_pop()
 
-	// if y_handle.ops.pressed {
-	// 	state.ui.panels.locked = true
-	// 	if y_handle.ops.clicked {
-	// 		state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/handle_range.y) + viewport.first.offset.y
-	// 	}
-	// 	viewport.first.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/handle_range.y)) - state.input.mouse.delta_temp.y) * -1
-	// } else {
-	// 	state.ui.panels.locked = false
-	// }
-
 	ui_size(.NONE, 0, .NONE, 0)
 	sbx := ui_create_box("scrollbar_x", { .NO_OFFSET, .DRAWBACKGROUND })
 	ui_process_ops(sbx)
@@ -655,20 +614,6 @@ ui_scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 	x_handle.bg_color = state.ui.col.inactive
 	// x_handle.offset.x = -handle_value.x
 	ui_pop()
-
-	// if x_handle.ops.pressed {
-	// 	if x_handle.ops.clicked {
-	// 		state.input.mouse.delta_temp.x = state.input.mouse.pos.x * (scr_range.x/handle_range.x) + viewport.first.offset.x
-	// 	}
-	// 	viewport.first.scroll.x = ((state.input.mouse.pos.x*(scr_range.x/handle_range.x)) - state.input.mouse.delta_temp.x) * -1
-	// }
-
-	// if viewport.ops.middle_dragged {
-	// 	if viewport.ops.middle_clicked {
-	// 		state.input.mouse.delta_temp = state.input.mouse.pos - viewport.first.offset
-	// 	}
-	// 	viewport.first.scroll = state.input.mouse.pos - state.input.mouse.delta_temp
-	// }
 
 	ui_push_parent(viewport)
 	return viewport

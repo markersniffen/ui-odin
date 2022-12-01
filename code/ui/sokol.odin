@@ -46,6 +46,13 @@ Cursor_Type :: enum {
 	Y,
 }
 
+Quad :: struct {
+	l: f32,
+	t: f32,
+	r: f32,
+	b: f32,
+}
+
 sokol :: proc() {
 	sapp.run({
 		icon = { sokol_default = true },
@@ -88,7 +95,7 @@ sokol_init :: proc "c" () {
                 ATTR_vs_uv = { format = .FLOAT2 },
                 ATTR_vs_tex_id = { format = .FLOAT },
                 ATTR_vs_clip_quad = { format = .FLOAT4 },
-            }
+            },
         },
         cull_mode = .BACK,
         depth = {
@@ -103,9 +110,9 @@ sokol_init :: proc "c" () {
 					src_factor_alpha = .SRC_ALPHA,
 					dst_factor_rgb = .ONE_MINUS_SRC_ALPHA,
 					dst_factor_alpha = .ONE_MINUS_SRC_ALPHA,
-				}
-			}
-        }
+				},
+			},
+        },
     })
 
 	ui_init_font()
@@ -113,8 +120,8 @@ sokol_init :: proc "c" () {
     // default pass action
     state.sokol.pass_action = {
         colors = {
-            0 = { action = .CLEAR, value = { 0, 0, 0, 1 }}
-        }
+            0 = { action = .CLEAR, value = { 0, 0, 0, 1 }},
+        },
     }
 
 	state.init()
@@ -330,7 +337,7 @@ sokol_push_quad :: proc(quad:Quad,
 					quad.l,		quad.t,		cA[0], cA[1], cA[2], cA[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
 					inner.l,	inner.t,	cA[0], cA[1], cA[2], cA[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
 					inner.l,	inner.b,	cC[0], cC[1], cC[2], cC[3], 0,0, texture_id, clip.l, clip.t, clip.r, clip.b,
-				}
+				},
 			}
 		}
 
@@ -354,7 +361,81 @@ sokol_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {
 	    width = font.texture_size,
 	    height = font.texture_size,
 	    pixel_format = .R8,
-	    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } }
+	    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
 	})
 	return true
+}
+
+push_quad :: proc(quad:Quad,
+						cA:			HSL=	{1,1,1,1},
+						cB:			HSL=	{1,1,1,1},
+						cC:			HSL=	{1,1,1,1},
+						cD:			HSL=	{1,1,1,1},
+						border: 		f32=	0.0, 
+						uv:			Quad=	{0,0,0,0},
+						texture_id:	f32=	0.0,
+						clip:			Quad= {0,0,0,0},
+					) {
+	sokol_push_quad(quad, cA, cB, cC, cD,border, uv, texture_id,	clip)
+}
+
+push_quad_solid :: proc(quad: Quad, color:HSL, clip: Quad) {
+	push_quad(quad,	color, color, color, color, 0, {0,0,0,0}, 0, clip)
+}
+
+push_quad_gradient_h :: proc(quad: Quad, color_left:HSL, color_right:HSL, clip: Quad) {
+	push_quad(quad,	color_left, color_right, color_left, color_right, 0, {0,0,0,0}, 0, clip)
+}
+
+push_quad_gradient_v :: proc(quad: Quad, color_top:HSL, color_bottom:HSL, clip:Quad) {
+	push_quad(quad,	color_top, color_top, color_bottom, color_bottom, 0, {0,0,0,0}, 0, clip)
+}
+
+push_quad_border :: proc(quad: Quad, color:HSL, border: f32=2, clip: Quad) {
+	push_quad(quad,	color, color, color, color, border, {0,0,0,0}, 0, clip)
+}
+
+push_quad_font :: proc(quad: Quad, color:HSL, uv:Quad, font_icon:f32, clip: Quad) {
+	when PROFILER do tracy.ZoneNC("quad font", 0x0000ff)
+	push_quad(quad,	color, color, color, color, 0, uv, font_icon, clip)
+}
+
+pt_in_quad 	:: proc(pt: v2, quad: Quad) -> bool {
+	result := false;
+	if pt.x >= quad.l && pt.y >= quad.t && pt.x <= quad.r && pt.y <= quad.b do result = true;
+	return result;
+}
+
+quad_in_quad	:: proc(quad_a, quad_b: Quad) -> bool {
+	result := false
+	if pt_in_quad({quad_a.l,quad_a.t}, quad_b) || pt_in_quad({quad_a.r, quad_a.b}, quad_b) do result = true
+	return result
+}
+
+quad_full_in_quad	:: proc(quad_a, quad_b: Quad) -> bool {
+	result := false
+	if pt_in_quad({quad_a.l, quad_a.t}, quad_b) && pt_in_quad({quad_a.r, quad_a.b}, quad_b) do result = true
+	return result
+}
+
+quad_clamp_or_reject :: proc (quad_a, quad_b: Quad) -> (Quad, bool) {
+	clamped := quad_clamp_to_quad(quad_a, quad_b)
+
+	if (clamped.l == clamped.r) || (clamped.t == clamped.b) {
+		return clamped, false
+	}
+	return clamped, true
+}
+
+quad_clamp_to_quad :: proc (quad, quad_b: Quad) -> Quad {
+	result: Quad = quad
+	result.l = clamp(quad.l, quad_b.l, quad_b.r)
+	result.t = clamp(quad.t, quad_b.t, quad_b.b)
+	result.r = clamp(quad.r, quad_b.l, quad_b.r)
+	result.b = clamp(quad.b, quad_b.t, quad_b.b)
+	return result
+}
+
+pt_offset_quad :: proc(pt: v2, quad: Quad) -> Quad {
+	return {quad.l + pt.x, quad.t + pt.y, quad.r + pt.x, quad.b + pt.y}
 }

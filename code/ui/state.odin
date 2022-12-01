@@ -22,24 +22,16 @@ v4i :: [4]i32
 state : ^State
 
 State :: struct {
-	debug: 				Debug,
 	init:					proc(),
 	frame:				proc(),
 
-	sokol:				Sokol,
 	uid: 					Uid,
+	sokol:				Sokol,
 	window: 				Window,
 	ui: 					Ui,
-	// render: 				Render,
-	stats: 				Stats,
 	input: 				Input,
-}
-
-Stats :: struct {
-	start_time: time.Time,
-	prev_time: time.Time,
-	delta_time: f64,
-	fps: f64,
+	
+	debug: 				Debug,
 }
 
 Input :: struct {
@@ -120,6 +112,7 @@ read_key :: proc(key: ^bool) -> bool {
 }
 
 enter :: proc() -> bool { return state.input.keys.enter }
+esc :: proc() -> bool { return state.input.keys.escape }
 shift :: proc() -> bool { return state.input.keys.shift }
 alt :: proc() -> bool { return state.input.keys.alt }
 ctrl :: proc() -> bool { return state.input.keys.ctrl }
