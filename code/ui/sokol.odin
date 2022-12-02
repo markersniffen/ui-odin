@@ -115,7 +115,7 @@ sokol_init :: proc "c" () {
         },
     })
 
-	ui_init_font()
+	init_font()
 
     // default pass action
     state.sokol.pass_action = {
@@ -276,7 +276,7 @@ cursor :: proc(type: Cursor_Type) {
 	}
 }
 
-cursor_size :: proc(axis: Axis) {
+cursor_size :: proc(axis: UI_Axis) {
 	if axis == .X {
 		cursor(.X)
 	} else {

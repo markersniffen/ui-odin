@@ -84,7 +84,7 @@ Keys :: struct {
 	v: bool,
 }
 
-init :: proc(init: proc() = nil, frame: proc() = nil, title:string="My App", width:i32=1280, height:i32=720) -> (^State, bool) {
+init :: proc(init: proc() = nil, frame: proc() = nil, title:string="My App", width:i32=1280, height:i32=720) {
 	state = new(State)
 	state.init = init
 	state.frame = frame
@@ -93,8 +93,6 @@ init :: proc(init: proc() = nil, frame: proc() = nil, title:string="My App", wid
 
 	ui_init()
 	sokol()
-
-	return state, true
 }
 
 quit :: proc() {

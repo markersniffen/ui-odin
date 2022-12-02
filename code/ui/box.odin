@@ -39,7 +39,7 @@ Box :: struct {
 	hot_t: f32,
 	active_t: f32,
 
-	axis: Axis,
+	axis: UI_Axis,
 	size: [XY]Box_Size,
 	calc_size: v2,
 	offset: v2,		// from parent
@@ -115,13 +115,13 @@ Box_Ops :: struct {
   editing: bool,
 }
 
-ui_gen_key :: proc(name: string, id: string) -> Key {
+gen_key :: proc(name: string, id: string) -> Key {
 	text := fmt.tprint(args={name, id, state.ui.ctx.panel.uid}, sep="_") //state.ui.boxes.index,
 	key := string_to_key(text)
 	return key
 }
 
-ui_generate_box :: proc(key: Key) -> ^Box {
+generate_box :: proc(key: Key) -> ^Box {
 	box := cast(^Box)pool_alloc(&state.ui.boxes.pool)
 	box.key = key
 
@@ -130,7 +130,7 @@ ui_generate_box :: proc(key: Key) -> ^Box {
 	return box
 }
 
-ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -> ^Box {
+create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -> ^Box {
 	name := _name
 	id := fmt.tprint(state.ui.boxes.index)
 	// check if "###" exists in string, and use the left half for name, right half for the ID
@@ -143,13 +143,13 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 		}
 	}
 
-	key := ui_gen_key(name, id)
+	key := gen_key(name, id)
 	box, box_ok := state.ui.boxes.all[key]
 	parent := state.ui.ctx.parent
 	
 	// if box doesn't exist, create it
 	if !box_ok {
-		box = ui_generate_box(key)
+		box = generate_box(key)
 		box.frame_created = state.ui.frame
 		if .FLOATING in flags {
 			box.offset = state.input.mouse.pos
@@ -221,7 +221,7 @@ ui_create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil
 	return(box)
 }
 
-ui_process_ops :: proc(box: ^Box) {
+process_ops :: proc(box: ^Box) {
 	// PROCESS OPS ------------------------------
 	box.ops.clicked = false
 	box.ops.released = false
@@ -323,7 +323,7 @@ ui_process_ops :: proc(box: ^Box) {
 
 	if .MENU in box.flags {
 		if !mouse_over && lmb_click() {
-			ui_delete_panel(box.panel)
+			delete_panel(box.panel)
 		}
 	}
 
@@ -361,7 +361,7 @@ string_editing :: proc(box: ^Box) {
 	}
 
 	// SCROLL IF CURSOR OUT OF BOUNDS
-	end_pos := box.quad.l + ui_text_string_size(X, string(es.mem[:es.end]))
+	end_pos := box.quad.l + text_string_size(X, string(es.mem[:es.end]))
 	end_offset := end_pos - box.parent.quad.r
 	start_offset := end_offset + box.parent.quad.r - box.parent.quad.l
 	if end_offset > -10 do box.scroll.x -= 5
@@ -451,7 +451,7 @@ string_editing :: proc(box: ^Box) {
 	string_len_assert(es)
 }
 
-ui_calc_boxes :: proc(root: ^Box) {
+calc_boxes :: proc(root: ^Box) {
 	when PROFILER do tracy.Zone()
 	// PIXEL SIZE / TEXT CONTENT SIZE ------------------------------
 	for _, box in state.ui.boxes.all {
@@ -462,11 +462,11 @@ ui_calc_boxes :: proc(root: ^Box) {
 				calc_size^ = box.expand[axis] + size.value
 			} else if size.type == .TEXT || size.type == .MAX_SIBLING {
 				if axis == X {
-					calc_size^ = ui_text_size(X, &box.name) + (state.ui.margin*2)
-					if .DISPLAYVALUE in box.flags do calc_size^ = ui_text_string_size(X, fmt.tprint(" ", box.value, " "))
-					if .EDITTEXT in box.flags do calc_size^ = ui_String_size(X, box.editable_string) + state.ui.margin*2
+					calc_size^ = text_size(X, &box.name) + (state.ui.margin*2)
+					if .DISPLAYVALUE in box.flags do calc_size^ = text_string_size(X, fmt.tprint(" ", box.value, " "))
+					if .EDITTEXT in box.flags do calc_size^ = String_size(X, box.editable_string) + state.ui.margin*2
 				} else if axis == Y {
-					calc_size^ = ui_text_size(Y, &box.name) * size.value
+					calc_size^ = text_size(Y, &box.name) * size.value
 				}
 			}
 		}
@@ -669,7 +669,7 @@ ui_calc_boxes :: proc(root: ^Box) {
 	}
 }
 
-ui_delete_box :: proc(box: ^Box) {
+delete_box :: proc(box: ^Box) {
 	//  figure out how to delete all the boxes at once?
 	if box.parent != nil {
 		if box.parent.first == box && box.parent.last == box {

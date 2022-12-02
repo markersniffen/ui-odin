@@ -71,7 +71,7 @@ Text_Align :: enum {
 	RIGHT,
 }
 
-ui_init_font :: proc(size:f32=18) {
+init_font :: proc(size:f32=18) {
 	state.ui.font_size = size
 
 	// set font default values
@@ -116,14 +116,14 @@ ui_init_font :: proc(size:f32=18) {
 	state.ui.fonts.icons.texture_size = 256
 	state.ui.fonts.icons.texture_unit = 4
 
-	ui_load_font(&state.ui.fonts.regular)
-	ui_load_font(&state.ui.fonts.bold)
-	ui_load_font(&state.ui.fonts.italic)
-	ui_load_font(&state.ui.fonts.light)
-	ui_load_font(&state.ui.fonts.icons)
+	load_font(&state.ui.fonts.regular)
+	load_font(&state.ui.fonts.bold)
+	load_font(&state.ui.fonts.italic)
+	load_font(&state.ui.fonts.light)
+	load_font(&state.ui.fonts.icons)
 }
 
-ui_load_font :: proc(font: ^Font) -> bool {
+load_font :: proc(font: ^Font) -> bool {
 	using stb, mem, fmt
 	NUM_CHARS :: 96
 	
@@ -190,7 +190,7 @@ ui_load_font :: proc(font: ^Font) -> bool {
 	return true
 }
 
-ui_load_default_font :: proc(font: ^Font) {
+load_default_font :: proc(font: ^Font) {
 	start : int
 	item : int
 	char : rune
@@ -249,45 +249,45 @@ ui_load_default_font :: proc(font: ^Font) {
 	// }	
 }
 
-ui_set_font_size :: proc(size: f32 = 18) {
+set_font_size :: proc(size: f32 = 18) {
 	state.ui.font_size = size
 
-	if !ui_load_font(&state.ui.fonts.regular) {
-		if !ui_set_font_regular("Arial", "C:/Windows/Fonts/ARIAL.ttf") {
-			ui_load_default_font(&state.ui.fonts.regular)
+	if !load_font(&state.ui.fonts.regular) {
+		if !set_font_regular("Arial", "C:/Windows/Fonts/ARIAL.ttf") {
+			load_default_font(&state.ui.fonts.regular)
 		}
 	}
-	if !ui_load_font(&state.ui.fonts.bold) {
-		if !ui_set_font_bold("Arial", "C:/Windows/Fonts/ARIALBD.ttf") {
-			ui_load_default_font(&state.ui.fonts.bold)
+	if !load_font(&state.ui.fonts.bold) {
+		if !set_font_bold("Arial", "C:/Windows/Fonts/ARIALBD.ttf") {
+			load_default_font(&state.ui.fonts.bold)
 		}
 	}
-	if !ui_load_font(&state.ui.fonts.italic) {
-		if !ui_set_font_italic("Arial", "C:/Windows/Fonts/ARIALI.ttf") {
-			ui_load_default_font(&state.ui.fonts.italic)
+	if !load_font(&state.ui.fonts.italic) {
+		if !set_font_italic("Arial", "C:/Windows/Fonts/ARIALI.ttf") {
+			load_default_font(&state.ui.fonts.italic)
 		}
 	}
-	if !ui_load_font(&state.ui.fonts.light) {
-		if !ui_set_font_light("Arial", "C:/Windows/Fonts/ARIALN.ttf") {
-			ui_load_default_font(&state.ui.fonts.light)
+	if !load_font(&state.ui.fonts.light) {
+		if !set_font_light("Arial", "C:/Windows/Fonts/ARIALN.ttf") {
+			load_default_font(&state.ui.fonts.light)
 		}
 	}
-	if !ui_load_font(&state.ui.fonts.icons) {
-		ui_load_default_font(&state.ui.fonts.icons)
+	if !load_font(&state.ui.fonts.icons) {
+		load_default_font(&state.ui.fonts.icons)
 	}
 }
 
-ui_set_font :: proc(font: ^Font, name, path: string) -> bool {
+set_font :: proc(font: ^Font, name, path: string) -> bool {
 	font.name = name
 	font.path = path
-	return ui_load_font(font)
+	return load_font(font)
 }
 
-ui_set_font_regular :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.regular, name, path) }
-ui_set_font_bold :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.bold, name, path) }
-ui_set_font_italic :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.italic, name, path) }
-ui_set_font_light :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.light, name, path) }
-ui_set_font_icons :: proc(name, path: string) -> bool { return ui_set_font(&state.ui.fonts.icons, name, path) }
+set_font_regular :: proc(name, path: string) -> bool { return set_font(&state.ui.fonts.regular, name, path) }
+set_font_bold :: proc(name, path: string) -> bool { return set_font(&state.ui.fonts.bold, name, path) }
+set_font_italic :: proc(name, path: string) -> bool { return set_font(&state.ui.fonts.italic, name, path) }
+set_font_light :: proc(name, path: string) -> bool { return set_font(&state.ui.fonts.light, name, path) }
+set_font_icons :: proc(name, path: string) -> bool { return set_font(&state.ui.fonts.icons, name, path) }
 
 draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}, clip:Quad) {
 	using stb
@@ -650,7 +650,7 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 // 	}
 // }
 
-ui_text_size :: proc(axis: int, text: ^String) -> f32 {
+text_size :: proc(axis: int, text: ^String) -> f32 {
 	size: f32
 	if axis == X {
 		for letter in to_string(text) {
@@ -666,7 +666,7 @@ ui_text_size :: proc(axis: int, text: ^String) -> f32 {
 	return size
 }
 
-ui_text_string_size :: proc(axis: int, text: string) -> f32 {
+text_string_size :: proc(axis: int, text: string) -> f32 {
 	size: f32
 	if axis == X {
 		for letter in text {
@@ -682,7 +682,7 @@ ui_text_string_size :: proc(axis: int, text: string) -> f32 {
 	return size
 }
 
-ui_String_size :: proc(axis: int, editable: ^String) -> f32 {
+String_size :: proc(axis: int, editable: ^String) -> f32 {
 	size: f32
 	text := to_string(editable)
 	if axis == X {

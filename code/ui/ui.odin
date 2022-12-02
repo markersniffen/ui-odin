@@ -67,7 +67,7 @@ UI_Context :: struct {
 
 	editable_string: String,
 
-	axis: Axis,
+	axis: UI_Axis,
 	size: [XY]Box_Size,
 
 	bg_color: HSL,
@@ -98,7 +98,7 @@ UI_Colors :: struct {
 	active: HSL,	
 }
 
-Axis :: enum {
+UI_Axis :: enum {
 	X,
 	Y,
 }
@@ -134,13 +134,13 @@ ui_update :: proc() {
 	// create queued panel
 	if state.ui.panels.queued != {} {
 		q := state.ui.panels.queued
-		ui_create_panel(state.ui.panels.queued_parent, q.axis, q.type, q.content, q.size, q.quad)
+		create_panel(state.ui.panels.queued_parent, q.axis, q.type, q.content, q.size, q.quad)
 		state.ui.panels.queued = {}
 	}
 
-	ui_calc_panel(state.ui.panels.root, state.window.quad)
+	calc_panel(state.ui.panels.root, state.window.quad)
 	if state.ui.panels.floating != nil {
-		ui_calc_panel(state.ui.panels.floating, state.ui.panels.floating.quad)
+		calc_panel(state.ui.panels.floating, state.ui.panels.floating.quad)
 	}
 	
 	{
@@ -173,7 +173,7 @@ ui_update :: proc() {
 		if box_index > 0 {
 			for i in 0..<box_index {
 				box := cast(^Box)state.ui.boxes.to_delete[i]
-				ui_delete_box(box)
+				delete_box(box)
 				state.ui.boxes.to_delete[i] = nil
 			}
 		}
@@ -197,7 +197,7 @@ ui_update :: proc() {
 		when PROFILER do tracy.ZoneN("CALC BOXES")
 		for panel in panels {
 			if panel != nil {
-				if panel.box != nil do ui_calc_boxes(panel.box)
+				if panel.box != nil do calc_boxes(panel.box)
 			}
 		}
 	}

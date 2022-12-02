@@ -18,7 +18,7 @@ Panel :: struct {
 	next: ^Panel,
 	prev: ^Panel,
 
-	axis: Axis,
+	axis: UI_Axis,
 	size: f32,
 	type: Panel_Type,
 	quad: Quad,
@@ -35,7 +35,7 @@ Panel_Type :: enum {
 	FLOATING,
 }
 
-ui_queue_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0})
+queue_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0})
 {
 	state.ui.panels.queued.axis = axis
 	state.ui.panels.queued.type = type
@@ -45,7 +45,7 @@ ui_queue_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, conte
 	state.ui.panels.queued_parent = current
 }
 
-ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0}) -> ^Panel
+create_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0}) -> ^Panel
 {
 	// current := state.ui.ctx.panel
 	panel := cast(^Panel)pool_alloc(&state.ui.panels.pool)
@@ -64,14 +64,14 @@ ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, cont
 		state.ui.panels.root = panel
 	} else {
 		if type == .FLOATING {
-			if state.ui.panels.floating != nil do ui_delete_panel(state.ui.panels.floating)
+			if state.ui.panels.floating != nil do delete_panel(state.ui.panels.floating)
 			assert(current.child_a == nil && current.child_b == nil)
 			if state.ui.panels.floating != nil {
 				if state.ui.panels.floating.content == content {
 					panel.quad = state.ui.panels.floating.quad
 				}
 				// note needed?
-				// ui_delete_panel(state.ui.panels.floating)
+				// delete_panel(state.ui.panels.floating)
 			}
 			panel.parent = current
 			state.ui.panels.floating = panel
@@ -107,7 +107,7 @@ ui_create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, cont
 	return panel
 }
 
-ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
+calc_panel :: proc(panel: ^Panel, quad: Quad) {
 	when PROFILER do tracy.Zone()
 	if panel != nil
 	{
@@ -155,8 +155,8 @@ ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
 			} else if panel.child_a.type == .STATIC {
 				panel.size = state.ui.line_space * (1 / f32(state.window.size[panel.axis]))			
 			}
-			ui_calc_panel(panel.child_a, a)
-			ui_calc_panel(panel.child_b, b)
+			calc_panel(panel.child_a, a)
+			calc_panel(panel.child_b, b)
 		} else if panel.type == .FLOATING {
 			if panel.box != nil do panel.quad = panel.box.quad
 		}
@@ -188,7 +188,7 @@ ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
 		}
 }
 
-ui_delete_panel :: proc(panel: ^Panel) {
+delete_panel :: proc(panel: ^Panel) {
 	if panel != nil
 	{
 		parent := panel.parent
