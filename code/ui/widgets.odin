@@ -11,25 +11,25 @@ import "core:mem"
 // this creates a root box and set's it to the context parent
 
 reset_colors :: proc() {
-	state.ui.ctx.bg_color = state.ui.col.bg
-	state.ui.ctx.border_color = state.ui.col.border
-	state.ui.ctx.font_color = state.ui.col.font
+	state.ctx.bg_color = state.col.bg
+	state.ctx.border_color = state.col.border
+	state.ctx.font_color = state.col.font
 }
 
 begin :: proc() -> ^Panel {
 	reset_colors()
-	state.ui.ctx.box = nil
-	state.ui.ctx.parent = nil
-	quad := state.ui.ctx.panel.quad
+	state.ctx.box = nil
+	state.ctx.parent = nil
+	quad := state.ctx.panel.quad
 	size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
 	box := create_box("root", { .ROOT, .CLIP })
 	process_ops(box)
 	box.offset = {quad.l, quad.t}
-	state.ui.ctx.panel.box = box
+	state.ctx.panel.box = box
 	push_parent(box)
 	size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
 	axis(.Y)
-	return state.ui.ctx.panel
+	return state.ctx.panel
 }
 
 // use
@@ -38,14 +38,14 @@ begin :: proc() -> ^Panel {
 //
 begin_floating :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING}) -> ^Panel {
 	reset_colors()
-	state.ui.ctx.box = nil
-	state.ui.ctx.parent = nil
+	state.ctx.box = nil
+	state.ctx.parent = nil
 	size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
 	box := create_box("root_floating", flags)
 	process_ops(box)
-	state.ui.ctx.panel.box = box
+	state.ctx.panel.box = box
 	push_parent(box)
-	return state.ui.ctx.panel
+	return state.ctx.panel
 }
 
 // use
@@ -69,7 +69,7 @@ begin_floating_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .F
 // at end of each panel.
 //
 end :: proc() {
-	state.ui.boxes.index = 0
+	state.boxes.index = 0
 }
 
 //______ PUSH and POP parent ______//
@@ -79,13 +79,13 @@ end :: proc() {
 // use:
 //   push_parent(box: ^Box)
 //
-push_parent :: proc(box: ^Box) {	state.ui.ctx.parent = box }
+push_parent :: proc(box: ^Box) {	state.ctx.parent = box }
 
 // you will need to pop out of a box regularly.
 // use:
 //   pop()
 //
-pop :: proc() { state.ui.ctx.parent = state.ui.ctx.parent.parent }
+pop :: proc() { state.ctx.parent = state.ctx.parent.parent }
 
 //______ SIZE and AXIS for new boxes ______//
 //
@@ -96,7 +96,7 @@ pop :: proc() { state.ui.ctx.parent = state.ui.ctx.parent.parent }
 //   axis(.Y)
 // you can think of it of setting the context for a row or column.
 //
-axis 				:: proc(axis: UI_Axis) 	{ state.ui.ctx.axis = axis }
+axis 				:: proc(axis: UI_Axis) 	{ state.ctx.axis = axis }
 
 // the size of each box is determined by the size context
 // you set this with the function:
@@ -126,26 +126,26 @@ size :: proc (x_type: Box_Size_Type, x_value: f32, y_type: Box_Size_Type, y_valu
 }
 
 size_x :: proc(type: Box_Size_Type, value: f32) {
-	state.ui.ctx.size.x.type = type
-	state.ui.ctx.size.x.value = value
+	state.ctx.size.x.type = type
+	state.ctx.size.x.value = value
 }
 
 size_y :: proc(type: Box_Size_Type, value: f32) {
-	state.ui.ctx.size.y.type = type
-	state.ui.ctx.size.y.value = value
+	state.ctx.size.y.type = type
+	state.ctx.size.y.value = value
 }
 
 // sets the border color
 
-set_border_color 	:: proc(color: HSL) 		{ state.ui.ctx.border_color = color }
+set_border_color 	:: proc(color: HSL) 		{ state.ctx.border_color = color }
 
 // sets the border thickness
 
-set_border_thickness :: proc(value: f32)		{ state.ui.ctx.border = value }
+set_border_thickness :: proc(value: f32)		{ state.ctx.border = value }
 
 // sets extra flags to add to next box (gets reset by create_box())
 
-extra_flags :: proc(flags:bit_set[Box_Flags]) { state.ui.ctx.flags = flags }
+extra_flags :: proc(flags:bit_set[Box_Flags]) { state.ctx.flags = flags }
 
 //______ WIDGETS ______//
 //
@@ -189,9 +189,9 @@ empty :: proc(_name:string="") -> ^Box {
 bar :: proc(color:HSL={}, _axis:UI_Axis=.Y) -> ^Box {
 	axis(_axis)
 	if _axis == .Y {
-		size(.PCT_PARENT, 1, .PIXELS, state.ui.margin/2)
+		size(.PCT_PARENT, 1, .PIXELS, state.font.margin/2)
 	} else {
-		size(.PIXELS, state.ui.margin, .PCT_PARENT, 1)
+		size(.PIXELS, state.font.margin, .PCT_PARENT, 1)
 	}
 	bar := create_box("bar", { .DRAWBACKGROUND })
 	process_ops(bar)
@@ -251,7 +251,7 @@ edit_value:: proc(key: string, ev: any) -> ^Box {
 		.CLIP,
 	}, ev)
 
-	is_editing := (text_box.key == state.ui.boxes.editing)	
+	is_editing := (text_box.key == state.boxes.editing)	
 
 	// NOTE editing-check
 	if is_editing {
@@ -260,7 +260,7 @@ edit_value:: proc(key: string, ev: any) -> ^Box {
 			end_editing_value(text_box)
 		}
 	// NOTE editing-check
-	} else if box.ops.clicked && state.ui.boxes.editing == {} {
+	} else if box.ops.clicked && state.boxes.editing == {} {
 		start_editing_value(text_box)
 	}
 
@@ -292,9 +292,9 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 	text_box.editable_string = es
 
 	if box.ops.clicked {
-		state.ui.boxes.editing = text_box.key
+		state.boxes.editing = text_box.key
 	} else if box.ops.off_clicked || box.ops.right_clicked {
-		state.ui.boxes.editing = {}
+		state.boxes.editing = {}
 	}
 
 	process_ops(text_box)
@@ -340,18 +340,18 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 // 				val.lines += 1
 // 				width = 0
 // 			} else {
-// 				width += state.ui.fonts.regular.char_data[rune(char)].advance
+// 				width += state.font.fonts.regular.char_data[rune(char)].advance
 // 			}
 // 			i += 1
 // 		}
 // 	}
 	
-// 	size(.PIXELS, val.width, .PIXELS, (state.ui.line_space-4) * f32(val.lines+1))
+// 	size(.PIXELS, val.width, .PIXELS, (state.font.line_space-4) * f32(val.lines+1))
 // 	box := _box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH }, value)
 // 	process_ops(box)
 
 // 	val.current_line = clamp( (int( (-box.scroll.y / (box.calc_size.y)) * f32(val.lines+1) ) ), 0, val.lines)
-// 	val.last_line = clamp( val.current_line + int(sbox.calc_size.y/(state.ui.line_space-4)), 0, val.lines)
+// 	val.last_line = clamp( val.current_line + int(sbox.calc_size.y/(state.font.line_space-4)), 0, val.lines)
 
 // 	return box.ops
 // }
@@ -360,7 +360,7 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 // creates a slider for editing float values
 
 slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
-	old_size := state.ui.ctx.size
+	old_size := state.ctx.size
 	box := create_box(label, {
 		.CLICKABLE,
 		.HOVERABLE,
@@ -381,7 +381,7 @@ slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 		.HOVERABLE,
 		.CLICKABLE,
 	})
-	highlight.bg_color = state.ui.col.highlight
+	highlight.bg_color = state.col.highlight
 	process_ops(highlight)
 	
 	size(.PCT_PARENT, 1, .PCT_PARENT, 1)
@@ -391,7 +391,7 @@ slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 	}, value^)
 
 	// NOTE editing-check
-	if display_value.key == state.ui.boxes.editing {
+	if display_value.key == state.boxes.editing {
 		excl(&box.flags, Box_Flags.HOVERABLE)
 		excl(&highlight.flags, Box_Flags.CLICKABLE)
 		excl(&highlight.flags, Box_Flags.ACTIVEANIMATION)
@@ -403,7 +403,7 @@ slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 	if box.ops.ctrl_clicked {
 		start_editing_value(display_value)
 	// NOTE editing-check
-	} else if state.ui.boxes.editing == display_value.key {
+	} else if state.boxes.editing == display_value.key {
 		if box.ops.off_clicked || enter() {
 			end_editing_value(display_value)
 		} else if esc() {
@@ -412,7 +412,7 @@ slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 	}
 
 	// NOTE editing-check
-	if display_value.key != state.ui.boxes.editing {
+	if display_value.key != state.boxes.editing {
 		if box.ops.clicked {
 			state.input.mouse.delta_temp = state.input.mouse.pos - linear(value^, min, max, 0, box.calc_size.x)
 		}
@@ -423,7 +423,7 @@ slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 	}
 
 	pop()
-	state.ui.ctx.size = old_size
+	state.ctx.size = old_size
 	return box.ops
 }
 
@@ -520,7 +520,7 @@ tab :: proc(names: []string, active:^int=nil) -> ([]^Box, int) {
 			label := label(name)
 			
 			close := button(fmt.tprint("<#>x###close", i))
-			excl(&state.ui.ctx.box.flags, Box_Flags.DRAWBACKGROUND, Box_Flags.DRAWGRADIENT, Box_Flags.DRAWBORDER)
+			excl(&state.ctx.box.flags, Box_Flags.DRAWBACKGROUND, Box_Flags.DRAWGRADIENT, Box_Flags.DRAWBORDER)
 
 			if radio.ops.clicked {
 				index = i
@@ -534,7 +534,7 @@ tab :: proc(names: []string, active:^int=nil) -> ([]^Box, int) {
 	}
 
 	if tab.first != nil {
-		if state.ui.frame - tab.first.frame_created <= 10 {
+		if state.frame - tab.first.frame_created <= 10 {
 			tab.first.ops.selected = true
 		}
 	}
@@ -544,7 +544,7 @@ tab :: proc(names: []string, active:^int=nil) -> ([]^Box, int) {
 	}
 
 	pop()
-	bar(state.ui.col.active)
+	bar(state.col.active)
 
 	if active != nil do active^ = index
 	return tabs, index
@@ -555,7 +555,7 @@ tab :: proc(names: []string, active:^int=nil) -> ([]^Box, int) {
 // parent must not rely solely on children for .X size
 
 spacer_fill :: proc() -> Box_Ops {
-	oldsize := state.ui.ctx.size[X]
+	oldsize := state.ctx.size[X]
 	size_x(.MIN_SIBLINGS, 1)
 	box := create_box("spacer_fill", {
 	})
@@ -568,7 +568,7 @@ spacer_fill :: proc() -> Box_Ops {
 // TODO make this work for the .Y axis
 
 spacer_pixels :: proc(pixels: f32, name:="spacer_pixels") -> Box_Ops {
-	oldsize := state.ui.ctx.size.x
+	oldsize := state.ctx.size.x
 	size_x(.PIXELS, pixels)
 	box := create_box(name, {})
 	process_ops(box)
@@ -598,7 +598,7 @@ scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 	size(.NONE, 1, .NONE, 0)
 	y_handle := create_box("y_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
 	process_ops(y_handle)
-	y_handle.bg_color = state.ui.col.inactive
+	y_handle.bg_color = state.col.inactive
 	// TODO y_handle.offset.y = -handle_value.y 
 	pop()
 
@@ -611,7 +611,7 @@ scrollbox :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 	size(.NONE, 0, .NONE, 0)
 	x_handle := create_box("x_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
 	process_ops(x_handle)
-	x_handle.bg_color = state.ui.col.inactive
+	x_handle.bg_color = state.col.inactive
 	// x_handle.offset.x = -handle_value.x
 	pop()
 
@@ -666,18 +666,18 @@ scrollbox_old :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 			size(.PCT_PARENT, 1, .PIXELS, db_size.y)
 			y_handle := create_box("y_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
 			process_ops(y_handle)
-			y_handle.bg_color = state.ui.col.inactive
+			y_handle.bg_color = state.col.inactive
 			y_handle.offset.y = -db_value.y
 			pop()
 
 			if y_handle.ops.pressed {
-				state.ui.panels.locked = true
+				state.panels.locked = true
 				if y_handle.ops.clicked {
 					state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/db_range.y) + viewport.first.offset.y
 				}
 				viewport.first.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/db_range.y)) - state.input.mouse.delta_temp.y) * -1
 			} else {
-				state.ui.panels.locked = false
+				state.panels.locked = false
 			}
 		}
 		if x {
@@ -690,7 +690,7 @@ scrollbox_old :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 			size(.PIXELS, db_size.x, .PCT_PARENT, 1)
 			x_handle := create_box("x_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
 			process_ops(x_handle)
-			x_handle.bg_color = state.ui.col.inactive
+			x_handle.bg_color = state.col.inactive
 			x_handle.offset.x = -db_value.x
 			pop()
 

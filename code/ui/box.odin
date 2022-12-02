@@ -116,23 +116,23 @@ Box_Ops :: struct {
 }
 
 gen_key :: proc(name: string, id: string) -> Key {
-	text := fmt.tprint(args={name, id, state.ui.ctx.panel.uid}, sep="_") //state.ui.boxes.index,
+	text := fmt.tprint(args={name, id, state.ctx.panel.uid}, sep="_") //state.boxes.index,
 	key := string_to_key(text)
 	return key
 }
 
 generate_box :: proc(key: Key) -> ^Box {
-	box := cast(^Box)pool_alloc(&state.ui.boxes.pool)
+	box := cast(^Box)pool_alloc(&state.boxes.pool)
 	box.key = key
 
-	assert(!(box.key in state.ui.boxes.all))
-	state.ui.boxes.all[box.key] = box
+	assert(!(box.key in state.boxes.all))
+	state.boxes.all[box.key] = box
 	return box
 }
 
 create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -> ^Box {
 	name := _name
-	id := fmt.tprint(state.ui.boxes.index)
+	id := fmt.tprint(state.boxes.index)
 	// check if "###" exists in string, and use the left half for name, right half for the ID
 	for letter, index in _name {
 		if letter == '#' {
@@ -144,19 +144,19 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 	}
 
 	key := gen_key(name, id)
-	box, box_ok := state.ui.boxes.all[key]
-	parent := state.ui.ctx.parent
+	box, box_ok := state.boxes.all[key]
+	parent := state.ctx.parent
 	
 	// if box doesn't exist, create it
 	if !box_ok {
 		box = generate_box(key)
-		box.frame_created = state.ui.frame
+		box.frame_created = state.frame
 		if .FLOATING in flags {
 			box.offset = state.input.mouse.pos
 		}	else if .MENU in flags {
-			if state.ui.boxes.active != nil {
-				offset := state.ui.boxes.active.offset
-				offset.y += state.ui.boxes.active.calc_size.y
+			if state.boxes.active != nil {
+				offset := state.boxes.active.offset
+				offset.y += state.boxes.active.calc_size.y
 				box.offset = offset
 			} else {
 				box.offset = state.input.mouse.pos
@@ -170,17 +170,17 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 
 	assert(box != nil)
 	box.name = from_string(name)
-	box.flags = state.ui.ctx.flags + flags
-	state.ui.ctx.flags = {}
+	box.flags = state.ctx.flags + flags
+	state.ctx.flags = {}
 	box.value = value
-	box.size = state.ui.ctx.size
-	box.axis = state.ui.ctx.axis
-	box.bg_color = state.ui.ctx.bg_color
-	box.border_color = state.ui.ctx.border_color
-	box.font_color = state.ui.ctx.font_color
-	box.border = state.ui.ctx.border
-	box.text_align = state.ui.ctx.text_align
-	box.panel = state.ui.ctx.panel
+	box.size = state.ctx.size
+	box.axis = state.ctx.axis
+	box.bg_color = state.ctx.bg_color
+	box.border_color = state.ctx.border_color
+	box.font_color = state.ctx.font_color
+	box.border = state.ctx.border
+	box.text_align = state.ctx.text_align
+	box.panel = state.ctx.panel
 
 	box.first = nil
 	// box.last = nil
@@ -211,13 +211,13 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 
 	// ADD BOX TO LINKED LIST ------------------------------
 	if !(.ROOT in box.flags) {
-		box.hash_prev = state.ui.ctx.box
-		state.ui.ctx.box.hash_next = box
+		box.hash_prev = state.ctx.box
+		state.ctx.box.hash_next = box
 	}
-	state.ui.ctx.box = box
+	state.ctx.box = box
 
-	state.ui.boxes.index += 1
-	box.last_frame_touched = state.ui.frame
+	state.boxes.index += 1
+	box.last_frame_touched = state.frame
 	return(box)
 }
 
@@ -227,11 +227,11 @@ process_ops :: proc(box: ^Box) {
 	box.ops.released = false
 	box.ops.off_clicked = false
 	
-	if box.panel != state.ui.panels.hot && box.panel != state.ui.panels.floating do return
-	if state.ui.panels.floating != nil && box.panel != state.ui.panels.floating do return
+	if box.panel != state.panels.hot && box.panel != state.panels.floating do return
+	if state.panels.floating != nil && box.panel != state.panels.floating do return
 
 	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
-		box.ops.editing = (box.key == state.ui.boxes.editing)
+		box.ops.editing = (box.key == state.boxes.editing)
 	}
 
 	mouse_over := mouse_in_quad(box.clip)
@@ -239,13 +239,13 @@ process_ops :: proc(box: ^Box) {
 	if .HOVERABLE in box.flags {
 		if mouse_over && !lmb_drag() {
 			box.ops.hovering = true
-			state.ui.boxes.hot = box
+			state.boxes.hot = box
 			if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
 				cursor(.TEXT)
 			}
 		} else {
 			box.ops.hovering = false
-			if state.ui.boxes.hot == box do state.ui.boxes.hot = nil
+			if state.boxes.hot == box do state.boxes.hot = nil
 		}
 	}
 
@@ -255,7 +255,7 @@ process_ops :: proc(box: ^Box) {
 				box.ops.pressed = true
 				box.ops.clicked = true
 				if ctrl() do box.ops.ctrl_clicked = true
-				state.ui.boxes.active = box
+				state.boxes.active = box
 			} else {
 				box.ops.clicked = false
 				box.ops.ctrl_clicked = false
@@ -296,12 +296,12 @@ process_ops :: proc(box: ^Box) {
 		}
 		if lmb_release_up() {
 			box.ops.dragging = false
-			state.ui.panels.locked = false
+			state.panels.locked = false
 		}
 		
 		if box.ops.clicked {
 			box.ops.dragging = true
-			state.ui.panels.locked = true
+			state.panels.locked = true
 		}
 	}
 
@@ -311,7 +311,7 @@ process_ops :: proc(box: ^Box) {
 				box.ops.middle_clicked = true
 				box.ops.middle_dragged = true
 				// TODO really do this?
-				state.ui.boxes.active = box
+				state.boxes.active = box
 			} else {
 				box.ops.middle_clicked = false
 			}
@@ -342,7 +342,7 @@ string_editing :: proc(box: ^Box) {
 	if box.parent.ops.clicked || lmb_drag() {
 		for i in 0..=es.len {
 			if i < es.len {
-				quad.r += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
+				quad.r += state.font.fonts.regular.char_data[rune(es.mem[i])].advance
 			} else {
 				quad.r = box.quad.r
 			}
@@ -356,7 +356,7 @@ string_editing :: proc(box: ^Box) {
 					break
 				}
 			}
-			quad.l += state.ui.fonts.regular.char_data[rune(es.mem[i])].advance
+			quad.l += state.font.fonts.regular.char_data[rune(es.mem[i])].advance
 		}
 	}
 
@@ -368,21 +368,21 @@ string_editing :: proc(box: ^Box) {
 	if start_offset < 10 do box.scroll.x += 5
 	
 	// TYPE LETTERS
-	if state.ui.last_char > 0 {
+	if state.font.last_char > 0 {
 		if es.end-es.start != 0 {
 			string_backspace(es)
 		}
 		if !(es.len+1 > LONG_STRING_LEN) {
 			if es.start >= es.len {
-				es.mem[es.len] = u8(state.ui.last_char)
+				es.mem[es.len] = u8(state.font.last_char)
 			} else {
 				copy(es.mem[clamp(es.start+1, 0, es.len):], es.mem[es.start:es.len])
-				es.mem[es.start] = u8(state.ui.last_char)
+				es.mem[es.start] = u8(state.font.last_char)
 			}
 			es.start +=	1
 			es.end = es.start
 			es.len += 1
-			state.ui.last_char = -1
+			state.font.last_char = -1
 		} else {
 			fmt.println("MAX STRING LENGTH REACHED")
 		}
@@ -454,7 +454,7 @@ string_editing :: proc(box: ^Box) {
 calc_boxes :: proc(root: ^Box) {
 	when PROFILER do tracy.Zone()
 	// PIXEL SIZE / TEXT CONTENT SIZE ------------------------------
-	for _, box in state.ui.boxes.all {
+	for _, box in state.boxes.all {
 		// for each axis (x/y) ------------------------------
 		for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
@@ -462,9 +462,9 @@ calc_boxes :: proc(root: ^Box) {
 				calc_size^ = box.expand[axis] + size.value
 			} else if size.type == .TEXT || size.type == .MAX_SIBLING {
 				if axis == X {
-					calc_size^ = text_size(X, &box.name) + (state.ui.margin*2)
+					calc_size^ = text_size(X, &box.name) + (state.font.margin*2)
 					if .DISPLAYVALUE in box.flags do calc_size^ = text_string_size(X, fmt.tprint(" ", box.value, " "))
-					if .EDITTEXT in box.flags do calc_size^ = String_size(X, box.editable_string) + state.ui.margin*2
+					if .EDITTEXT in box.flags do calc_size^ = String_size(X, box.editable_string) + state.font.margin*2
 				} else if axis == Y {
 					calc_size^ = text_size(Y, &box.name) * size.value
 				}
@@ -562,13 +562,13 @@ calc_boxes :: proc(root: ^Box) {
 				handle_value := handle_range * mpl
 				
 				if y_handle.ops.pressed {
-					state.ui.panels.locked = true
+					state.panels.locked = true
 					if y_handle.ops.clicked {
 						state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/handle_range.y) + box.offset.y
 					}
 					box.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/handle_range.y)) - state.input.mouse.delta_temp.y) * -1
 				} else {
-					state.ui.panels.locked = false
+					state.panels.locked = false
 				}
 
 				if x_handle.ops.pressed {
@@ -611,7 +611,7 @@ calc_boxes :: proc(root: ^Box) {
 		} else if !(.ROOT in box.flags) {
 			if box.prev == nil {
 				if box.parent != nil {
-					if .VIEWSCROLL in box.parent.flags && box.panel == state.ui.panels.hot {
+					if .VIEWSCROLL in box.parent.flags && box.panel == state.panels.hot {
 						 if mouse_in_quad(box.parent.parent.quad) {
 							box.scroll = box.scroll + (state.input.mouse.scroll*20)
 
@@ -652,7 +652,7 @@ calc_boxes :: proc(root: ^Box) {
 	for box := root; box != nil; box = box.hash_next	{
 
 		if .HOTANIMATION in box.flags {
-			if box.ops.hovering && box == state.ui.boxes.hot {
+			if box.ops.hovering && box == state.boxes.hot {
 				box.hot_t = clamp(box.hot_t + 0.12, 0, 1)
 			} else {
 				box.hot_t = clamp(box.hot_t - 0.12, 0, 1)
@@ -660,7 +660,7 @@ calc_boxes :: proc(root: ^Box) {
 		}
 
 		if .ACTIVEANIMATION in box.flags {
-			if box.ops.pressed && box == state.ui.boxes.active {
+			if box.ops.pressed && box == state.boxes.active {
 				box.active_t = clamp(box.active_t + 0.12, 0, 1)
 			} else {
 				box.active_t = clamp(box.active_t - 0.12, 0, 1)
@@ -722,6 +722,6 @@ delete_box :: proc(box: ^Box) {
 	box.first = nil
 	box.last = nil
 	assert(box != nil)
-	delete_key(&state.ui.boxes.all, box.key)
-	pool_free(&state.ui.boxes.pool, box)
+	delete_key(&state.boxes.all, box.key)
+	pool_free(&state.boxes.pool, box)
 }

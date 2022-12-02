@@ -4,8 +4,6 @@ import sg "../../../sokol-odin/sokol/gfx"
 import sapp "../../../sokol-odin/sokol/app"
 import sglue "../../../sokol-odin/sokol/glue"
 
-import demo "../demo"
-
 import "core:runtime"
 import "core:mem"
 import "core:fmt"
@@ -117,10 +115,12 @@ sokol_init :: proc "c" () {
 
 	init_font()
 
+	col := v4(lin.vector4_hsl_to_rgb(state.col.backdrop.h, state.col.backdrop.s, state.col.backdrop.l, state.col.backdrop.a))
+
     // default pass action
     state.sokol.pass_action = {
         colors = {
-            0 = { action = .CLEAR, value = { 0, 0, 0, 1 }},
+            0 = { action = .CLEAR, value = {col[0], col[1], col[2], col[3]} },
         },
     }
 
@@ -129,6 +129,12 @@ sokol_init :: proc "c" () {
 
 sokol_frame :: proc "c" () {
 	context = runtime.default_context()
+	col := v4(lin.vector4_hsl_to_rgb(state.col.backdrop.h, state.col.backdrop.s, state.col.backdrop.l, state.col.backdrop.a))
+    state.sokol.pass_action = {
+        colors = {
+            0 = { action = .CLEAR, value = {col[0], col[1], col[2], col[3]} },
+        },
+    }
 	
 	cursor(.ARROW)
 
@@ -139,7 +145,7 @@ sokol_frame :: proc "c" () {
 	// state.window.framebuffer.x = sapp.width()
 	// state.window.framebuffer.y = sapp.height()
 	
-	ui_update()
+	update()
 	
 	state.sokol.vs_params.framebuffer = {f32(state.window.size.x/2), f32(state.window.size.y/2)}
 
@@ -173,9 +179,9 @@ sokol_frame :: proc "c" () {
 	state.sokol.iindex = 0
 	state.sokol.qindex = 0
 
-	state.ui.last_char = 0
+	state.font.last_char = 0
 
-	state.frame()
+	state.loop()
 }
 
 sokol_event :: proc "c" (e: ^sapp.Event) {
@@ -243,9 +249,9 @@ sokol_event :: proc "c" (e: ^sapp.Event) {
 		}
 	} else if e.type == .CHAR {
 		if !state.input.keys.ctrl && !state.input.keys.alt {
-			state.ui.last_char = rune(e.char_code)
+			state.font.last_char = rune(e.char_code)
 		} else {
-			state.ui.last_char = -1
+			state.font.last_char = -1
 		}
 	}
 }

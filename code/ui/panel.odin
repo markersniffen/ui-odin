@@ -37,21 +37,21 @@ Panel_Type :: enum {
 
 queue_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0})
 {
-	state.ui.panels.queued.axis = axis
-	state.ui.panels.queued.type = type
-	state.ui.panels.queued.content = content
-	state.ui.panels.queued.size = size
-	state.ui.panels.queued.quad = quad
-	state.ui.panels.queued_parent = current
+	state.panels.queued.axis = axis
+	state.panels.queued.type = type
+	state.panels.queued.content = content
+	state.panels.queued.size = size
+	state.panels.queued.quad = quad
+	state.panels.queued_parent = current
 }
 
 create_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0}) -> ^Panel
 {
-	// current := state.ui.ctx.panel
-	panel := cast(^Panel)pool_alloc(&state.ui.panels.pool)
+	// current := state.ctx.panel
+	panel := cast(^Panel)pool_alloc(&state.panels.pool)
 	panel.uid = new_uid()
 		
-	state.ui.panels.all[panel.uid] = panel
+	state.panels.all[panel.uid] = panel
 
 	panel.axis = axis
 	panel.size = size
@@ -61,25 +61,25 @@ create_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, cont
 	panel.content = content
 
 	if current == nil {
-		state.ui.panels.root = panel
+		state.panels.root = panel
 	} else {
 		if type == .FLOATING {
-			if state.ui.panels.floating != nil do delete_panel(state.ui.panels.floating)
+			if state.panels.floating != nil do delete_panel(state.panels.floating)
 			assert(current.child_a == nil && current.child_b == nil)
-			if state.ui.panels.floating != nil {
-				if state.ui.panels.floating.content == content {
-					panel.quad = state.ui.panels.floating.quad
+			if state.panels.floating != nil {
+				if state.panels.floating.content == content {
+					panel.quad = state.panels.floating.quad
 				}
 				// note needed?
-				// delete_panel(state.ui.panels.floating)
+				// delete_panel(state.panels.floating)
 			}
 			panel.parent = current
-			state.ui.panels.floating = panel
+			state.panels.floating = panel
 		} else {
 			// create parent
-			new_parent := cast(^Panel)pool_alloc(&state.ui.panels.pool)
+			new_parent := cast(^Panel)pool_alloc(&state.panels.pool)
 			new_parent.uid = new_uid()
-			state.ui.panels.all[new_parent.uid] = new_parent
+			state.panels.all[new_parent.uid] = new_parent
 
 			new_parent.child_a = current
 			new_parent.child_b = panel
@@ -90,7 +90,7 @@ create_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, cont
 
 			panel.parent = new_parent
 
-			if current == state.ui.panels.root do state.ui.panels.root = new_parent
+			if current == state.panels.root do state.panels.root = new_parent
 
 			grandpa := current.parent
 			if grandpa != nil {
@@ -103,7 +103,7 @@ create_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, cont
 			current.parent = new_parent
 		}
 	}
-	state.ui.ctx.panel = panel
+	state.ctx.panel = panel
 	return panel
 }
 
@@ -136,7 +136,7 @@ calc_panel :: proc(panel: ^Panel, quad: Quad) {
 
 			//NOTE - CODE FOR SIZING PANELS
 			if panel.child_a.type != .STATIC  {
-				if state.ui.panels.active == panel {
+				if state.panels.active == panel {
 					cb := panel.child_b
 					if panel.axis == .X {
 						panel.size = (f32(state.input.mouse.pos.x) - quad.l) * (1 / (quad.r - quad.l))
@@ -153,7 +153,7 @@ calc_panel :: proc(panel: ^Panel, quad: Quad) {
 					}
 				}
 			} else if panel.child_a.type == .STATIC {
-				panel.size = state.ui.line_space * (1 / f32(state.window.size[panel.axis]))			
+				panel.size = state.font.line_space * (1 / f32(state.window.size[panel.axis]))			
 			}
 			calc_panel(panel.child_a, a)
 			calc_panel(panel.child_b, b)
@@ -161,7 +161,7 @@ calc_panel :: proc(panel: ^Panel, quad: Quad) {
 			if panel.box != nil do panel.quad = panel.box.quad
 		}
 
-		if !state.ui.panels.locked {
+		if !state.panels.locked {
 			
 		mouse_over : bool = mouse_in_quad(panel.quad)
 		if panel.type == .NULL {
@@ -171,18 +171,18 @@ calc_panel :: proc(panel: ^Panel, quad: Quad) {
 			}
 		}
 		if mouse_over {
-			state.ui.panels.hot = panel
+			state.panels.hot = panel
 
 			if lmb_click() {
-				state.ui.panels.active = panel
+				state.panels.active = panel
 			}
 		} else {
-			if state.ui.panels.hot == panel {
-				state.ui.panels.hot = nil
+			if state.panels.hot == panel {
+				state.panels.hot = nil
 			}
 		}
-		if lmb_release_up() && state.ui.panels.active == panel {
-			state.ui.panels.active = nil
+		if lmb_release_up() && state.panels.active == panel {
+			state.panels.active = nil
 		}
 	}
 		}
@@ -194,9 +194,9 @@ delete_panel :: proc(panel: ^Panel) {
 		parent := panel.parent
 		
 		if panel.type == .FLOATING {
-			delete_key(&state.ui.panels.all, panel.uid)
-			assert(pool_free(&state.ui.panels.pool, panel) == true)
-			state.ui.panels.floating = nil
+			delete_key(&state.panels.all, panel.uid)
+			assert(pool_free(&state.panels.pool, panel) == true)
+			state.panels.floating = nil
 		} else {
 			if parent != nil
 			{
@@ -216,10 +216,10 @@ delete_panel :: proc(panel: ^Panel) {
 						if grandpa.child_a == panel.parent do grandpa.child_a = sibling
 						if grandpa.child_b == panel.parent do grandpa.child_b = sibling
 
-						delete_key(&state.ui.panels.all, parent.uid)
-						delete_key(&state.ui.panels.all, panel.uid)
-						assert(pool_free(&state.ui.boxes.pool, panel))
-						assert(pool_free(&state.ui.boxes.pool, parent))
+						delete_key(&state.panels.all, parent.uid)
+						delete_key(&state.panels.all, panel.uid)
+						assert(pool_free(&state.boxes.pool, panel))
+						assert(pool_free(&state.boxes.pool, parent))
 					} else {
 						fmt.println("failed to find sibling")
 					}
