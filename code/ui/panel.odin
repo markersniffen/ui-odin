@@ -162,29 +162,30 @@ ui_calc_panel :: proc(panel: ^Panel, quad: Quad) {
 		}
 
 		if !state.ui.panels.locked {
-			mouse_over : bool = mouse_in_quad(panel.quad)
-			if panel.type == .NULL {
-				mouse_over = mouse_in_quad(panel.bar)
-				if mouse_over {
-					cursor_size(panel.axis)				
-				}
-			}
+			
+		mouse_over : bool = mouse_in_quad(panel.quad)
+		if panel.type == .NULL {
+			mouse_over = mouse_in_quad(panel.bar)
 			if mouse_over {
-				state.ui.panels.hot = panel
-
-				if lmb_click() {
-					state.ui.panels.active = panel
-				}
-			} else {
-				if state.ui.panels.hot == panel {
-					state.ui.panels.hot = nil
-				}
-			}
-			if lmb_release_up() && state.ui.panels.active == panel {
-				state.ui.panels.active = nil
+				cursor_size(panel.axis)				
 			}
 		}
+		if mouse_over {
+			state.ui.panels.hot = panel
+
+			if lmb_click() {
+				state.ui.panels.active = panel
+			}
+		} else {
+			if state.ui.panels.hot == panel {
+				state.ui.panels.hot = nil
+			}
+		}
+		if lmb_release_up() && state.ui.panels.active == panel {
+			state.ui.panels.active = nil
+		}
 	}
+		}
 }
 
 ui_delete_panel :: proc(panel: ^Panel) {

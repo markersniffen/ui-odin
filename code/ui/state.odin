@@ -31,7 +31,6 @@ State :: struct {
 	ui: 					Ui,
 	input: 				Input,
 	
-	debug: 				Debug,
 }
 
 Input :: struct {

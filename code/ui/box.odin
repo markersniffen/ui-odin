@@ -360,9 +360,13 @@ string_editing :: proc(box: ^Box) {
 		}
 	}
 
-	pos := quad.l - box.quad.l + box.offset.x
-	width := box.parent.quad.r - box.parent.quad.l
-
+	// SCROLL IF CURSOR OUT OF BOUNDS
+	end_pos := box.quad.l + ui_text_string_size(X, string(es.mem[:es.end]))
+	end_offset := end_pos - box.parent.quad.r
+	start_offset := end_offset + box.parent.quad.r - box.parent.quad.l
+	if end_offset > -10 do box.scroll.x -= 5
+	if start_offset < 10 do box.scroll.x += 5
+	
 	// TYPE LETTERS
 	if state.ui.last_char > 0 {
 		if es.end-es.start != 0 {

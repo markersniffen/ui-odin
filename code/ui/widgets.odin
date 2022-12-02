@@ -279,6 +279,7 @@ ui_edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 		.DRAWBORDER,
 		.DRAWGRADIENT,
 		.VIEWSCROLL,
+		.CLIP,
 	})
 
 	ui_push_parent(box)
@@ -287,7 +288,6 @@ ui_edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 	ui_size(.TEXT, 1, .PCT_PARENT, 1)
 	text_box := ui_create_box("editable_text_box", {
 		.EDITTEXT,
-		.CLIP,
 	})
 	text_box.editable_string = es
 
@@ -312,49 +312,49 @@ ui_edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 }
 
 
-ui_paragraph :: proc(value: any) -> Box_Ops {
-	assert(value.id == Document)
-	val := cast(^Document)value.data
+// ui_paragraph :: proc(value: any) -> Box_Ops {
+// 	assert(value.id == Document)
+// 	val := cast(^Document)value.data
 	
-	sbox := ui_scrollbox()
+// 	sbox := ui_scrollbox()
 	
-	width : f32 = 0
-	last_space := 0
-	start := 0
+// 	width : f32 = 0
+// 	last_space := 0
+// 	start := 0
 
-	if val.width != sbox.calc_size.x {
-		val.width = sbox.calc_size.x
-		val.lines = 0
-		i : int = 0
-		for i < len(val.mem) {
-			char := val.mem[i]
-			if char == ' ' do last_space = i
-			return_break := (char == '\n')
-			width_break := (width >= val.width-30)
-			last_char := (i == len(val.mem)-1)
-			if return_break || width_break || last_char {
-				if width_break {
-					if last_space > start do i = last_space+1
-				}
-				start = i
-				val.lines += 1
-				width = 0
-			} else {
-				width += state.ui.fonts.regular.char_data[rune(char)].advance
-			}
-			i += 1
-		}
-	}
+// 	if val.width != sbox.calc_size.x {
+// 		val.width = sbox.calc_size.x
+// 		val.lines = 0
+// 		i : int = 0
+// 		for i < len(val.mem) {
+// 			char := val.mem[i]
+// 			if char == ' ' do last_space = i
+// 			return_break := (char == '\n')
+// 			width_break := (width >= val.width-30)
+// 			last_char := (i == len(val.mem)-1)
+// 			if return_break || width_break || last_char {
+// 				if width_break {
+// 					if last_space > start do i = last_space+1
+// 				}
+// 				start = i
+// 				val.lines += 1
+// 				width = 0
+// 			} else {
+// 				width += state.ui.fonts.regular.char_data[rune(char)].advance
+// 			}
+// 			i += 1
+// 		}
+// 	}
 	
-	ui_size(.PIXELS, val.width, .PIXELS, (state.ui.line_space-4) * f32(val.lines+1))
-	box := ui_create_box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH }, value)
-	ui_process_ops(box)
+// 	ui_size(.PIXELS, val.width, .PIXELS, (state.ui.line_space-4) * f32(val.lines+1))
+// 	box := ui_create_box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH }, value)
+// 	ui_process_ops(box)
 
-	val.current_line = clamp( (int( (-box.scroll.y / (box.calc_size.y)) * f32(val.lines+1) ) ), 0, val.lines)
-	val.last_line = clamp( val.current_line + int(sbox.calc_size.y/(state.ui.line_space-4)), 0, val.lines)
+// 	val.current_line = clamp( (int( (-box.scroll.y / (box.calc_size.y)) * f32(val.lines+1) ) ), 0, val.lines)
+// 	val.last_line = clamp( val.current_line + int(sbox.calc_size.y/(state.ui.line_space-4)), 0, val.lines)
 
-	return box.ops
-}
+// 	return box.ops
+// }
 
 
 // creates a slider for editing float values

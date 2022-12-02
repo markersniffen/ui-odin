@@ -303,7 +303,8 @@ ui_draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 				draw_text(value, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)
 			}
 		} else if .DRAWPARAGRAPH in box.flags {
-			if box.value != nil do draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
+			// TODO implement this without a Documentc struct?
+			// if box.value != nil do draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
 		}
 		if .DISPLAYVALUE in box.flags {
 			draw_text(value, pt_offset_quad({0, -state.ui.font_offset_y}, quad), box.text_align, box.font_color, box.clip)

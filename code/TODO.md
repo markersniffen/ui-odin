@@ -3,9 +3,11 @@
 [ ] features to change?
  - creating and deleting panels on the fly currently uses a queue
  - render pipeline / calc pipeline
- - clipping boxes?
+ [X] clipping boxes?
  - box state:
-   - active, editing, hot
+   - active
+   - hot
+   [X] editing
 
 
 [X] fix blinking panel on add (used queue for creating new panels after startup)

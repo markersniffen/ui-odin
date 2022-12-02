@@ -603,52 +603,52 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 }
 
 // TODO Redo this whole thing, based of of []u8
-draw_text_multiline :: proc(value:any, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
-	when PROFILER do tracy.ZoneNC("Draw multiline text", 0xff0000)
-	assert(value.id == Document)	
-	text : string = "FAILED TO LOAD TEXT"
-	val : Document
+// draw_text_multiline :: proc(value:any, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
+// 	when PROFILER do tracy.ZoneNC("Draw multiline text", 0xff0000)
+// 	assert(value.id == Document)	
+// 	text : string = "FAILED TO LOAD TEXT"
+// 	val : Document
 	
-	if value.id == Document {
-		val = (cast(^Document)value.data)^
-		text = string(val.mem)
-	}
+// 	if value.id == Document {
+// 		val = (cast(^Document)value.data)^
+// 		text = string(val.mem)
+// 	}
 
-	lines := 0
-	last_space := 0
-	start := 0
-	width : f32 = 0
-	i : int = 0
-	for i < len(val.mem) {
-		char := val.mem[i]
-		if char == ' ' do last_space = i
-		return_break := (char == '\n')
-		width_break := (width >= val.width-30)
-		last_char := (i == len(val.mem)-1)
+// 	lines := 0
+// 	last_space := 0
+// 	start := 0
+// 	width : f32 = 0
+// 	i : int = 0
+// 	for i < len(val.mem) {
+// 		char := val.mem[i]
+// 		if char == ' ' do last_space = i
+// 		return_break := (char == '\n')
+// 		width_break := (width >= val.width-30)
+// 		last_char := (i == len(val.mem)-1)
 
-		if return_break || width_break || last_char {
-			jump := f32(lines) * (state.ui.line_space-4)
-			if width_break {
-				if last_space > start do i = last_space+1
-			}
-			text_slice := text[start:i]
-			if last_char do text_slice = text[start:]
-			if lines >= val.current_line-5 && lines <= val.last_line+5 {
-				draw_text(text_slice, {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font, clip)
-			} else if lines > val.last_line+5 {
-				return
-			}
-			if val.mem[i] == ' ' do i += 1
-			start = i
-			width = 0
-			lines += 1
-		} else {
-			width += state.ui.fonts.regular.char_data[rune(char)].advance
-		}
-		i += 1
+// 		if return_break || width_break || last_char {
+// 			jump := f32(lines) * (state.ui.line_space-4)
+// 			if width_break {
+// 				if last_space > start do i = last_space+1
+// 			}
+// 			text_slice := text[start:i]
+// 			if last_char do text_slice = text[start:]
+// 			if lines >= val.current_line-5 && lines <= val.last_line+5 {
+// 				draw_text(text_slice, {quad.l, quad.t + jump, quad.r, quad.t + jump + state.ui.line_space}, align, state.ui.col.font, clip)
+// 			} else if lines > val.last_line+5 {
+// 				return
+// 			}
+// 			if val.mem[i] == ' ' do i += 1
+// 			start = i
+// 			width = 0
+// 			lines += 1
+// 		} else {
+// 			width += state.ui.fonts.regular.char_data[rune(char)].advance
+// 		}
+// 		i += 1
 
-	}
-}
+// 	}
+// }
 
 ui_text_size :: proc(axis: int, text: ^String) -> f32 {
 	size: f32
