@@ -20,19 +20,22 @@ string_to_key :: proc(text: string) -> Key {
 	return key
 }
 
-key_to_string :: proc(key: ^Key) -> string {
+key_to_odin_string :: proc(key: ^Key) -> string {
 	return string(key.mem[:key.len])
 }
 
 String :: struct {
 	mem: [LONG_STRING_LEN]u8,
 	len: int,
-	max: int,
 	start: int,
 	end: int,
+	lines: int,
+	current_line: int,
+	last_line: int,
+	width: f32,
 }
 
-to_string :: proc(es: ^String) -> string {
+to_odin_string :: proc(es: ^String) -> string {
 	if es.len == 0 do return ""
 	return string(es.mem[:es.len])
 }
@@ -46,10 +49,14 @@ replace_string :: proc(es: ^String, text: string) {
 	copy(es.mem[:es.len], text)
 }
 
-from_string :: proc(text: string) -> String {
+from_odin_string :: proc(text: string) -> String {
 	es : String
 	es.len = len(text)
-	assert(es.len <= LONG_STRING_LEN, fmt.tprint("es.len <= LONG_STRING_LEN", es.len, LONG_STRING_LEN, text))
+	// assert(es.len <= LONG_STRING_LEN, fmt.tprint("es.len <= LONG_STRING_LEN", es.len, LONG_STRING_LEN, text))
+	if es.len > LONG_STRING_LEN {
+		fmt.println("TRIMMING LONG STRING!")
+		es.len = LONG_STRING_LEN
+	}
 	copy(es.mem[:es.len], text)
 	return es
 }

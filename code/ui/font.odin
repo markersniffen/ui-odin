@@ -292,7 +292,7 @@ set_font_icons :: proc(name, path: string) -> bool { return set_font(&state.font
 draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}, clip:Quad) {
 	using stb
 
-	text := to_string(editable)
+	text := to_odin_string(editable)
 
 	left_align: f32 = quad.l
 	top_align: f32 = quad.t + state.font.margin
@@ -385,7 +385,7 @@ get_font_from_pattern :: proc(text: string, i: int, current_font: Font) -> (Font
 draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1} ) {
 	using stb
 	
-	text := to_string(es)
+	text := to_odin_string(es)
 
 	left_align: f32 = quad.l
 	top_align: f32 = quad.t + state.font.margin
@@ -603,62 +603,64 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 }
 
 // TODO Redo this whole thing, based of of []u8
-// draw_text_multiline :: proc(value:any, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
-// 	when PROFILER do tracy.ZoneNC("Draw multiline text", 0xff0000)
-// 	assert(value.id == Document)	
-// 	text : string = "FAILED TO LOAD TEXT"
-// 	val : Document
+draw_text_multiline :: proc(value:^String, quad:Quad, align:Text_Align=.LEFT, kerning:f32=-2, clip: Quad) {
+	when PROFILER do tracy.ZoneNC("Draw multiline text", 0xff0000)
+	// assert(value.id == Document)	
+	// text : string = "FAILED TO LOAD TEXT"
+	// val : Document
 	
-// 	if value.id == Document {
-// 		val = (cast(^Document)value.data)^
-// 		text = string(val.mem)
-// 	}
+	// if value.id == Document {
+	// 	val = (cast(^Document)value.data)^
+	// 	text = string(val.mem)
+	// }
 
-// 	lines := 0
-// 	last_space := 0
-// 	start := 0
-// 	width : f32 = 0
-// 	i : int = 0
-// 	for i < len(val.mem) {
-// 		char := val.mem[i]
-// 		if char == ' ' do last_space = i
-// 		return_break := (char == '\n')
-// 		width_break := (width >= val.width-30)
-// 		last_char := (i == len(val.mem)-1)
+	text := value.mem
 
-// 		if return_break || width_break || last_char {
-// 			jump := f32(lines) * (state.font.line_space-4)
-// 			if width_break {
-// 				if last_space > start do i = last_space+1
-// 			}
-// 			text_slice := text[start:i]
-// 			if last_char do text_slice = text[start:]
-// 			if lines >= val.current_line-5 && lines <= val.last_line+5 {
-// 				draw_text(text_slice, {quad.l, quad.t + jump, quad.r, quad.t + jump + state.font.line_space}, align, state.col.font, clip)
-// 			} else if lines > val.last_line+5 {
-// 				return
-// 			}
-// 			if val.mem[i] == ' ' do i += 1
-// 			start = i
-// 			width = 0
-// 			lines += 1
-// 		} else {
-// 			width += state.font.fonts.regular.char_data[rune(char)].advance
-// 		}
-// 		i += 1
+	lines := 0
+	last_space := 0
+	start := 0
+	width : f32 = 0
+	i : int = 0
+	for i < len(text) {
+		char := text[i]
+		if char == ' ' do last_space = i
+		return_break := (char == '\n')
+		width_break := (width >= value.width-30)
+		last_char := (i == len(text)-1)
 
-// 	}
-// }
+		if return_break || width_break || last_char {
+			jump := f32(lines) * (state.font.line_space-4)
+			if width_break {
+				if last_space > start do i = last_space+1
+			}
+			text_slice := value.mem[start:i]
+			if last_char do text_slice = value.mem[start:]
+			if lines >= value.current_line-5 && lines <= value.last_line+5 {
+				draw_text(string(text_slice), {quad.l, quad.t + jump, quad.r, quad.t + jump + state.font.line_space}, align, state.col.font, clip)
+			} else if lines > value.last_line+5 {
+				return
+			}
+			if text[i] == ' ' do i += 1
+			start = i
+			width = 0
+			lines += 1
+		} else {
+			width += state.font.fonts.regular.char_data[rune(char)].advance
+		}
+		i += 1
+
+	}
+}
 
 text_size :: proc(axis: int, text: ^String) -> f32 {
 	size: f32
 	if axis == X {
-		for letter in to_string(text) {
+		for letter in to_odin_string(text) {
 			size += state.font.fonts.regular.char_data[letter].advance
 		}
 	} else if axis == Y {
 		lines: f32 = 1
-		for letter in to_string(text) {
+		for letter in to_odin_string(text) {
 			if letter == '\n' do lines += 1
 		}
 		size = lines * state.font.line_space
@@ -684,7 +686,7 @@ text_string_size :: proc(axis: int, text: string) -> f32 {
 
 String_size :: proc(axis: int, editable: ^String) -> f32 {
 	size: f32
-	text := to_string(editable)
+	text := to_odin_string(editable)
 	if axis == X {
 		for letter in text {
 			size += state.font.fonts.regular.char_data[letter].advance

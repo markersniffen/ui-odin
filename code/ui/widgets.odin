@@ -312,49 +312,50 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 }
 
 
-// paragraph :: proc(value: any) -> Box_Ops {
-// 	assert(value.id == Document)
-// 	val := cast(^Document)value.data
+paragraph :: proc(value: ^String) -> Box_Ops {
+	// assert(value.id == Document)
+	// val := cast(^Document)value.data
 	
-// 	sbox := scrollbox()
+	sbox := scrollbox()
 	
-// 	width : f32 = 0
-// 	last_space := 0
-// 	start := 0
+	width : f32 = 0
+	last_space := 0
+	start := 0
 
-// 	if val.width != sbox.calc_size.x {
-// 		val.width = sbox.calc_size.x
-// 		val.lines = 0
-// 		i : int = 0
-// 		for i < len(val.mem) {
-// 			char := val.mem[i]
-// 			if char == ' ' do last_space = i
-// 			return_break := (char == '\n')
-// 			width_break := (width >= val.width-30)
-// 			last_char := (i == len(val.mem)-1)
-// 			if return_break || width_break || last_char {
-// 				if width_break {
-// 					if last_space > start do i = last_space+1
-// 				}
-// 				start = i
-// 				val.lines += 1
-// 				width = 0
-// 			} else {
-// 				width += state.font.fonts.regular.char_data[rune(char)].advance
-// 			}
-// 			i += 1
-// 		}
-// 	}
+	if value.width != sbox.calc_size.x {
+		value.width = sbox.calc_size.x
+		value.lines = 0
+		i : int = 0
+		for i < len(value.mem) {
+			char := value.mem[i]
+			if char == ' ' do last_space = i
+			return_break := (char == '\n')
+			width_break := (width >= value.width-30)
+			last_char := (i == len(value.mem)-1)
+			if return_break || width_break || last_char {
+				if width_break {
+					if last_space > start do i = last_space+1
+				}
+				start = i
+				value.lines += 1
+				width = 0
+			} else {
+				width += state.font.fonts.regular.char_data[rune(char)].advance
+			}
+			i += 1
+		}
+	}
 	
-// 	size(.PIXELS, val.width, .PIXELS, (state.font.line_space-4) * f32(val.lines+1))
-// 	box := _box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH }, value)
-// 	process_ops(box)
+	size(.PIXELS, value.width, .PIXELS, (state.font.line_space-4) * f32(value.lines+1))
+	box := create_box("paragraph", { .HOVERABLE, .DRAWPARAGRAPH })
+	box.editable_string = value
+	process_ops(box)
 
-// 	val.current_line = clamp( (int( (-box.scroll.y / (box.calc_size.y)) * f32(val.lines+1) ) ), 0, val.lines)
-// 	val.last_line = clamp( val.current_line + int(sbox.calc_size.y/(state.font.line_space-4)), 0, val.lines)
+	value.current_line = clamp( (int( (-box.scroll.y / (box.calc_size.y)) * f32(value.lines+1) ) ), 0, value.lines)
+	value.last_line = clamp( value.current_line + int(sbox.calc_size.y/(state.font.line_space-4)), 0, value.lines)
 
-// 	return box.ops
-// }
+	return box.ops
+}
 
 
 // creates a slider for editing float values
@@ -476,9 +477,9 @@ dropdown :: proc(key: string) -> Box_Ops {
 	})
 	process_ops(box)
 	if box.ops.selected {
-		box.name = from_string(fmt.tprint("<#>s<r>", key))
+		box.name = from_odin_string(fmt.tprint("<#>s<r>", key))
 	} else {
-		box.name = from_string(fmt.tprint("<#>d<r>", key))
+		box.name = from_odin_string(fmt.tprint("<#>d<r>", key))
 	}
 	box.text_align = .LEFT
 	return box.ops
@@ -500,53 +501,72 @@ radio :: proc(key: string) -> ^Box {
 	return box
 }
 
-// creates a tab
+// creates a set of tabs
 
-tab :: proc(names: []string, active:^int=nil) -> ([]^Box, int) {
+tab :: proc(names: []string, close_button:bool=false) -> ([]^Box, int) {
 	size(.PCT_PARENT, 1, .TEXT, 1)
 	tab := empty()
 	tabs := make([]^Box, len(names), context.temp_allocator)
 
-	clicked := false
-	index := 0
-	if active != nil do index = active^
+	clicked := -1
+	index := -1
 
 	for name, i in names {
 		axis(.X)
 		size(.SUM_CHILDREN, 1, .TEXT, 1)
-		radio := radio(fmt.tprint("###radio", i))
-		push_parent(radio)
+		tab := create_box(fmt.tprint("###radio", i), {
+			.CLICKABLE,
+			.HOVERABLE,
+			.DRAWTEXT,
+			.DRAWBACKGROUND,
+			.DRAWGRADIENT,
+			.HOTANIMATION,
+			.ACTIVEANIMATION,
+		})
+		process_ops(tab)
+		push_parent(tab)
 			size(.TEXT, 1, .TEXT, 1)
 			label := label(name)
 			
-			close := button(fmt.tprint("<#>x###close", i))
-			excl(&state.ctx.box.flags, Box_Flags.DRAWBACKGROUND, Box_Flags.DRAWGRADIENT, Box_Flags.DRAWBORDER)
-
-			if radio.ops.clicked {
-				index = i
-				clicked = true
-			} else {
-				radio.ops.selected = false
+			if close_button {
+				close := button(fmt.tprint("<#>x###close", i))
+				excl(&state.ctx.box.flags, Box_Flags.DRAWBACKGROUND, Box_Flags.DRAWGRADIENT, Box_Flags.DRAWBORDER)
+				if close.released do tab.ops.middle_clicked = true
 			}
-			tabs[i] = radio
-			if close.released do radio.ops.middle_clicked = true
+
+			if tab.ops.clicked {
+				clicked = i
+				index = i
+			}
+			if tab.ops.selected {
+				index = i
+			}
+			tabs[i] = tab
 		pop()
 	}
-
-	if tab.first != nil {
-		if state.frame - tab.first.frame_created <= 10 {
-			tab.first.ops.selected = true
+	
+	if len(names) == 1 {
+		tabs[0].ops.selected = true
+		index = 0
+	} else {
+		if tab.first != nil {
+			if state.frame - tab.first.frame_created <= 10 {
+				index = 0
+			}
 		}
+
+		for tab, i in tabs {
+			if clicked >= 0 {
+				tab.ops.selected = (i == clicked)
+			} else {
+				tab.ops.selected = (i == index)
+			}
+		}
+
+		pop()
+		bar(state.col.active)
+		bar(state.col.active)
 	}
-
-	if clicked == false && index < len(tabs) {
-		tabs[index].ops.selected = true
-	}
-
-	pop()
-	bar(state.col.active)
-
-	if active != nil do active^ = index
 	return tabs, index
 }
 

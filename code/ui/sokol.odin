@@ -129,6 +129,8 @@ sokol_init :: proc "c" () {
 
 sokol_frame :: proc "c" () {
 	context = runtime.default_context()
+	state.loop()
+
 	col := v4(lin.vector4_hsl_to_rgb(state.col.backdrop.h, state.col.backdrop.s, state.col.backdrop.l, state.col.backdrop.a))
     state.sokol.pass_action = {
         colors = {
@@ -142,9 +144,6 @@ sokol_frame :: proc "c" () {
 	state.window.size.y = sapp.height()
 	state.window.quad = {0, 0, f32(sapp.width()), f32(sapp.height())}
 
-	// state.window.framebuffer.x = sapp.width()
-	// state.window.framebuffer.y = sapp.height()
-	
 	update()
 	
 	state.sokol.vs_params.framebuffer = {f32(state.window.size.x/2), f32(state.window.size.y/2)}
@@ -181,7 +180,6 @@ sokol_frame :: proc "c" () {
 
 	state.font.last_char = 0
 
-	state.loop()
 }
 
 sokol_event :: proc "c" (e: ^sapp.Event) {

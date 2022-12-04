@@ -169,7 +169,7 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 	}
 
 	assert(box != nil)
-	box.name = from_string(name)
+	box.name = from_odin_string(name)
 	box.flags = state.ctx.flags + flags
 	state.ctx.flags = {}
 	box.value = value

@@ -8,7 +8,8 @@ import "core:path/filepath"
 // demo app
 App :: struct {
 	path: ui.String,
-	panels: [3]Panel,
+	panels: [5]Panel,
+	lorem: ui.String,
 }
 
 Panel :: struct {
@@ -24,32 +25,56 @@ main :: proc() {
 		0 = {panel_colors, "colors"},
 		1 = {panel_properties, "properties"},
 		2 = {panel_boxlist, "boxlist"},
+		3 = {panel_lorem, "Lorem"},
+		4 = {panel_tab_test, "Tab Test"},
 	}
 
 	ui.init(
-		init = panels,
-		loop = loop,
+		init = app_init,
+		loop = app_loop,
 		title = "ui odin demo",
 		width = 1280,
 		height = 720,
 	)
 }
 
-panels :: proc() {
-	app.path = ui.from_string("C:/Users/marxn/Desktop/")
+app_init :: proc() {
+	app.lorem = ui.from_odin_string("This is some text\nthat goes on two linse!\n\nHere is somre more text. Even more text that doesn't have returns in it, but goes on for a bit.\n")
+	app.path = ui.from_odin_string("C:/Users/marxn/Desktop/")
+
 	//					parent			 	   direction	type			content						size
 	ui.create_panel(nil, 					.Y,			.STATIC, 	top_bar, 		0.3)
 	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_colors, 			0.1)
-	ui.create_panel(ui.state.ctx.panel, .X,			.DYNAMIC, 	panel_properties, 					0.8)
-	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_boxlist, 	0.3)
+	ui.create_panel(ui.state.ctx.panel, .X,			.DYNAMIC, 	panel_lorem, 					0.7)
+	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_tab_test, 	0.4)
 }
 
-loop :: proc() {
+app_loop :: proc() {
+	if ui.rmb_click() {
+		ui.queue_panel(ui.state.panels.hot, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.panels.hot.quad)
+	}
 }
 
+app_load_text_file :: proc(_path:string="") {
+	fmt.println("trying to load", ui.to_odin_string(&app.path))
+	path : string  
+	if _path != "" {
+		path = _path
+	} else {
+		path = ui.to_odin_string(&app.path)
+	}
+
+	data, ok := os.read_entire_file(path)
+	if !ok {
+		fmt.println("Failed to load file!")
+		return
+	}
+
+	app.lorem = ui.from_odin_string(string(data[:]))
+
+}
 
 // DEMO //
-
 top_bar :: proc() {
 	using ui
 	ui.begin()
@@ -143,7 +168,7 @@ panel_colors :: proc() {
 			ui.queue_panel(state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, state.ctx.panel.quad)
 		}
 	ui.pop()
-	
+
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
 	ui.empty()
@@ -157,203 +182,68 @@ panel_colors :: proc() {
 		ui.label("<i>Alpha")
 	ui.pop()
 	ui.bar(state.col.highlight)
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, .15, .TEXT, 1)
-		ui.label("Backdrop:")
-		ui.size(.PCT_PARENT, .05, .TEXT, 1)
-		ui.color(state.col.bg)
-		ui.size(.PCT_PARENT, .2, .TEXT, 1)
-		ui.slider("h:", &state.col.backdrop.h)
-		ui.slider("s:", &state.col.backdrop.s)
-		ui.slider("l:", &state.col.backdrop.l)
-		ui.slider("v:", &state.col.backdrop.a)
-	ui.pop()
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, .15, .TEXT, 1)
-		ui.label("BG:")
-		ui.size(.PCT_PARENT, .05, .TEXT, 1)
-		ui.color(state.col.bg)
-		ui.size(.PCT_PARENT, .2, .TEXT, 1)
-		ui.slider("h:", &state.col.bg.h)
-		ui.slider("s:", &state.col.bg.s)
-		ui.slider("l:", &state.col.bg.l)
-		ui.slider("v:", &state.col.bg.a)
-	ui.pop()
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, .15, .TEXT, 1)
-		ui.label("Gradient:")
-		ui.size(.PCT_PARENT, .05, .TEXT, 1)
-		ui.color(state.col.gradient)
-		ui.size(.PCT_PARENT, .2, .TEXT, 1)
-		ui.slider("h:", &state.col.gradient.h)
-		ui.slider("s:", &state.col.gradient.s)
-		ui.slider("l:", &state.col.gradient.l)
-		ui.slider("v:", &state.col.gradient.a)
-	ui.pop()
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, .15, .TEXT, 1)
-		ui.label("Border:")
-		ui.size(.PCT_PARENT, .05, .TEXT, 1)
-		ui.color(state.col.border)
-		ui.size(.PCT_PARENT, .2, .TEXT, 1)
-		ui.slider("h:", &state.col.border.h)
-		ui.slider("s:", &state.col.border.s)
-		ui.slider("l:", &state.col.border.l)
-		ui.slider("v:", &state.col.border.a)
-	ui.pop()
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, .15, .TEXT, 1)
-		ui.label("Font:")
-		ui.size(.PCT_PARENT, .05, .TEXT, 1)
-		ui.color(state.col.font)
-		ui.size(.PCT_PARENT, .2, .TEXT, 1)
-		ui.slider("h:", &state.col.font.h)
-		ui.slider("s:", &state.col.font.s)
-		ui.slider("l:", &state.col.font.l)
-		ui.slider("v:", &state.col.font.a)
-	ui.pop()
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, .15, .TEXT, 1)
-		ui.label("Hot:")
-		ui.size(.PCT_PARENT, .05, .TEXT, 1)
-		ui.color(state.col.hot)
-		ui.size(.PCT_PARENT, .2, .TEXT, 1)
-		ui.slider("h:", &state.col.hot.h)
-		ui.slider("s:", &state.col.hot.s)
-		ui.slider("l:", &state.col.hot.l)
-		ui.slider("v:", &state.col.hot.a)
-	ui.pop()
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, .15, .TEXT, 1)
-		ui.label("Inactive:")
-		ui.size(.PCT_PARENT, .05, .TEXT, 1)
-		ui.color(state.col.inactive)
-		ui.size(.PCT_PARENT, .2, .TEXT, 1)
-		ui.slider("h:", &state.col.inactive.h)
-		ui.slider("s:", &state.col.inactive.s)
-		ui.slider("l:", &state.col.inactive.l)
-		ui.slider("v:", &state.col.inactive.a)
-	ui.pop()
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, .15, .TEXT, 1)
-		ui.label("Active:")
-		ui.size(.PCT_PARENT, .05, .TEXT, 1)
-		ui.color(state.col.active)
-		ui.size(.PCT_PARENT, .2, .TEXT, 1)
-		ui.slider("h:", &state.col.active.h)
-		ui.slider("s:", &state.col.active.s)
-		ui.slider("l:", &state.col.active.l)
-		ui.slider("v:", &state.col.active.a)
-	ui.pop()
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, .15, .TEXT, 1)
-		ui.label("Highlight:")
-		ui.size(.PCT_PARENT, .05, .TEXT, 1)
-		ui.color(state.col.highlight)
-		ui.size(.PCT_PARENT, .2, .TEXT, 1)
-		ui.slider("h:", &state.col.highlight.h)
-		ui.slider("s:", &state.col.highlight.s)
-		ui.slider("l:", &state.col.highlight.l)
-		ui.slider("v:", &state.col.highlight.a)
-	ui.pop()
-	ui.end()
+
+	color_row :: proc(name: string, col:^ui.HSL) {
+		ui.axis(.Y)
+		ui.size(.PCT_PARENT, 1, .TEXT, 1)
+		ui.empty()
+			ui.axis(.X)
+			ui.size(.PCT_PARENT, .15, .TEXT, 1)
+			ui.label(name)
+			ui.size(.PCT_PARENT, .05, .TEXT, 1)
+			ui.color(col^)
+			ui.size(.PCT_PARENT, .2, .TEXT, 1)
+			ui.slider("h:", &col.h)
+			ui.slider("s:", &col.s)
+			ui.slider("l:", &col.l)
+			ui.slider("v:", &col.a)
+		ui.pop()
+	}
+
+	color_row("Backdrop:", &state.col.backdrop)
+	color_row("Background:", &state.col.bg)
+	color_row("Gradient:", &state.col.gradient)
+	color_row("Border:", &state.col.border)
+	color_row("Font:", &state.col.font)
+	color_row("Hot:", &state.col.hot)
+	color_row("Inactive:", &state.col.inactive)
+	color_row("Active:", &state.col.active)
+	color_row("Highlight:", &state.col.highlight)
 }
 
-lorem :: proc() {
+panel_lorem :: proc() {
 	using ui
-	ui.begin()
+	panel := ui.begin()
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
 		ui.empty()
 			ui.axis(.X)
 			ui.size(.TEXT, 1, .TEXT, 1)
-			ui.label("Load text file:")
-		ui.pop()
-		ui.axis(.Y)
-		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.empty()
-			ui.axis(.X)
-			ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
-			ui.edit_text("edit text", &app.path)
-			ui.size(.TEXT, 1, .TEXT, 1)
-			if ui.button("Load").released {
-				// load_doc(&app.lorem, to_string(&app.path))
+			if ui.button("<#>p").released {
+				ui.queue_panel(state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, state.ctx.panel.quad)
 			}
 		ui.pop()
+
 		ui.axis(.Y)
-		if state.boxes.editing == {} {
-			ui.label("no editing...")
-		} else {
-			ui.label(key_to_string(&state.boxes.editing))
-		}
+		ui.size(.PCT_PARENT, 1, .TEXT, 1)
+		ui.empty()
+			ui.axis(.X)
+			ui.size(.PCT_PARENT, 1, .TEXT, 1)
+			if ui.menu_button("Open Text File").clicked {
+				ui.queue_panel(panel, .Y, .FLOATING, file_browser, 1.0, state.ctx.panel.quad)
+			}
+		ui.pop()
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
 		ui.empty()
 		ui.size(.PCT_PARENT, 1, .PCT_PARENT, 1)
-			// ui.paragraph(state.debug.lorem)
-			// ui.pop()
+			ui.paragraph(&app.lorem)
+			ui.pop()
 		ui.pop()
 	ui.end()
 }
 
-// ui.panel_tab_test :: proc() {
-// 	using ui
-// 	ui.begin()
-// 	tab_names : []string = {"First", "Second", "Third"}
-// 	tabs, index := ui.tab(tab_names)
-	
-// 	ui.axis(.Y)
-// 	ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
-// 	ui.empty()
-// 	ui.size(.TEXT, 1, .TEXT, 1)
-// 	ui.axis(.Y)
-// 	if len(tabs) > 0 {
-// 		switch to_string(&tabs[index].name) {
-// 			case "First":
-// 				ui.button("Tab one | Button 1")
-// 				ui.button("Tab one | Button 2")
-// 				ui.button("Tab one | Button 3")
-// 			case "Second":
-// 				ui.button("Tab two | Button 1")
-// 				ui.button("Tab two | Button 2")
-// 				ui.button("Tab two | Button 3")
-// 			case "Third":
-// 				ui.button("Tab three | Button 1")
-// 				ui.button("Tab three | Button 2")
-// 				ui.button("Tab three | Button 3")
-// 		}
-// 	}
-// 	ui.end()
-// }
-
-panel_boxlist :: proc() {
+panel_tab_test :: proc() {
 	using ui
 	ui.begin()
 	ui.axis(.Y)
@@ -365,19 +255,81 @@ panel_boxlist :: proc() {
 			ui.queue_panel(state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, state.ctx.panel.quad)
 		}
 	ui.pop()
+
+	tab_names : []string = {"First", "Second", "Third"}
+	
 	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .TEXT, 6)
+	ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+	ui.empty()
+		ui.axis(.X)
+		ui.size(.PCT_PARENT, 1, .TEXT, 1)
+		tabs, index := ui.tab(tab_names)
+		
+
+		ui.axis(.Y)
+		ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
+		ui.empty()
+		ui.size(.TEXT, 1, .TEXT, 1)
+		ui.axis(.Y)
+		if len(tabs) > 0 {
+			switch index {
+				case 0:
+					ui.button("Tab one | Button 1")
+					ui.button("Tab one | Button 2")
+					ui.button("Tab one | Button 3")
+				case 1:
+					ui.button("Tab two | Button 1")
+					ui.button("Tab two | Button 2")
+					ui.button("Tab two | Button 3")
+				case 2:
+					ui.button("Tab three | Button 1")
+					ui.button("Tab three | Button 2")
+					ui.button("Tab three | Button 3")
+			}
+		}
+	ui.pop()
+	ui.end()
+}
+
+panel_boxlist :: proc() {
+	ui.begin()
+	ui.axis(.Y)
+	ui.size(.PCT_PARENT, 1, .TEXT, 1)
+	ui.empty()
+		ui.axis(.X)
+		ui.size(.TEXT, 1, .TEXT, 1)
+		if ui.button("<#>p").released {
+			ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.ctx.panel.quad)
+		}
+	ui.pop()
+	ui.axis(.Y)
+	ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
 	ui.scrollbox()
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
 		ui.empty()
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
 		ui.label("Panel List:")
-		for key, panel in state.panels.all {
+		for key, panel in ui.state.panels.all {
 			if panel.box != nil {
-				ui.button(fmt.tprint(panel.uid, " | ", panel.content, "<#>d ", panel.box.key.len))
+				ui.axis(.Y)
+				ui.size(.PCT_PARENT, 1, .TEXT, 1)
+				ui.label(fmt.tprint("PANEL ID:", panel.uid))
+				indent :f32= 0
+				for first := panel.box; first != nil; first = first.first {
+					indent += 1
+					for next := first.next; next != nil; next = next.next {
+						ui.axis(.Y)
+						ui.size(.PCT_PARENT, 1, .TEXT, 1)
+						ui.empty()
+						ui.spacer_pixels(10*indent)
+						ui.axis(.X)
+						ui.size(.TEXT, 1, .TEXT, 1)
+						ui.label(fmt.tprint(" <> ", ui.key_to_odin_string(&next.key)))
+						ui.pop()
+					}
+				}
 			} else {
-				ui.button(fmt.tprint(panel.uid, " | ", panel.content))
 			}
 		}
 		ui.pop()
@@ -432,7 +384,6 @@ panel_pick_panel :: proc() {
 		ui.size(.PIXELS, 250, .TEXT, 1)
 		ui.drag_panel("Select Panel:")
 		ui.size(.TEXT, 1, .TEXT, 1)
-		// ui.spacer_pixels(120)
 		if ui.button("<#>x").released {
 			if state.panels.floating != nil {
 				ui.delete_panel(state.panels.floating)
@@ -453,20 +404,6 @@ panel_pick_panel :: proc() {
 	ui.pop()
 	ui.end()
 }
-
-// ui.panel_floater :: proc() {
-// 	using ui
-// 	ui.begin_floating()
-// 	ui.size(.SUM_CHILDREN, 1, .SUM_CHILDREN, 1)
-// 	ui.empty()
-// 		ui.axis(.X)
-// 		ui.size(.TEXT, 1, .TEXT, 1)
-// 		ui.label("FLOATING PANEL")
-// 		ui.spacer_pixels(50)
-// 		if ui.button("<#>x").released do ui.delete_panel(state.panels.floating)
-// 	ui.pop()
-// 	ui.end()
-// }
 
 file_browser :: proc () {
 	using ui
@@ -504,7 +441,7 @@ find_files_and_run :: proc(run:proc(string) -> ui.Box_Ops, filter:string="") {
 		app.path.mem[app.path.len] = 0
 		app.path.len -= 1
 	}
-	path := to_string(&app.path)
+	path := to_odin_string(&app.path)
 	if os.is_dir(path) {
 		handle, hok := os.open(path)
 		file_list, fok := os.read_dir(handle, 0)
@@ -531,7 +468,7 @@ find_files_and_run :: proc(run:proc(string) -> ui.Box_Ops, filter:string="") {
 					if run(file.name).released {
 						switch ext(file.name) {
 							case ".txt":
-								// open_tsv(file.fullpath)
+								app_load_text_file(file.fullpath)
 						}
 						state.boxes.editing = {}
 						ui.delete_panel(state.panels.floating)
@@ -541,61 +478,3 @@ find_files_and_run :: proc(run:proc(string) -> ui.Box_Ops, filter:string="") {
 		}
 	}
 }
-
-// // DOC DEMO //
-
-// Document :: struct {
-// 	mem: []u8,
-// 	len: int,
-
-// 	returns: []int,
-// 	return_count: int,
-
-// 	width: f32,
-// 	lines: int,
-// 	current_line: int,
-// 	last_line: int,
-// 	current_char: int,
-// 	// index: int,
-// 	// start: int,
-// 	// end: int,
-// }
-
-// load_doc :: proc(doc:^Document, filename:string) -> bool {
-// 	close_doc(doc)
-	
-// 	fmt.println("trying to load doc:", filename)
-// 	doc_ok := false
-// 		doc.mem, doc_ok = os.read_entire_file(filename)
-// 	if !doc_ok {
-// 		fmt.println("ERROR LOADING", filename)
-// 		return false
-// 	}
-// 	doc.len = len(doc.mem)
-
-// 	temp_returns := make([]int, doc.len)
-// 	defer delete(temp_returns)
-
-// 	return_count := 0
-// 	for char, index in doc.mem {
-// 		if char == '\n' {
-// 			return_count += 1
-// 			temp_returns[return_count] = index
-// 		}
-// 	}
-	
-// 	doc.returns = make([]int, return_count)
-// 	copy(doc.returns[:], temp_returns[:return_count])
-// 	doc.return_count = return_count
-
-// 	return true
-// }
-
-// close_doc :: proc(doc: ^Document) -> bool {
-// 	fmt.println("closing doc")
-// 	delete(doc.mem)
-// 	delete(doc.returns)
-// 	doc^ = {}
-// 	return true
-// }
-

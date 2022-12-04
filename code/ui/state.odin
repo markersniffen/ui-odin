@@ -373,7 +373,7 @@ draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 			}
 		}
 		if .DRAWTEXT in box.flags {
-			draw_text(to_string(&box.name), pt_offset_quad({0, -state.font.offset_y}, quad), box.text_align, box.font_color, box.clip)
+			draw_text(to_odin_string(&box.name), pt_offset_quad({0, -state.font.offset_y}, quad), box.text_align, box.font_color, box.clip)
 		} else if .EDITTEXT in box.flags {
 			if is_editing do push_quad_border(box.parent.quad, state.col.active, box.border, box.parent.quad)
 			draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.font.offset_y}, quad), box.text_align, box.font_color, box.clip)
@@ -388,7 +388,7 @@ draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 			}
 		} else if .DRAWPARAGRAPH in box.flags {
 			// TODO implement this without a Documentc struct?
-			// if box.value != nil do draw_text_multiline(box.value, quad, .LEFT, 2, box.clip)
+			if box.editable_string != nil do draw_text_multiline(box.editable_string, quad, .LEFT, 2, box.clip)
 		}
 		if .DISPLAYVALUE in box.flags {
 			draw_text(value, pt_offset_quad({0, -state.font.offset_y}, quad), box.text_align, box.font_color, box.clip)
