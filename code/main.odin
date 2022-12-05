@@ -80,9 +80,14 @@ top_bar :: proc() {
 	ui.begin()
 	ui.size(.TEXT, 1, .TEXT, 1)
 	ui.axis(.X)
-	if ui.button("File").clicked do ui.queue_panel(state.ctx.panel, .Y, .FLOATING, file_menu, 1.0, state.ctx.panel.quad)
-	if ui.button("Edit").clicked do ui.queue_panel(state.ctx.panel, .Y, .FLOATING, edit_menu, 1.0, state.ctx.panel.quad)
-	if ui.button("View").clicked do ui.queue_panel(state.ctx.panel, .Y, .FLOATING, view_menu, 1.0, state.ctx.panel.quad)
+	labels: []string = {"File", "Edit", "View"}
+	epanels: []proc() = {file_menu, edit_menu, view_menu}
+
+	mbuttons, active := ui.menu("Main Menu", labels)
+	for ep, i in epanels {
+		if mbuttons[i].ops.released do ui.queue_panel(state.ctx.panel, .Y, .FLOATING, ep, 1.0, state.ctx.panel.quad)
+	}
+
 	ui.spacer_fill()
 	ui.value("scroll:", state.input.mouse.scroll)
 	ui.label("|")

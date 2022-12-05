@@ -1,5 +1,7 @@
 // TODO //
 
+
+
 [ ] features to change?
  - creating and deleting panels on the fly currently uses a queue
  - render pipeline / calc pipeline
@@ -19,7 +21,7 @@
   [X] adding space at begining or with no text crashes (?)
   [X] select any and backspace() calculates len wrong
 [X] large viewable text
-   [ ] switch to word wrap vs \n wrap
+   [X] switch to word wrap vs \n wrap
    [ ] large editable text
 [X] font weights
 [ ] different colored text

@@ -222,6 +222,8 @@ update :: proc() {
 		state.panels.queued = {}
 	}
 
+	cursor(.ARROW)
+	
 	calc_panel(state.panels.root, state.window.quad)
 	if state.panels.floating != nil {
 		calc_panel(state.panels.floating, state.panels.floating.quad)

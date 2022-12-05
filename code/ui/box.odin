@@ -11,7 +11,7 @@ Box :: struct {
 	key: Key,									// unique ID
 	name: String,							// text displayed
 	value: any,								// external value that is displayed
-	editable_string: ^String,	// pointer to 
+	editable_string: ^String,	// pointer to editable string
 
 	panel: ^Panel,
 

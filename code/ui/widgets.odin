@@ -48,6 +48,8 @@ begin_floating :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATI
 	return state.ctx.panel
 }
 
+
+// TODO what's the difference between these two?
 // use
 //   begin_menu()
 // at the beginning of menu panels instead of begin()
@@ -446,8 +448,42 @@ button :: proc(key: string) -> Box_Ops {
 	return box.ops
 }
 
-// creates a button without a border (for use in menus)
 
+menu :: proc (name: string, labels:[]string) -> ([]^Box, int) {
+	buttons := make([]^Box, len(labels), context.temp_allocator)
+	axis(.Y)
+	size(.PCT_PARENT, 1, .TEXT, 1)
+	box := empty(name)
+	axis(.X)
+	size(.TEXT, 1, .TEXT, 1)
+	for label, i in labels { 
+		buttons[i] = create_box(label, {
+			.CLICKABLE,
+			.HOVERABLE,
+			.DRAWTEXT,
+			.DRAWBORDER,
+			.DRAWBACKGROUND,
+			.DRAWGRADIENT,
+			.HOTANIMATION,
+			.ACTIVEANIMATION,
+		})
+		process_ops(buttons[i])
+		if buttons[i].ops.released {
+			box.ops.selected = true
+			buttons[i].ops.selected = true
+		}
+		if box.ops.selected {
+			fmt.println("selected")
+			if buttons[i].ops.hovering {
+				box	
+				buttons[i].ops.selected = true
+			}
+		}
+	}
+	return buttons, 0
+}
+
+// creates a button without a border (for use in menus)
 menu_button :: proc(key: string) -> Box_Ops {
 	box := create_box(key, {
 		.CLICKABLE,
@@ -503,12 +539,11 @@ radio :: proc(key: string) -> ^Box {
 
 // creates a set of tabs
 
-tab :: proc(names: []string, close_button:bool=false) -> ([]^Box, int) {
-	size(.PCT_PARENT, 1, .TEXT, 1)
+tab :: proc(names: []string, close_button:bool=false, select_tab:int=-1) -> ([]^Box, int) {
 	tab := empty()
 	tabs := make([]^Box, len(names), context.temp_allocator)
 
-	clicked := -1
+	clicked := select_tab
 	index := -1
 
 	for name, i in names {
@@ -544,6 +579,8 @@ tab :: proc(names: []string, close_button:bool=false) -> ([]^Box, int) {
 			tabs[i] = tab
 		pop()
 	}
+
+	if index == -1 do index = len(names)-1
 	
 	if len(names) == 1 {
 		tabs[0].ops.selected = true
@@ -551,7 +588,7 @@ tab :: proc(names: []string, close_button:bool=false) -> ([]^Box, int) {
 	} else {
 		if tab.first != nil {
 			if state.frame - tab.first.frame_created <= 10 {
-				index = 0
+				index = len(names)-1
 			}
 		}
 
@@ -563,10 +600,11 @@ tab :: proc(names: []string, close_button:bool=false) -> ([]^Box, int) {
 			}
 		}
 
-		pop()
 		bar(state.col.active)
 		bar(state.col.active)
 	}
+
+	pop()
 	return tabs, index
 }
 

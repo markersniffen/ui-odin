@@ -138,7 +138,6 @@ sokol_frame :: proc "c" () {
         },
     }
 	
-	cursor(.ARROW)
 
 	state.window.size.x = sapp.width()
 	state.window.size.y = sapp.height()
