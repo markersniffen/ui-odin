@@ -5,7 +5,7 @@ import "core:mem"
 
 //- NOTE Simple Pool allocator 
 // TODO make this growable...
-Node :: struct
+Node :: struct 
 {
 	next: ^Node,
 }

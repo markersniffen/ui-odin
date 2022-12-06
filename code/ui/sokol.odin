@@ -1,5 +1,7 @@
 package ui
 
+LAYER :: true
+
 import sg "../../../sokol-odin/sokol/gfx"
 import sapp "../../../sokol-odin/sokol/app"
 import sglue "../../../sokol-odin/sokol/glue"
@@ -17,13 +19,28 @@ MAX_INDICES :: 6 * 2048 * 40
 Sokol :: struct {
     pass_action: sg.Pass_Action,
     pip: sg.Pipeline,
-    bind: sg.Bindings,
+
+    // bind: sg.Bindings,
+	// vertices: []f32,
+	// indices: []u32,
+	// vindex: u32,
+	// iindex: u32,
+	// qindex: u32,
+
+	layers: [2]Layer,
+
+	vs_params: Vs_Params,
+	current_layer: int,
+}
+
+Layer :: struct {
+	pip: sg.Pipeline,
+	bind: sg.Bindings,
 	vertices: []f32,
 	indices: []u32,
 	vindex: u32,
 	iindex: u32,
 	qindex: u32,
-	vs_params: Vs_Params,
 }
 
 Window :: struct {
@@ -67,21 +84,41 @@ sokol :: proc() {
 
 sokol_init :: proc "c" () {
 	context = runtime.default_context()
+	// state.sokol.vertices = make([]f32, MAX_VERTICES)
+	// state.sokol.indices = make([]u32, MAX_INDICES)
 
-	state.sokol.vertices = make([]f32, MAX_VERTICES)
-	state.sokol.indices = make([]u32, MAX_INDICES)
-	
 	sg.setup({ ctx = sglue.ctx() })
 
-	state.sokol.bind.vertex_buffers[0] = sg.make_buffer({
-		size = size_of(f32) * MAX_VERTICES,
-		usage = .DYNAMIC,
-    })
-    state.sokol.bind.index_buffer = sg.make_buffer({
-        type = .INDEXBUFFER,
-    	size = size_of(u32) * MAX_INDICES,
-        usage = .DYNAMIC,
-    })
+	when LAYER == true {
+
+		for layer, i in &state.sokol.layers {
+			layer.vertices = make([]f32, MAX_VERTICES)
+			layer.indices = make([]u32, MAX_INDICES)
+
+			layer.bind.vertex_buffers[0] = sg.make_buffer({
+				size = size_of(f32) * MAX_VERTICES,
+				usage = .DYNAMIC,
+		    })
+
+		    layer.bind.index_buffer = sg.make_buffer({
+		        type = .INDEXBUFFER,
+		    	size = size_of(u32) * MAX_INDICES,
+		        usage = .DYNAMIC,
+		    })
+		}
+	} else {
+
+		state.sokol.bind.vertex_buffers[0] = sg.make_buffer({
+			size = size_of(f32) * MAX_VERTICES,
+			usage = .DYNAMIC,
+	    })
+
+	    state.sokol.bind.index_buffer = sg.make_buffer({
+	        type = .INDEXBUFFER,
+	    	size = size_of(u32) * MAX_INDICES,
+	        usage = .DYNAMIC,
+	    })
+	}
 
     state.sokol.pip = sg.make_pipeline({
         shader = sg.make_shader(quad_shader_desc(sg.query_backend())),
@@ -137,7 +174,6 @@ sokol_frame :: proc "c" () {
             0 = { action = .CLEAR, value = {col[0], col[1], col[2], col[3]} },
         },
     }
-	
 
 	state.window.size.x = sapp.width()
 	state.window.size.y = sapp.height()
@@ -147,24 +183,48 @@ sokol_frame :: proc "c" () {
 	
 	state.sokol.vs_params.framebuffer = {f32(state.window.size.x/2), f32(state.window.size.y/2)}
 
-	sg.update_buffer(state.sokol.bind.vertex_buffers[0], {
-		ptr = raw_data(state.sokol.vertices),
-		size = size_of(f32) * u64(state.sokol.vindex),
-	})
+	when LAYER == true {
+	    sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
+	    sg.apply_pipeline(state.sokol.pip)
+	    sg.apply_uniforms(.VS, SLOT_vs_params, { ptr = &state.sokol.vs_params, size = size_of(state.sokol.vs_params) })
+		for layer, i in state.sokol.layers {
+			if layer.vindex > 0 {
+				sg.update_buffer(layer.bind.vertex_buffers[0], {
+					ptr = raw_data(layer.vertices),
+					size = size_of(f32) * u64(layer.vindex),
+				})
 
-	sg.update_buffer(state.sokol.bind.index_buffer, {
-		ptr = raw_data(state.sokol.indices),
-		size = size_of(u32) * u64(state.sokol.iindex),
-	})
+				sg.update_buffer(layer.bind.index_buffer, {
+					ptr = raw_data(layer.indices),
+					size = size_of(u32) * u64(layer.iindex),
+				})
 
-	// RENDER HERE
-    sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
-    sg.apply_pipeline(state.sokol.pip)
-    sg.apply_bindings(state.sokol.bind)
-    sg.apply_uniforms(.VS, SLOT_vs_params, { ptr = &state.sokol.vs_params, size = size_of(state.sokol.vs_params) })
-    sg.draw(0, state.sokol.iindex, 1)
-    sg.end_pass()
-    sg.commit()
+			    sg.apply_bindings(layer.bind)
+
+			    sg.draw(0, layer.iindex, 1)
+			}
+		}
+	    sg.end_pass()
+	    sg.commit()
+	} else {
+		sg.update_buffer(state.sokol.bind.vertex_buffers[0], {
+			ptr = raw_data(state.sokol.vertices),
+			size = size_of(f32) * u64(state.sokol.vindex),
+		})
+
+		sg.update_buffer(state.sokol.bind.index_buffer, {
+			ptr = raw_data(state.sokol.indices),
+			size = size_of(u32) * u64(state.sokol.iindex),
+		})
+
+	    sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
+	    sg.apply_pipeline(state.sokol.pip)
+	    sg.apply_bindings(state.sokol.bind)
+	    sg.apply_uniforms(.VS, SLOT_vs_params, { ptr = &state.sokol.vs_params, size = size_of(state.sokol.vs_params) })
+	    sg.draw(0, state.sokol.iindex, 1)
+	    sg.end_pass()
+	    sg.commit()
+	}
 
 	mouse_buttons: [3]^Button = { &state.input.mouse.left, &state.input.mouse.right, &state.input.mouse.middle }
 	for mouse_button, index in mouse_buttons {
@@ -173,9 +233,17 @@ sokol_frame :: proc "c" () {
 	}
 	state.input.mouse.scroll = {0,0}
 
-	state.sokol.vindex = 0
-	state.sokol.iindex = 0
-	state.sokol.qindex = 0
+	when LAYER == true {
+		for layer in &state.sokol.layers {
+			layer.vindex = 0
+			layer.iindex = 0
+			layer.qindex = 0
+		}
+	} else {
+		state.sokol.vindex = 0
+		state.sokol.iindex = 0
+		state.sokol.qindex = 0
+	}
 
 	state.font.last_char = 0
 
@@ -299,7 +367,12 @@ sokol_push_quad :: proc(quad:Quad,
 					) 
 {
 	NUM_ELEMENTS :: 52
-	if state.sokol.vindex < MAX_VERTICES-NUM_ELEMENTS {
+	when LAYER == true {
+		layer := &state.sokol.layers[state.sokol.current_layer]
+	} else {
+		layer := &state.sokol
+	}
+	if layer.vindex < MAX_VERTICES-NUM_ELEMENTS {
 		vertex_arrays: [4][NUM_ELEMENTS]f32
 
 		cA : v4 = v4(lin.vector4_hsl_to_rgb(_cA.h, _cA.s, _cA.l, _cA.a))
@@ -347,25 +420,35 @@ sokol_push_quad :: proc(quad:Quad,
 		for vertex_array, i in &vertex_arrays {
 			if border == 0 && i >= 1 do break
 
-			copy(state.sokol.vertices[ state.sokol.vindex : state.sokol.vindex+NUM_ELEMENTS ], vertex_array[:])
-			state.sokol.vindex += NUM_ELEMENTS
+			copy(layer.vertices[ layer.vindex : layer.vindex+NUM_ELEMENTS ], vertex_array[:])
+			layer.vindex += NUM_ELEMENTS
 
-			qi := state.sokol.qindex * 4
+			qi := layer.qindex * 4
 			indices := [6]u32{0+qi, 1+qi, 3+qi, 1+qi, 2+qi, 3+qi}
-			copy(state.sokol.indices[ state.sokol.iindex : state.sokol.iindex+6 ], indices[:])
-			state.sokol.iindex += 6
-			state.sokol.qindex += 1
+			copy(layer.indices[ layer.iindex : layer.iindex+6 ], indices[:])
+			layer.iindex += 6
+			layer.qindex += 1
 		}
 	}
 }
 
 sokol_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {
-	state.sokol.bind.fs_images[font.texture_unit] = sg.make_image({
-	    width = font.texture_size,
-	    height = font.texture_size,
-	    pixel_format = .R8,
-	    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
-	})
+	when LAYER == true {
+		state.sokol.layers[0].bind.fs_images[font.texture_unit] = sg.make_image({
+		    width = font.texture_size,
+		    height = font.texture_size,
+		    pixel_format = .R8,
+		    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
+		})
+		state.sokol.layers[1].bind.fs_images[font.texture_unit] = state.sokol.layers[0].bind.fs_images[font.texture_unit]
+	} else {
+		state.sokol.bind.fs_images[font.texture_unit] = sg.make_image({
+		    width = font.texture_size,
+		    height = font.texture_size,
+		    pixel_format = .R8,
+		    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
+		})
+	}
 	return true
 }
 

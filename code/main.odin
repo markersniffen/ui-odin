@@ -43,10 +43,11 @@ app_init :: proc() {
 	app.path = ui.from_odin_string("C:/Users/marxn/Desktop/")
 
 	//					parent			 	   direction	type			content						size
-	ui.create_panel(nil, 					.Y,			.STATIC, 	top_bar, 		0.3)
-	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_colors, 			0.1)
-	ui.create_panel(ui.state.ctx.panel, .X,			.DYNAMIC, 	panel_lorem, 					0.7)
-	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_tab_test, 	0.4)
+	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	main_panel, 	1)
+	// ui.create_panel(nil, 					.Y,			.STATIC, 	top_bar, 		0.3)
+	// ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_colors, 			0.1)
+	// ui.create_panel(ui.state.ctx.panel, .X,			.DYNAMIC, 	panel_lorem, 					0.7)
+	// ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_tab_test, 	0.4)
 }
 
 app_loop :: proc() {
@@ -74,18 +75,74 @@ app_load_text_file :: proc(_path:string="") {
 
 }
 
-// DEMO //
-top_bar :: proc() {
-	using ui
-	ui.begin()
+main_panel :: proc() {
+	panel := ui.begin()
 	ui.size(.TEXT, 1, .TEXT, 1)
 	ui.axis(.X)
 	labels: []string = {"File", "Edit", "View"}
-	epanels: []proc() = {file_menu, edit_menu, view_menu}
-
 	mbuttons, active := ui.menu("Main Menu", labels)
-	for ep, i in epanels {
-		if mbuttons[i].ops.released do ui.queue_panel(state.ctx.panel, .Y, .FLOATING, ep, 1.0, state.ctx.panel.quad)
+	if active != nil {
+		ui.size(.TEXT, 1, .TEXT, 1)
+		// ui.extra_flags({ .NOCLIP })
+		if ui.button("BIG LONG BUTTON").hovering do fmt.println("BUX LONG BUTTON")
+		if ui.button("Another Test").hovering do fmt.println("ANOTEHR TEST")
+		if ui.button("Finally!").hovering do fmt.println("Finally")
+		ui.state.ctx.layer = 0
+	}
+	ui.push_parent(panel.box)
+	ui.bar()
+	ui.axis(.Y)
+	ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+	ui.empty()
+		ui.axis(.X)
+		ui.size(.PIXELS, 600, .PCT_PARENT, 1)
+		ui.extra_flags({.DEBUG})
+		ui.empty()
+			ui.axis(.Y)
+			ui.size(.PCT_PARENT, 1, .TEXT, 1)
+			ui.button("Click Me")
+			ui.button("Click Me")
+			ui.button("Click Me")
+			
+
+		ui.pop()
+		ui.sizebar_x()
+		ui.axis(.X)
+		ui.size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
+		ui.extra_flags({.DEBUG})
+		ui.empty()
+			ui.axis(.Y)
+			ui.size(.PCT_PARENT, 1, .PIXELS, 400)
+			ui.empty()
+			ui.pop()
+			ui.sizebar_y()
+			ui.axis(.Y)
+			ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+			ui.extra_flags({.DEBUG})
+			ui.empty()
+
+			ui.pop()
+		ui.pop()
+	ui.end()
+}
+
+// DEMO //
+top_bar :: proc() {
+	using ui
+	panel := ui.begin()
+	ui.size(.TEXT, 1, .TEXT, 1)
+	ui.axis(.X)
+	labels: []string = {"File", "Edit", "View"}
+	mbuttons, active := ui.menu("Main Menu", labels)
+	if active != nil {
+		ui.queue_panel(panel, .Y, .FLOATING, file_menu, 1.0, state.ctx.panel.quad)
+		// ui.size(.TEXT, 1, .TEXT, 1)
+		// extra_flags({.NOCLIP})
+		// if ui.button("BIG LONG BUTTON").hovering do fmt.println("BUX LONG BUTTOn")
+		// if ui.button("Another Test").hovering do fmt.println("ANOTEHR TEST")
+		// if ui.button("Finally!").hovering do fmt.println("Finally")
+		// state.ctx.layer = 0
+		ui.pop()
 	}
 
 	ui.spacer_fill()
@@ -214,6 +271,24 @@ panel_colors :: proc() {
 	color_row("Inactive:", &state.col.inactive)
 	color_row("Active:", &state.col.active)
 	color_row("Highlight:", &state.col.highlight)
+
+	ui.size(.TEXT, 1, .TEXT, 1)
+	ui.axis(.X)
+	labels: []string = {"File", "Edit", "View"}
+
+	mbuttons, active := ui.menu("Main Menu", labels)
+	if active != nil {
+				ui.axis(.Y)
+				ui.size(.PIXELS, 250, .SUM_CHILDREN, 1)
+				state.ctx.layer = 1
+				ui.empty("whee")
+					ui.size(.PCT_PARENT, 1, .TEXT, 1)
+					ui.button("Test")
+					ui.button("Another Test")
+					ui.button("Finally!")
+				state.ctx.layer = 0
+				ui.pop()
+	}
 }
 
 panel_lorem :: proc() {

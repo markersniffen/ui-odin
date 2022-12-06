@@ -25,6 +25,7 @@ Box :: struct {
 
 	last_frame_touched: u64,
 	frame_created: u64,
+	layer: int,
 
 	flags: bit_set[Box_Flags],
 	ops: Box_Ops,
@@ -94,6 +95,7 @@ Box_Flags :: enum {
 	DRAWBACKGROUND,
 	DRAWGRADIENT,
 	CLIP,
+	NOCLIP,
 
 	HOTANIMATION,
 	ACTIVEANIMATION,
@@ -181,6 +183,7 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 	box.border = state.ctx.border
 	box.text_align = state.ctx.text_align
 	box.panel = state.ctx.panel
+	box.layer = state.ctx.layer
 
 	box.first = nil
 	// box.last = nil
@@ -233,8 +236,9 @@ process_ops :: proc(box: ^Box) {
 	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
 		box.ops.editing = (box.key == state.boxes.editing)
 	}
-
+	
 	mouse_over := mouse_in_quad(box.clip)
+	if box.layer == 1 do mouse_over = mouse_in_quad(box.quad)
 
 	if .HOVERABLE in box.flags {
 		if mouse_over && !lmb_drag() {

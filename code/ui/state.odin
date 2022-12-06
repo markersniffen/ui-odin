@@ -147,6 +147,7 @@ UI_Context :: struct {
 	border: f32,
 	text_align: Text_Align,
 	flags: bit_set[Box_Flags],
+	layer: int,
 }
 
 HSL :: struct {
@@ -334,11 +335,17 @@ update :: proc() {
 // recursive draw boxes
 draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 	if box == nil do return
+
+	state.sokol.current_layer = box.layer
 	
 	quad := box.quad
 	clip_ok := true
 
 	box.clip, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
+	if .NOCLIP in box.flags {
+		box.clip = quad
+		clip_ok = true
+	}
 
 	// NOTE COLORS
 	// if .ROOT in box.flags do push_quad_border(quad, state.col.backdrop, 1)

@@ -449,37 +449,60 @@ button :: proc(key: string) -> Box_Ops {
 }
 
 
-menu :: proc (name: string, labels:[]string) -> ([]^Box, int) {
+menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 	buttons := make([]^Box, len(labels), context.temp_allocator)
+	active_button : ^Box
 	axis(.Y)
 	size(.PCT_PARENT, 1, .TEXT, 1)
 	box := empty(name)
-	axis(.X)
-	size(.TEXT, 1, .TEXT, 1)
-	for label, i in labels { 
-		buttons[i] = create_box(label, {
-			.CLICKABLE,
-			.HOVERABLE,
-			.DRAWTEXT,
-			.DRAWBORDER,
-			.DRAWBACKGROUND,
-			.DRAWGRADIENT,
-			.HOTANIMATION,
-			.ACTIVEANIMATION,
-		})
-		process_ops(buttons[i])
-		if buttons[i].ops.released {
-			box.ops.selected = true
-			buttons[i].ops.selected = true
+		axis(.X)
+		size(.TEXT, 1, .TEXT, 1)
+		released_button : int = -1
+		hovering_button : int = -1
+		selected_button : int = -1
+		off_clicked := false
+		for label, i in labels { 
+			buttons[i] = create_box(label, {
+				.CLICKABLE,
+				.HOVERABLE,
+				.DRAWTEXT,
+				.DRAWBACKGROUND,
+				.DRAWGRADIENT,
+				.HOTANIMATION,
+				.ACTIVEANIMATION,
+			})
+			process_ops(buttons[i])
+			if buttons[i].ops.released do released_button = i
+			if buttons[i].ops.hovering do hovering_button = i
+			if buttons[i].ops.selected do selected_button = i
+			off_clicked = buttons[i].ops.off_clicked
 		}
-		if box.ops.selected {
-			fmt.println("selected")
-			if buttons[i].ops.hovering {
-				buttons[i].ops.selected = true
+
+		if selected_button >= 0 && off_clicked {
+			buttons[selected_button].ops.selected = false
+		} else if released_button >= 0 {
+			buttons[released_button].ops.selected = true
+			if selected_button >= 0 do buttons[selected_button].ops.selected = false
+		} else if selected_button >= 0 {
+			if hovering_button >= 0 && hovering_button != selected_button {
+				buttons[hovering_button].ops.selected = true
+				if selected_button >= 0 do buttons[selected_button].ops.selected = false
 			}
 		}
+	pop()
+	if selected_button >= 0 {
+		active_button = buttons[selected_button]
+		push_parent(active_button)
+		axis(.Y)
+		state.ctx.layer = 1
+		size(.MAX_CHILD, 200, .SUM_CHILDREN, 1)
+		container :=  create_box("menu elements", { .NOCLIP, .CLIP, .DEBUG })
+		process_ops(container)
+		container.offset.y = state.font.line_space
+		push_parent(container)
 	}
-	return buttons, 0
+	state.panels.locked = (selected_button >= 0)
+	return buttons, active_button
 }
 
 // creates a button without a border (for use in menus)
