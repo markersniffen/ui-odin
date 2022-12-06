@@ -475,7 +475,6 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, int) {
 		if box.ops.selected {
 			fmt.println("selected")
 			if buttons[i].ops.hovering {
-				box	
 				buttons[i].ops.selected = true
 			}
 		}
