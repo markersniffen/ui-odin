@@ -117,8 +117,9 @@ UI_Boxes :: struct {
 	to_delete: [MAX_BOXES]rawptr,
 	root: ^Box,
 	active: ^Box,
-	hot: ^Box,
 	editing: Key,
+	hot: ^Box,
+	
 	index: int,
 }
 
@@ -219,6 +220,11 @@ update :: proc() {
 	// create queued panel
 	if state.panels.queued != {} {
 		q := state.panels.queued
+
+		state.boxes.active = nil
+		state.boxes.hot = nil
+		state.boxes.editing = {}
+
 		create_panel(state.panels.queued_parent, q.axis, q.type, q.content, q.size, q.quad)
 		state.panels.queued = {}
 	}

@@ -52,7 +52,9 @@ app_init :: proc() {
 
 app_loop :: proc() {
 	if ui.rmb_click() {
-		ui.queue_panel(ui.state.panels.hot, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.panels.hot.quad)
+		if ui.state.boxes.active == nil {
+			ui.queue_panel(ui.state.panels.hot, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.panels.hot.quad)
+		}
 	}
 }
 
@@ -381,6 +383,14 @@ panel_tab_test :: proc() {
 					ui.button("Tab three | Button 2")
 					ui.button("Tab three | Button 3")
 			}
+		}
+
+		ui.axis(.Y)
+		ui.size(.PCT_PARENT, 1, .TEXT, 1)
+		if state.boxes.active != nil {
+			ui.label(to_odin_string(&state.boxes.active.name))
+		} else {
+			ui.label("NO ACTIVE BOX")
 		}
 	ui.pop()
 	ui.end()

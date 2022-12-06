@@ -269,7 +269,8 @@ process_ops :: proc(box: ^Box) {
 				box.ops.clicked = is_pressed
 
 				if is_pressed {
-					if ctrl() do box.ops.ctrl_clicked = true
+					
+				if ctrl() do box.ops.ctrl_clicked = true
 					state.boxes.active = box
 				}
 			} else {

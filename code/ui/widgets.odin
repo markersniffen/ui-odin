@@ -37,6 +37,7 @@ begin :: proc() -> ^Panel {
 // at the beginning of floating panels instead of begin()
 //
 begin_floating :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING}) -> ^Panel {
+	state.ctx.layer = 1
 	reset_colors()
 	state.ctx.box = nil
 	state.ctx.parent = nil
@@ -72,6 +73,7 @@ begin_floating_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .F
 //
 end :: proc() {
 	state.boxes.index = 0
+	state.ctx.layer = 0
 }
 
 //______ PUSH and POP parent ______//
@@ -450,6 +452,7 @@ button :: proc(key: string) -> Box_Ops {
 
 
 menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
+	state.ctx.layer = 1
 	buttons := make([]^Box, len(labels), context.temp_allocator)
 	active_button : ^Box
 	axis(.Y)
@@ -507,6 +510,10 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 		}
 	}
 	state.panels.locked = (selected_button >= 0)
+	if active_button == nil {
+		
+		state.ctx.layer = 0
+	}
 	return buttons, active_button
 }
 
