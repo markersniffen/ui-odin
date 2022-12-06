@@ -478,28 +478,33 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 			off_clicked = buttons[i].ops.off_clicked
 		}
 
-		if selected_button >= 0 && off_clicked {
-			buttons[selected_button].ops.selected = false
-		} else if released_button >= 0 {
-			buttons[released_button].ops.selected = true
-			if selected_button >= 0 do buttons[selected_button].ops.selected = false
-		} else if selected_button >= 0 {
-			if hovering_button >= 0 && hovering_button != selected_button {
-				buttons[hovering_button].ops.selected = true
-				if selected_button >= 0 do buttons[selected_button].ops.selected = false
-			}
-		}
 	pop()
+	container : ^Box
+
 	if selected_button >= 0 {
 		active_button = buttons[selected_button]
 		push_parent(active_button)
 		axis(.Y)
 		state.ctx.layer = 1
 		size(.MAX_CHILD, 200, .SUM_CHILDREN, 1)
-		container :=  create_box("menu elements", { .NOCLIP, .CLIP, .DEBUG })
+		container = create_box("menu elements", { .NOCLIP, .CLIP, .DRAWBACKGROUND })
 		process_ops(container)
 		container.offset.y = state.font.line_space
 		push_parent(container)
+	}
+
+	if selected_button >= 0 && off_clicked && container != nil {
+		if !mouse_in_quad(container.quad) {
+			buttons[selected_button].ops.selected = false 
+		}
+	} else if released_button >= 0 {
+		buttons[released_button].ops.selected = true
+		if selected_button >= 0 do buttons[selected_button].ops.selected = false
+	} else if selected_button >= 0 {
+		if hovering_button >= 0 && hovering_button != selected_button {
+			buttons[hovering_button].ops.selected = true
+			if selected_button >= 0 do buttons[selected_button].ops.selected = false
+		}
 	}
 	state.panels.locked = (selected_button >= 0)
 	return buttons, active_button

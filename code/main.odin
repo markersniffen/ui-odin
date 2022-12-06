@@ -43,11 +43,11 @@ app_init :: proc() {
 	app.path = ui.from_odin_string("C:/Users/marxn/Desktop/")
 
 	//					parent			 	   direction	type			content						size
-	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	main_panel, 	1)
-	// ui.create_panel(nil, 					.Y,			.STATIC, 	top_bar, 		0.3)
-	// ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_colors, 			0.1)
-	// ui.create_panel(ui.state.ctx.panel, .X,			.DYNAMIC, 	panel_lorem, 					0.7)
-	// ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_tab_test, 	0.4)
+	// ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	main_panel, 	1)
+	ui.create_panel(nil, 					.Y,			.STATIC, 	top_bar, 		0.3)
+	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_colors, 			0.1)
+	ui.create_panel(ui.state.ctx.panel, .X,			.DYNAMIC, 	panel_lorem, 					0.7)
+	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_tab_test, 	0.4)
 }
 
 app_loop :: proc() {
@@ -135,14 +135,29 @@ top_bar :: proc() {
 	labels: []string = {"File", "Edit", "View"}
 	mbuttons, active := ui.menu("Main Menu", labels)
 	if active != nil {
-		ui.queue_panel(panel, .Y, .FLOATING, file_menu, 1.0, state.ctx.panel.quad)
-		// ui.size(.TEXT, 1, .TEXT, 1)
-		// extra_flags({.NOCLIP})
-		// if ui.button("BIG LONG BUTTON").hovering do fmt.println("BUX LONG BUTTOn")
-		// if ui.button("Another Test").hovering do fmt.println("ANOTEHR TEST")
-		// if ui.button("Finally!").hovering do fmt.println("Finally")
-		// state.ctx.layer = 0
-		ui.pop()
+		for button, i in mbuttons {
+			if button.key == active.key {
+				label := labels[i]
+				ui.size(.PIXELS, 200, .TEXT, 1)
+				extra_flags({.NOCLIP})
+				switch label {
+					case "File":
+						ui.menu_button("Open")
+						ui.menu_button("Close")
+						ui.menu_button("Exit")
+					case "Edit":
+						ui.menu_button("Exit")
+						ui.menu_button("Exit")
+						ui.menu_button("Exit")
+					case "View":
+						ui.menu_button("View")
+						ui.menu_button("View")
+						ui.menu_button("View")
+				}
+				state.ctx.layer = 0
+				ui.pop()
+			}
+		}
 	}
 
 	ui.spacer_fill()

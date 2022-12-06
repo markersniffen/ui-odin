@@ -230,7 +230,8 @@ process_ops :: proc(box: ^Box) {
 	box.ops.released = false
 	box.ops.off_clicked = false
 	
-	if box.panel != state.panels.hot && box.panel != state.panels.floating do return
+	// if box.panel != state.panels.hot && box.panel != state.panels.floating do return
+	
 	if state.panels.floating != nil && box.panel != state.panels.floating do return
 
 	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
@@ -242,8 +243,12 @@ process_ops :: proc(box: ^Box) {
 
 	if .HOVERABLE in box.flags {
 		if mouse_over && !lmb_drag() {
-			box.ops.hovering = true
-			state.boxes.hot = box
+			is_hot := true
+			if state.boxes.hot != nil {
+				if box.layer < state.boxes.hot.layer do is_hot = false
+			}
+			box.ops.hovering = is_hot
+			if is_hot do state.boxes.hot = box
 			if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
 				cursor(.TEXT)
 			}
@@ -256,10 +261,17 @@ process_ops :: proc(box: ^Box) {
 	if .CLICKABLE in box.flags {
 		if mouse_over {
 			if lmb_click() {
-				box.ops.pressed = true
-				box.ops.clicked = true
-				if ctrl() do box.ops.ctrl_clicked = true
-				state.boxes.active = box
+				is_pressed := true
+				if state.boxes.active != nil {
+					if state.boxes.active.layer > box.layer do is_pressed = false
+				}
+				box.ops.pressed = is_pressed
+				box.ops.clicked = is_pressed
+
+				if is_pressed {
+					if ctrl() do box.ops.ctrl_clicked = true
+					state.boxes.active = box
+				}
 			} else {
 				box.ops.clicked = false
 				box.ops.ctrl_clicked = false

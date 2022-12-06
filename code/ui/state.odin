@@ -232,6 +232,7 @@ update :: proc() {
 	
 	{
 	when PROFILER do tracy.ZoneN("Build Boxes")
+		state.boxes.hot = nil
 		// NOTE build boxes
 		for _, panel in state.panels.all {
 			state.ctx.panel = panel
