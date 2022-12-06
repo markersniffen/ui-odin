@@ -48,6 +48,9 @@ app_init :: proc() {
 	// ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_colors, 			0.1)
 	// ui.create_panel(ui.state.ctx.panel, .X,			.DYNAMIC, 	panel_lorem, 					0.7)
 	// ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_tab_test, 	0.4)
+
+	ui.state.layers[0].quad = ui.state.window.quad
+	ui.state.layers[0].content = main_panel
 }
 
 app_loop :: proc() {
@@ -103,7 +106,7 @@ main_panel :: proc() {
 			ui.button("Click Me")
 			ui.button("Click Me")
 			ui.button("Click Me")
-			
+
 
 		ui.pop()
 		ui.sizebar_x()

@@ -37,6 +37,14 @@ State :: struct {
 	boxes: 	UI_Boxes,
 	col: 		UI_Colors,
 	ctx: 		UI_Context,
+
+	layers: [2]UI_Layer,
+}
+
+UI_Layer :: struct {
+	content: proc(),
+	box: ^Box,
+	quad: Quad,
 }
 
 UI_Font :: struct {
@@ -148,6 +156,7 @@ UI_Context :: struct {
 	text_align: Text_Align,
 	flags: bit_set[Box_Flags],
 	layer: int,
+	ui_layer: ^UI_Layer,
 }
 
 HSL :: struct {
@@ -217,29 +226,36 @@ update :: proc() {
 	when PROFILER do tracy.Zone()
 	
 	// create queued panel
-	if state.panels.queued != {} {
-		q := state.panels.queued
-		create_panel(state.panels.queued_parent, q.axis, q.type, q.content, q.size, q.quad)
-		state.panels.queued = {}
-	}
+	// if state.panels.queued != {} {
+	// 	q := state.panels.queued
+	// 	create_panel(state.panels.queued_parent, q.axis, q.type, q.content, q.size, q.quad)
+	// 	state.panels.queued = {}
+	// }
 
 	cursor(.ARROW)
 	
-	calc_panel(state.panels.root, state.window.quad)
-	if state.panels.floating != nil {
-		calc_panel(state.panels.floating, state.panels.floating.quad)
-	}
+	// calc_panel(state.panels.root, state.window.quad)
+	// if state.panels.floating != nil {
+	// 	calc_panel(state.panels.floating, state.panels.floating.quad)
+	// }
 	
-	{
-	when PROFILER do tracy.ZoneN("Build Boxes")
-		// NOTE build boxes
-		for _, panel in state.panels.all {
-			state.ctx.panel = panel
-			if panel.type == .NULL {
-				push_quad_solid(panel.bar, state.col.inactive, panel.quad)
-			} else {
-				panel.content()
-			}
+	// {
+	// when PROFILER do tracy.ZoneN("Build Boxes")
+	// 	// NOTE build boxes
+	// 	for _, panel in state.panels.all {
+	// 		state.ctx.panel = panel
+	// 		if panel.type == .NULL {
+	// 			push_quad_solid(panel.bar, state.col.inactive, panel.quad)
+	// 		} else {
+	// 			panel.content()
+	// 		}
+	// 	}
+	// }
+
+	for layer in &state.layers {
+		if layer.content != nil {
+			state.ctx.ui_layer = &layer
+			layer.content()
 		}
 	}
 
@@ -273,60 +289,68 @@ update :: proc() {
 	}
 
 	// CALC BOXES ------------------------------------------------	
-	panels : [MAX_PANELS]^Panel
+	// panels : [MAX_PANELS]^Panel
 	index:= 0
-	for _, panel in state.panels.all {
-		panels[index] = panel
-		index += 1
-	}
+	// for _, panel in state.panels.all {
+	// 	panels[index] = panel
+	// 	index += 1
+	// }
 	
-	{
-		when PROFILER do tracy.ZoneN("CALC BOXES")
-		for panel in panels {
-			if panel != nil {
-				if panel.box != nil do calc_boxes(panel.box)
-			}
-		}
+	// {
+	// 	when PROFILER do tracy.ZoneN("CALC BOXES")
+	// 	for panel in panels {
+	// 		if panel != nil {
+	// 			if panel.box != nil do calc_boxes(panel.box)
+	// 		}
+	// 	}
+	// }
+
+	for layer in state.layers {
+		if layer.box != nil do calc_boxes(layer.box)
 	}
 
 	// advance frame / reset box index for keys -----------------------------
 	state.frame += 1
 
 	// queue panels/boxes for rendering ------------------------------
-	if state.panels.hot != nil {
-		if state.panels.hot.type == .NULL {
-			if state.panels.hot.child_a != nil {
-				if state.panels.hot.child_a.type != .STATIC {
-					push_quad_solid(state.panels.hot.bar, state.col.hot, state.panels.hot.quad)
-				}
-			}
-		}
-	}
+	// if state.panels.hot != nil {
+	// 	if state.panels.hot.type == .NULL {
+	// 		if state.panels.hot.child_a != nil {
+	// 			if state.panels.hot.child_a.type != .STATIC {
+	// 				push_quad_solid(state.panels.hot.bar, state.col.hot, state.panels.hot.quad)
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	if state.panels.active != nil {
-		if state.panels.active.type == .NULL {
-			push_quad_solid(state.panels.active.bar, state.col.active, state.panels.active.quad)
-		}
-	}
+	// if state.panels.active != nil {
+	// 	if state.panels.active.type == .NULL {
+	// 		push_quad_solid(state.panels.active.bar, state.col.active, state.panels.active.quad)
+	// 	}
+	// }
 
- 	{
-		when PROFILER do tracy.ZoneN("DRAW BOXES")
-		for _, panel in state.panels.all {
-			if panel.type != .FLOATING {
-				when PROFILER do tracy.ZoneN(fmt.tprint("Draw", panel.content))
-				draw_boxes(panel.box, panel.quad)
-			}
-		}
- 	}
+ 	// {
+	// 	when PROFILER do tracy.ZoneN("DRAW BOXES")
+	// 	for _, panel in state.panels.all {
+	// 		if panel.type != .FLOATING {
+	// 			when PROFILER do tracy.ZoneN(fmt.tprint("Draw", panel.content))
+	// 			draw_boxes(panel.box, panel.quad)
+	// 		}
+	// 	}
+ 	// }
 
- 	{
-	 	when PROFILER do tracy.ZoneN("DRAW Floating Box")
-		if state.panels.floating != nil {
-			if state.panels.floating.box.first != nil {
-				push_quad_gradient_v(state.panels.root.quad, {0,0,0,0.4},{0,0,0,0.2}, state.panels.root.quad)
-				draw_boxes(state.panels.floating.box, state.panels.floating.quad)
-			}
-		}
+ 	// {
+	//  	when PROFILER do tracy.ZoneN("DRAW Floating Box")
+	// 	if state.panels.floating != nil {
+	// 		if state.panels.floating.box.first != nil {
+	// 			push_quad_gradient_v(state.panels.root.quad, {0,0,0,0.4},{0,0,0,0.2}, state.panels.root.quad)
+	// 			draw_boxes(state.panels.floating.box, state.panels.floating.quad)
+	// 		}
+	// 	}
+ 	// }
+
+ 	for layer in state.layers {
+ 		draw_boxes(layer.box, layer.quad)
  	}
 
 	state.font.last_char = 0

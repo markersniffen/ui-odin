@@ -14,6 +14,7 @@ Box :: struct {
 	editable_string: ^String,	// pointer to editable string
 
 	panel: ^Panel,
+	ui_layer: ^UI_Layer,
 
 	parent: ^Box,	// parent
 	first: ^Box,	// first child
@@ -230,8 +231,8 @@ process_ops :: proc(box: ^Box) {
 	box.ops.released = false
 	box.ops.off_clicked = false
 	
-	if box.panel != state.panels.hot && box.panel != state.panels.floating do return
-	if state.panels.floating != nil && box.panel != state.panels.floating do return
+	// if box.panel != state.panels.hot && box.panel != state.panels.floating do return
+	// if state.panels.floating != nil && box.panel != state.panels.floating do return
 
 	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
 		box.ops.editing = (box.key == state.boxes.editing)

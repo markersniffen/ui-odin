@@ -20,12 +20,13 @@ begin :: proc() -> ^Panel {
 	reset_colors()
 	state.ctx.box = nil
 	state.ctx.parent = nil
-	quad := state.ctx.panel.quad
+	quad := state.window.quad //state.ctx.panel.quad
 	size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
 	box := create_box("root", { .ROOT, .CLIP })
 	process_ops(box)
 	box.offset = {quad.l, quad.t}
 	state.ctx.panel.box = box
+	state.ctx.ui_layer.box = box
 	push_parent(box)
 	size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
 	axis(.Y)
