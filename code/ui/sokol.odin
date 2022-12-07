@@ -15,8 +15,8 @@ MAX_VERTICES :: 8 * 2048 * 40
 MAX_INDICES :: 6 * 2048 * 40
 
 Sokol :: struct {
-    pass_action: sg.Pass_Action,
-    pip: sg.Pipeline,
+	pass_action: sg.Pass_Action,
+	pip: sg.Pipeline,
 	vs_params: Vs_Params,
 	layers: [2]Layer,
 	current_layer: int,
@@ -83,33 +83,33 @@ sokol_init :: proc "c" () {
 		layer.bind.vertex_buffers[0] = sg.make_buffer({
 			size = size_of(f32) * MAX_VERTICES,
 			usage = .DYNAMIC,
-	    })
+		})
 
-	    layer.bind.index_buffer = sg.make_buffer({
-	        type = .INDEXBUFFER,
-	    	size = size_of(u32) * MAX_INDICES,
-	        usage = .DYNAMIC,
-	    })
+		layer.bind.index_buffer = sg.make_buffer({
+			type = .INDEXBUFFER,
+			size = size_of(u32) * MAX_INDICES,
+			usage = .DYNAMIC,
+		})
 	}
 
-    state.sokol.pip = sg.make_pipeline({
-        shader = sg.make_shader(quad_shader_desc(sg.query_backend())),
-        index_type = .UINT32,
-        layout = {
-            attrs = {
-                ATTR_vs_position = { format = .FLOAT2 },
-                ATTR_vs_color = { format = .FLOAT4 },
-                ATTR_vs_uv = { format = .FLOAT2 },
-                ATTR_vs_tex_id = { format = .FLOAT },
-                ATTR_vs_clip_quad = { format = .FLOAT4 },
-            },
-        },
-        cull_mode = .BACK,
-        depth = {
-        	compare = .LESS_EQUAL,
-        	write_enabled = true,
-        },
-        colors = {
+	state.sokol.pip = sg.make_pipeline({
+		shader = sg.make_shader(quad_shader_desc(sg.query_backend())),
+		index_type = .UINT32,
+		layout = {
+			attrs = {
+				ATTR_vs_position = { format = .FLOAT2 },
+				ATTR_vs_color = { format = .FLOAT4 },
+				ATTR_vs_uv = { format = .FLOAT2 },
+				ATTR_vs_tex_id = { format = .FLOAT },
+				ATTR_vs_clip_quad = { format = .FLOAT4 },
+			},
+		},
+		cull_mode = .BACK,
+		depth = {
+			compare = .LESS_EQUAL,
+			write_enabled = true,
+		},
+		colors = {
 			0 = {
 				blend = {
 					enabled = true,
@@ -119,19 +119,19 @@ sokol_init :: proc "c" () {
 					dst_factor_alpha = .ONE_MINUS_SRC_ALPHA,
 				},
 			},
-        },
-    })
+		},
+	})
 
 	init_font()
 
 	col := v4(lin.vector4_hsl_to_rgb(state.col.backdrop.h, state.col.backdrop.s, state.col.backdrop.l, state.col.backdrop.a))
 
-    // default pass action
-    state.sokol.pass_action = {
-        colors = {
-            0 = { action = .CLEAR, value = {col[0], col[1], col[2], col[3]} },
-        },
-    }
+	// default pass action
+	state.sokol.pass_action = {
+		colors = {
+			0 = { action = .CLEAR, value = {col[0], col[1], col[2], col[3]} },
+		},
+	}
 
 	state.init()
 }
@@ -141,11 +141,11 @@ sokol_frame :: proc "c" () {
 	state.loop()
 
 	col := v4(lin.vector4_hsl_to_rgb(state.col.backdrop.h, state.col.backdrop.s, state.col.backdrop.l, state.col.backdrop.a))
-    state.sokol.pass_action = {
-        colors = {
-            0 = { action = .CLEAR, value = {col[0], col[1], col[2], col[3]} },
-        },
-    }
+	state.sokol.pass_action = {
+		colors = {
+			0 = { action = .CLEAR, value = {col[0], col[1], col[2], col[3]} },
+		},
+	}
 
 	state.window.size.x = sapp.width()
 	state.window.size.y = sapp.height()
@@ -155,9 +155,9 @@ sokol_frame :: proc "c" () {
 	
 	state.sokol.vs_params.framebuffer = {f32(state.window.size.x/2), f32(state.window.size.y/2)}
 
-    sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
-    sg.apply_pipeline(state.sokol.pip)
-    sg.apply_uniforms(.VS, SLOT_vs_params, { ptr = &state.sokol.vs_params, size = size_of(state.sokol.vs_params) })
+	sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
+	sg.apply_pipeline(state.sokol.pip)
+	sg.apply_uniforms(.VS, SLOT_vs_params, { ptr = &state.sokol.vs_params, size = size_of(state.sokol.vs_params) })
 	for layer, i in state.sokol.layers {
 		if layer.vindex > 0 {
 			sg.update_buffer(layer.bind.vertex_buffers[0], {
@@ -170,13 +170,13 @@ sokol_frame :: proc "c" () {
 				size = size_of(u32) * u64(layer.iindex),
 			})
 
-		    sg.apply_bindings(layer.bind)
+			sg.apply_bindings(layer.bind)
 
-		    sg.draw(0, layer.iindex, 1)
+			sg.draw(0, layer.iindex, 1)
 		}
 	}
-    sg.end_pass()
-    sg.commit()
+	sg.end_pass()
+	sg.commit()
 
 	mouse_buttons: [3]^Button = { &state.input.mouse.left, &state.input.mouse.right, &state.input.mouse.middle }
 	for mouse_button, index in mouse_buttons {
@@ -268,9 +268,9 @@ sokol_event :: proc "c" (e: ^sapp.Event) {
 }
 
 sokol_cleanup :: proc "c" () {
-    context = runtime.default_context()
-    sg.shutdown()
-    free(state)
+	context = runtime.default_context()
+	sg.shutdown()
+	free(state)
 }
 
 cursor :: proc(type: Cursor_Type) {
@@ -377,10 +377,10 @@ sokol_push_quad :: proc(quad:Quad,
 
 sokol_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {\
 	tex_image := sg.make_image({
-	    width = font.texture_size,
-	    height = font.texture_size,
-	    pixel_format = .R8,
-	    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
+		width = font.texture_size,
+		height = font.texture_size,
+		pixel_format = .R8,
+		data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
 	})
 
 	for layer in &state.sokol.layers {

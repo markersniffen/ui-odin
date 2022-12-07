@@ -8,18 +8,18 @@ import "core:strconv"
 MAX_BOXES :: 16384
 
 Box :: struct {
-	key: Key,									// unique ID
-	name: String,							// text displayed
-	value: any,								// external value that is displayed
+	key: Key,						// unique ID
+	name: String,					// text displayed
+	value: any,						// external value that is displayed
 	editable_string: ^String,	// pointer to editable string
 
 	panel: ^Panel,
 
-	parent: ^Box,	// parent
-	first: ^Box,	// first child
-	last: ^Box,		// last child
-	next: ^Box,		// next sibling
-	prev: ^Box,		// prev sibling
+	parent: ^Box,		// parent
+	first: ^Box,		// first child
+	last: ^Box,			// last child
+	next: ^Box,			// next sibling
+	prev: ^Box,			// prev sibling
 	hash_next: ^Box,
 	hash_prev: ^Box,
 
@@ -54,13 +54,13 @@ Box :: struct {
 
 Box_Size_Type :: enum {
 	NONE,
-  PIXELS,
-  TEXT,
-  PCT_PARENT,
-  SUM_CHILDREN,
-  MAX_CHILD,
-  MIN_SIBLINGS,
-  MAX_SIBLING,
+	PIXELS,
+	TEXT,
+	PCT_PARENT,
+	SUM_CHILDREN,
+	MAX_CHILD,
+	MIN_SIBLINGS,
+	MAX_SIBLING,
 }
 
 Box_Size :: struct {
@@ -101,19 +101,19 @@ Box_Flags :: enum {
 }
 
 Box_Ops :: struct {
-  clicked: bool,
-  off_clicked: bool,
-  ctrl_clicked: bool,
-  double_clicked: bool,
-  right_clicked: bool,
-  middle_clicked: bool,
-  middle_dragged: bool,
-  pressed: bool,
-  released: bool,
-  selected: bool,
-  dragging: bool,
-  hovering: bool,
-  editing: bool,
+	clicked: bool,
+	off_clicked: bool,
+	ctrl_clicked: bool,
+	double_clicked: bool,
+	right_clicked: bool,
+	middle_clicked: bool,
+	middle_dragged: bool,
+	pressed: bool,
+	released: bool,
+	selected: bool,
+	dragging: bool,
+	hovering: bool,
+	editing: bool,
 }
 
 gen_key :: proc(name: string, id: string) -> Key {
@@ -424,7 +424,7 @@ string_editing :: proc(box: ^Box) {
 	}
 
 	if es.len > 0 {
- 		// BACKSPACE
+		// BACKSPACE
 		if read_key(&state.input.keys.backspace) {
 			if ctrl() {
 				string_backspace_all(es)
@@ -477,7 +477,7 @@ calc_boxes :: proc(root: ^Box) {
 	// RELATIVE TO SIBLINGS ------------------------------
 	for box := root; box != nil; box = box.hash_next	{
 		if box.hash_next == nil do last = box
-  	for size, axis in box.size {
+	for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
 			if size.type == .MIN_SIBLINGS	{
 				calc_size^ = 0
@@ -512,7 +512,7 @@ calc_boxes :: proc(root: ^Box) {
 				
 	// SUM CHILDREN / MAX CHILD ------------------------------
 	for box := last; box != nil; box = box.hash_prev	{
-  	for size, axis in box.size {
+	for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
 			if .VIEWSCROLL in box.flags || size.type == .SUM_CHILDREN {
 				if size.type == .SUM_CHILDREN do calc_size^ = 0

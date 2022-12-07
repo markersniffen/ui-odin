@@ -253,7 +253,7 @@ update :: proc() {
 
 	{
 		when PROFILER do tracy.ZoneN("PRUNE BOXES")
-	  	// prune boxes that aren't used ------------------------------
+		// prune boxes that aren't used ------------------------------
 		box_index := 0
 		for _, box in state.boxes.all {
 			if state.frame > box.last_frame_touched {
@@ -325,17 +325,17 @@ update :: proc() {
 				draw_boxes(panel.box, panel.quad)
 			}
 		}
- 	}
+	}
 
- 	{
-	 	when PROFILER do tracy.ZoneN("DRAW Floating Box")
+	{
+		when PROFILER do tracy.ZoneN("DRAW Floating Box")
 		if state.panels.floating != nil {
 			if state.panels.floating.box.first != nil {
 				push_quad_gradient_v(state.panels.root.quad, {0,0,0,0.4},{0,0,0,0.2}, state.panels.root.quad)
 				draw_boxes(state.panels.floating.box, state.panels.floating.quad)
 			}
 		}
- 	}
+	}
 
 	state.font.last_char = 0
 
