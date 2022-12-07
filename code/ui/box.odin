@@ -74,7 +74,6 @@ Box_Flags :: enum {
 	DEBUGCLIP,
 	ROOT,
 	FLOATING,
-	MENU,
 	PANEL,
 	NO_OFFSET,
 
@@ -155,14 +154,6 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 		box.frame_created = state.frame
 		if .FLOATING in flags {
 			box.offset = state.input.mouse.pos
-		}	else if .MENU in flags {
-			if state.boxes.active != nil {
-				offset := state.boxes.active.offset
-				offset.y += state.boxes.active.calc_size.y
-				box.offset = offset
-			} else {
-				box.offset = state.input.mouse.pos
-			}
 		}
 	}
 
@@ -262,16 +253,15 @@ process_ops :: proc(box: ^Box) {
 		if mouse_over {
 			if lmb_click() {
 				is_pressed := true
-				if state.boxes.active != nil {
-					if state.boxes.active.layer > box.layer do is_pressed = false
+				if state.boxes.pressed != nil {
+					if box.layer < state.boxes.pressed.layer do is_pressed = false
 				}
 				box.ops.pressed = is_pressed
 				box.ops.clicked = is_pressed
 
 				if is_pressed {
-					
-				if ctrl() do box.ops.ctrl_clicked = true
-					state.boxes.active = box
+					if ctrl() do box.ops.ctrl_clicked = true
+					state.boxes.pressed = box
 				}
 			} else {
 				box.ops.clicked = false
@@ -284,6 +274,8 @@ process_ops :: proc(box: ^Box) {
 						box.ops.selected = !box.ops.selected
 					}
 					box.ops.released = true
+					fmt.println("Clocked me")
+
 				}
 			}
 			if lmb_up() {
@@ -327,8 +319,6 @@ process_ops :: proc(box: ^Box) {
 			if mmb_click() {
 				box.ops.middle_clicked = true
 				box.ops.middle_dragged = true
-				// TODO really do this?
-				state.boxes.active = box
 			} else {
 				box.ops.middle_clicked = false
 			}
@@ -338,11 +328,7 @@ process_ops :: proc(box: ^Box) {
 		}
 	}
 
-	if .MENU in box.flags {
-		if !mouse_over && lmb_click() {
-			delete_panel(box.panel)
-		}
-	}
+	if box.ops.pressed || box.ops.dragging do state.panels.locked = true
 
 	if box.ops.editing do string_editing(box)
 }
@@ -584,8 +570,6 @@ calc_boxes :: proc(root: ^Box) {
 						state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/handle_range.y) + box.offset.y
 					}
 					box.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/handle_range.y)) - state.input.mouse.delta_temp.y) * -1
-				} else {
-					state.panels.locked = false
 				}
 
 				if x_handle.ops.pressed {
@@ -628,7 +612,7 @@ calc_boxes :: proc(root: ^Box) {
 		} else if !(.ROOT in box.flags) {
 			if box.prev == nil {
 				if box.parent != nil {
-					if .VIEWSCROLL in box.parent.flags && box.panel == state.panels.hot {
+					if .VIEWSCROLL in box.parent.flags {
 						 if mouse_in_quad(box.parent.parent.quad) {
 							box.scroll = box.scroll + (state.input.mouse.scroll*20)
 
@@ -669,7 +653,7 @@ calc_boxes :: proc(root: ^Box) {
 	for box := root; box != nil; box = box.hash_next	{
 
 		if .HOTANIMATION in box.flags {
-			if box.ops.hovering && box == state.boxes.hot {
+			if box.ops.hovering {
 				box.hot_t = clamp(box.hot_t + 0.12, 0, 1)
 			} else {
 				box.hot_t = clamp(box.hot_t - 0.12, 0, 1)
@@ -677,7 +661,7 @@ calc_boxes :: proc(root: ^Box) {
 		}
 
 		if .ACTIVEANIMATION in box.flags {
-			if box.ops.pressed && box == state.boxes.active {
+			if box.ops.pressed {
 				box.active_t = clamp(box.active_t + 0.12, 0, 1)
 			} else {
 				box.active_t = clamp(box.active_t - 0.12, 0, 1)

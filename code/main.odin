@@ -52,10 +52,19 @@ app_init :: proc() {
 
 app_loop :: proc() {
 	if ui.rmb_click() {
-		if ui.state.boxes.active == nil {
-			ui.queue_panel(ui.state.panels.hot, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.panels.hot.quad)
-		}
+		ui.queue_panel(ui.state.panels.hot, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.panels.hot.quad)
 	}
+
+	if ui.ctrl() && ui.state.input.keys.n_plus{
+		fmt.println(">>>>>>>>>>>>>>>>>>>>")
+		ui.queue_panel(ui.state.panels.hot, .Y, .DYNAMIC, ui.state.panels.hot.content, 0.5)
+	}
+
+	if ui.ctrl() && ui.state.input.keys.n_minus{
+		fmt.println(">>>>>>>>>>>>>>>>>>>>", ui.state.panels.hot)
+		ui.delete_panel(ui.state.panels.hot)
+	}	
+
 }
 
 app_load_text_file :: proc(_path:string="") {
@@ -72,9 +81,7 @@ app_load_text_file :: proc(_path:string="") {
 		fmt.println("Failed to load file!")
 		return
 	}
-
 	app.lorem = ui.from_odin_string(string(data[:]))
-
 }
 
 main_panel :: proc() {
@@ -85,7 +92,6 @@ main_panel :: proc() {
 	mbuttons, active := ui.menu("Main Menu", labels)
 	if active != nil {
 		ui.size(.TEXT, 1, .TEXT, 1)
-		// ui.extra_flags({ .NOCLIP })
 		if ui.button("BIG LONG BUTTON").hovering do fmt.println("BUX LONG BUTTON")
 		if ui.button("Another Test").hovering do fmt.println("ANOTEHR TEST")
 		if ui.button("Finally!").hovering do fmt.println("Finally")
@@ -105,8 +111,6 @@ main_panel :: proc() {
 			ui.button("Click Me")
 			ui.button("Click Me")
 			ui.button("Click Me")
-			
-
 		ui.pop()
 		ui.sizebar_x()
 		ui.axis(.X)
@@ -132,37 +136,33 @@ main_panel :: proc() {
 top_bar :: proc() {
 	using ui
 	panel := ui.begin()
-	ui.size(.TEXT, 1, .TEXT, 1)
-	ui.axis(.X)
+	ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
 	labels: []string = {"File", "Edit", "View"}
 	mbuttons, active := ui.menu("Main Menu", labels)
 	if active != nil {
 		for button, i in mbuttons {
 			if button.key == active.key {
-				label := labels[i]
 				ui.size(.PIXELS, 200, .TEXT, 1)
-				extra_flags({.NOCLIP})
-				switch label {
+				switch labels[i] {
 					case "File":
-						ui.menu_button("Open")
+						if ui.menu_button("Open").released {
+							ui.queue_panel(panel, .Y, .FLOATING, file_browser, 1.0, state.ctx.panel.quad)
+							active.ops.selected = false
+						}
 						ui.menu_button("Close")
-						ui.menu_button("Exit")
+						if ui.menu_button("Exit").released do quit()
 					case "Edit":
-						ui.menu_button("Exit")
-						ui.menu_button("Exit")
-						ui.menu_button("Exit")
+						ui.menu_button("Edit?")
 					case "View":
-						ui.menu_button("View")
-						ui.menu_button("View")
-						ui.menu_button("View")
+						ui.menu_button("View?")
 				}
 				state.ctx.layer = 0
-				ui.pop()
+				ui.pop(3)
 			}
 		}
 	}
-
-	ui.spacer_fill()
+	ui.axis(.X)
+	ui.size(.TEXT, 1, .TEXT, 1)
 	ui.value("scroll:", state.input.mouse.scroll)
 	ui.label("|")
 	ui.value("mouse pos:", state.input.mouse.pos)
@@ -238,13 +238,16 @@ ctx_panel :: proc() {
 
 panel_colors :: proc() {
 	using ui
-	ui.begin()
+	panel := ui.begin()
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
 	ui.empty()
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>p").released {
 			ui.queue_panel(state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, state.ctx.panel.quad)
+		}
+		if ui.button("Create Panel | X").released {
+			ui.queue_panel(state.ctx.panel, .X, .DYNAMIC, panel_colors, 0.5)	
 		}
 	ui.pop()
 
@@ -387,11 +390,8 @@ panel_tab_test :: proc() {
 
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		if state.boxes.active != nil {
-			ui.label(to_odin_string(&state.boxes.active.name))
-		} else {
-			ui.label("NO ACTIVE BOX")
-		}
+		ui.value("locked", state.panels.locked)
+		ui.value("active lyaer", state.sokol.current_layer)
 	ui.pop()
 	ui.end()
 }

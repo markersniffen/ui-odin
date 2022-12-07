@@ -55,7 +55,7 @@ begin_floating :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATI
 //   begin_menu()
 // at the beginning of menu panels instead of begin()
 //
-begin_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .MENU}) -> ^Panel {
+begin_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND}) -> ^Panel {
 	return begin_floating(flags)
 }
 
@@ -63,7 +63,7 @@ begin_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .MENU}) -> 
 //   begin_floating_menu()
 // at the beginning of menu panels instead of begin()
 //
-begin_floating_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING, .MENU}) -> ^Panel {
+begin_floating_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING }) -> ^Panel {
 	return begin_floating(flags)
 }
 
@@ -89,7 +89,13 @@ push_parent :: proc(box: ^Box) {	state.ctx.parent = box }
 // use:
 //   pop()
 //
-pop :: proc() { state.ctx.parent = state.ctx.parent.parent }
+pop :: proc(pops:int=1) { 
+	for i in 0..<pops {
+		if state.ctx.parent.parent != nil {
+			state.ctx.parent = state.ctx.parent.parent 
+		}
+	}
+}
 
 //______ SIZE and AXIS for new boxes ______//
 //
@@ -450,13 +456,11 @@ button :: proc(key: string) -> Box_Ops {
 	return box.ops
 }
 
-
 menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 	state.ctx.layer = 1
 	buttons := make([]^Box, len(labels), context.temp_allocator)
 	active_button : ^Box
-	axis(.Y)
-	size(.PCT_PARENT, 1, .TEXT, 1)
+	extra_flags({.DEBUG})
 	box := empty(name)
 		axis(.X)
 		size(.TEXT, 1, .TEXT, 1)
@@ -489,7 +493,7 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 		push_parent(active_button)
 		axis(.Y)
 		state.ctx.layer = 1
-		size(.MAX_CHILD, 200, .SUM_CHILDREN, 1)
+		size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
 		container = create_box("menu elements", { .NOCLIP, .CLIP, .DRAWBACKGROUND })
 		process_ops(container)
 		container.offset.y = state.font.line_space
@@ -498,7 +502,8 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 
 	if selected_button >= 0 && off_clicked && container != nil {
 		if !mouse_in_quad(container.quad) {
-			buttons[selected_button].ops.selected = false 
+			buttons[selected_button].ops.selected = false
+			active_button = nil
 		}
 	} else if released_button >= 0 {
 		buttons[released_button].ops.selected = true
@@ -509,10 +514,10 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 			if selected_button >= 0 do buttons[selected_button].ops.selected = false
 		}
 	}
-	state.panels.locked = (selected_button >= 0)
 	if active_button == nil {
-		
 		state.ctx.layer = 0
+	} else {
+		state.panels.locked = true
 	}
 	return buttons, active_button
 }
@@ -768,8 +773,6 @@ scrollbox_old :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 					state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/db_range.y) + viewport.first.offset.y
 				}
 				viewport.first.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/db_range.y)) - state.input.mouse.delta_temp.y) * -1
-			} else {
-				state.panels.locked = false
 			}
 		}
 		if x {

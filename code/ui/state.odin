@@ -116,7 +116,7 @@ UI_Boxes :: struct {
 	all: map[Key]^Box,
 	to_delete: [MAX_BOXES]rawptr,
 	root: ^Box,
-	active: ^Box,
+	pressed: ^Box,
 	editing: Key,
 	hot: ^Box,
 	
@@ -216,12 +216,12 @@ init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", widt
 //______ UI UPDATE ______//
 update :: proc() {
 	when PROFILER do tracy.Zone()
+	state.boxes.pressed = nil
 	
 	// create queued panel
 	if state.panels.queued != {} {
 		q := state.panels.queued
 
-		state.boxes.active = nil
 		state.boxes.hot = nil
 		state.boxes.editing = {}
 
@@ -231,6 +231,7 @@ update :: proc() {
 
 	cursor(.ARROW)
 	
+	state.panels.locked = false
 	calc_panel(state.panels.root, state.window.quad)
 	if state.panels.floating != nil {
 		calc_panel(state.panels.floating, state.panels.floating.quad)
@@ -337,6 +338,10 @@ update :: proc() {
  	}
 
 	state.font.last_char = 0
+
+	// state.input.keys.ctrl = false
+	state.input.keys.n_plus = false
+	state.input.keys.n_minus = false
 }
 
 // recursive draw boxes

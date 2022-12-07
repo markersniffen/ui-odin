@@ -1,7 +1,5 @@
 package ui
 
-LAYER :: true
-
 import sg "../../../sokol-odin/sokol/gfx"
 import sapp "../../../sokol-odin/sokol/app"
 import sglue "../../../sokol-odin/sokol/glue"
@@ -19,17 +17,8 @@ MAX_INDICES :: 6 * 2048 * 40
 Sokol :: struct {
     pass_action: sg.Pass_Action,
     pip: sg.Pipeline,
-
-    // bind: sg.Bindings,
-	// vertices: []f32,
-	// indices: []u32,
-	// vindex: u32,
-	// iindex: u32,
-	// qindex: u32,
-
-	layers: [2]Layer,
-
 	vs_params: Vs_Params,
+	layers: [2]Layer,
 	current_layer: int,
 }
 
@@ -84,36 +73,19 @@ sokol :: proc() {
 
 sokol_init :: proc "c" () {
 	context = runtime.default_context()
-	// state.sokol.vertices = make([]f32, MAX_VERTICES)
-	// state.sokol.indices = make([]u32, MAX_INDICES)
 
 	sg.setup({ ctx = sglue.ctx() })
 
-	when LAYER == true {
+	for layer, i in &state.sokol.layers {
+		layer.vertices = make([]f32, MAX_VERTICES)
+		layer.indices = make([]u32, MAX_INDICES)
 
-		for layer, i in &state.sokol.layers {
-			layer.vertices = make([]f32, MAX_VERTICES)
-			layer.indices = make([]u32, MAX_INDICES)
-
-			layer.bind.vertex_buffers[0] = sg.make_buffer({
-				size = size_of(f32) * MAX_VERTICES,
-				usage = .DYNAMIC,
-		    })
-
-		    layer.bind.index_buffer = sg.make_buffer({
-		        type = .INDEXBUFFER,
-		    	size = size_of(u32) * MAX_INDICES,
-		        usage = .DYNAMIC,
-		    })
-		}
-	} else {
-
-		state.sokol.bind.vertex_buffers[0] = sg.make_buffer({
+		layer.bind.vertex_buffers[0] = sg.make_buffer({
 			size = size_of(f32) * MAX_VERTICES,
 			usage = .DYNAMIC,
 	    })
 
-	    state.sokol.bind.index_buffer = sg.make_buffer({
+	    layer.bind.index_buffer = sg.make_buffer({
 	        type = .INDEXBUFFER,
 	    	size = size_of(u32) * MAX_INDICES,
 	        usage = .DYNAMIC,
@@ -183,48 +155,28 @@ sokol_frame :: proc "c" () {
 	
 	state.sokol.vs_params.framebuffer = {f32(state.window.size.x/2), f32(state.window.size.y/2)}
 
-	when LAYER == true {
-	    sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
-	    sg.apply_pipeline(state.sokol.pip)
-	    sg.apply_uniforms(.VS, SLOT_vs_params, { ptr = &state.sokol.vs_params, size = size_of(state.sokol.vs_params) })
-		for layer, i in state.sokol.layers {
-			if layer.vindex > 0 {
-				sg.update_buffer(layer.bind.vertex_buffers[0], {
-					ptr = raw_data(layer.vertices),
-					size = size_of(f32) * u64(layer.vindex),
-				})
+    sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
+    sg.apply_pipeline(state.sokol.pip)
+    sg.apply_uniforms(.VS, SLOT_vs_params, { ptr = &state.sokol.vs_params, size = size_of(state.sokol.vs_params) })
+	for layer, i in state.sokol.layers {
+		if layer.vindex > 0 {
+			sg.update_buffer(layer.bind.vertex_buffers[0], {
+				ptr = raw_data(layer.vertices),
+				size = size_of(f32) * u64(layer.vindex),
+			})
 
-				sg.update_buffer(layer.bind.index_buffer, {
-					ptr = raw_data(layer.indices),
-					size = size_of(u32) * u64(layer.iindex),
-				})
+			sg.update_buffer(layer.bind.index_buffer, {
+				ptr = raw_data(layer.indices),
+				size = size_of(u32) * u64(layer.iindex),
+			})
 
-			    sg.apply_bindings(layer.bind)
+		    sg.apply_bindings(layer.bind)
 
-			    sg.draw(0, layer.iindex, 1)
-			}
+		    sg.draw(0, layer.iindex, 1)
 		}
-	    sg.end_pass()
-	    sg.commit()
-	} else {
-		sg.update_buffer(state.sokol.bind.vertex_buffers[0], {
-			ptr = raw_data(state.sokol.vertices),
-			size = size_of(f32) * u64(state.sokol.vindex),
-		})
-
-		sg.update_buffer(state.sokol.bind.index_buffer, {
-			ptr = raw_data(state.sokol.indices),
-			size = size_of(u32) * u64(state.sokol.iindex),
-		})
-
-	    sg.begin_default_pass(state.sokol.pass_action, sapp.width(), sapp.height())
-	    sg.apply_pipeline(state.sokol.pip)
-	    sg.apply_bindings(state.sokol.bind)
-	    sg.apply_uniforms(.VS, SLOT_vs_params, { ptr = &state.sokol.vs_params, size = size_of(state.sokol.vs_params) })
-	    sg.draw(0, state.sokol.iindex, 1)
-	    sg.end_pass()
-	    sg.commit()
 	}
+    sg.end_pass()
+    sg.commit()
 
 	mouse_buttons: [3]^Button = { &state.input.mouse.left, &state.input.mouse.right, &state.input.mouse.middle }
 	for mouse_button, index in mouse_buttons {
@@ -233,16 +185,10 @@ sokol_frame :: proc "c" () {
 	}
 	state.input.mouse.scroll = {0,0}
 
-	when LAYER == true {
-		for layer in &state.sokol.layers {
-			layer.vindex = 0
-			layer.iindex = 0
-			layer.qindex = 0
-		}
-	} else {
-		state.sokol.vindex = 0
-		state.sokol.iindex = 0
-		state.sokol.qindex = 0
+	for layer in &state.sokol.layers {
+		layer.vindex = 0
+		layer.iindex = 0
+		layer.qindex = 0
 	}
 
 	state.font.last_char = 0
@@ -367,11 +313,8 @@ sokol_push_quad :: proc(quad:Quad,
 					) 
 {
 	NUM_ELEMENTS :: 52
-	when LAYER == true {
-		layer := &state.sokol.layers[state.sokol.current_layer]
-	} else {
-		layer := &state.sokol
-	}
+	layer := &state.sokol.layers[state.sokol.current_layer]
+
 	if layer.vindex < MAX_VERTICES-NUM_ELEMENTS {
 		vertex_arrays: [4][NUM_ELEMENTS]f32
 
@@ -432,23 +375,18 @@ sokol_push_quad :: proc(quad:Quad,
 	}
 }
 
-sokol_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {
-	when LAYER == true {
-		state.sokol.layers[0].bind.fs_images[font.texture_unit] = sg.make_image({
-		    width = font.texture_size,
-		    height = font.texture_size,
-		    pixel_format = .R8,
-		    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
-		})
-		state.sokol.layers[1].bind.fs_images[font.texture_unit] = state.sokol.layers[0].bind.fs_images[font.texture_unit]
-	} else {
-		state.sokol.bind.fs_images[font.texture_unit] = sg.make_image({
-		    width = font.texture_size,
-		    height = font.texture_size,
-		    pixel_format = .R8,
-		    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
-		})
+sokol_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {\
+	tex_image := sg.make_image({
+	    width = font.texture_size,
+	    height = font.texture_size,
+	    pixel_format = .R8,
+	    data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
+	})
+
+	for layer in &state.sokol.layers {
+		layer.bind.fs_images[font.texture_unit] = tex_image
 	}
+
 	return true
 }
 

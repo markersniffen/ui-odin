@@ -214,7 +214,6 @@ delete_panel :: proc(panel: ^Panel) {
 						sibling.parent = parent.parent
 						if grandpa.child_a == panel.parent do grandpa.child_a = sibling
 						if grandpa.child_b == panel.parent do grandpa.child_b = sibling
-
 						delete_key(&state.panels.all, parent.uid)
 						delete_key(&state.panels.all, panel.uid)
 						assert(pool_free(&state.boxes.pool, panel))
