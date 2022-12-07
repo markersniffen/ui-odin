@@ -1,10 +1,12 @@
-Imgui-style ui library atop a sokol base layer.
+#### Imgui-style ui library atop a sokol base layer for Odin.
 
 Suggested use: None. \
 Very unstable and very much a work in progress. Use at your own risk!
 
-Requires sokol-odin in the same folder as this repo: https://github.com/floooh/sokol-odin \
-The build-run.bat file uses floooh's shader tool: https://github.com/floooh/sokol-tools \
+#### Requirements:
+- Requires sokol-odin in the same folder as this repo: https://github.com/floooh/sokol-odin  
+- The build-run.bat file uses floooh's shader tool if you want to regenerate the shader: https://github.com/floooh/sokol-tools  
+- Uses odin-tracy to profile unless you comment out the includes: https://github.com/oskarnp/odin-tracy
 
 ## TODOs:
 
