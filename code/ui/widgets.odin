@@ -74,16 +74,13 @@ begin_floating_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .F
 end :: proc() {
 	if mouse_in_quad(state.ctx.panel.quad) {
 		if ctrl() && shift() {
+			state.panels.locked = true
 			state.ctx.layer = 1
 			push_parent(state.ctx.panel.box)
 			axis(.Y)
 			size(.PCT_PARENT, 1, .PCT_PARENT, 1)
 			extra_flags({.NO_OFFSET})
 			empty()
-				axis(.Y)
-				size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-				ebox := create_box("empty", {.DRAWBACKGROUND})
-				ebox.bg_color = state.col.bg
 				axis(.Y)
 				size(.PCT_PARENT, 1, .TEXT, 2)
 				empty()
@@ -96,6 +93,14 @@ end :: proc() {
 					size(.PCT_PARENT, .1, .PCT_PARENT, 1)
 					if button("<#>x").released do delete_panel(state.ctx.panel)
 				pop()
+
+				axis(.Y)
+				size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+				ebox := create_box("empty", {.DRAWBACKGROUND, .HOVERABLE})
+				process_ops(ebox)
+				ebox.bg_color = state.col.bg
+				ebox.bg_color.a = .75
+				
 				push_parent(ebox)
 				if yops.hovering {
 					axis(.X)

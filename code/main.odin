@@ -54,17 +54,6 @@ app_loop :: proc() {
 	if ui.rmb_click() {
 		ui.queue_panel(ui.state.panels.hot, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.panels.hot.quad)
 	}
-
-	if ui.ctrl() && ui.state.input.keys.n_plus{
-		fmt.println(">>>>>>>>>>>>>>>>>>>>")
-		ui.queue_panel(ui.state.panels.hot, .Y, .DYNAMIC, ui.state.panels.hot.content, 0.5)
-	}
-
-	if ui.ctrl() && ui.state.input.keys.n_minus{
-		fmt.println(">>>>>>>>>>>>>>>>>>>>", ui.state.panels.hot)
-		ui.delete_panel(ui.state.panels.hot)
-	}	
-
 }
 
 app_load_text_file :: proc(_path:string="") {
@@ -131,7 +120,7 @@ main_panel :: proc() {
 // DEMO //
 top_bar :: proc() {
 	using ui
-	panel := ui.begin()
+	ui.begin()
 	ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
 	labels: []string = {"File", "Edit", "View"}
 	mbuttons, active := ui.menu("Main Menu", labels)
@@ -142,7 +131,7 @@ top_bar :: proc() {
 				switch labels[i] {
 					case "File":
 						if ui.menu_button("Open").released {
-							ui.queue_panel(panel, .Y, .FLOATING, file_browser, 1.0, state.ctx.panel.quad)
+							ui.queue_panel(state.ctx.panel, .Y, .FLOATING, file_browser, 1.0, state.ctx.panel.quad)
 							active.ops.selected = false
 						}
 						ui.menu_button("Close")
@@ -290,24 +279,6 @@ panel_colors :: proc() {
 	color_row("Inactive:", &state.col.inactive)
 	color_row("Active:", &state.col.active)
 	color_row("Highlight:", &state.col.highlight)
-
-	ui.size(.TEXT, 1, .TEXT, 1)
-	ui.axis(.X)
-	labels: []string = {"File", "Edit", "View"}
-
-	mbuttons, active := ui.menu("Main Menu", labels)
-	if active != nil {
-				ui.axis(.Y)
-				ui.size(.PIXELS, 250, .SUM_CHILDREN, 1)
-				state.ctx.layer = 1
-				ui.empty("whee")
-					ui.size(.PCT_PARENT, 1, .TEXT, 1)
-					ui.button("Test")
-					ui.button("Another Test")
-					ui.button("Finally!")
-				state.ctx.layer = 0
-				ui.pop()
-	}
 	ui.end()
 }
 
