@@ -310,7 +310,7 @@ update :: proc() {
 			}
 		}
 	}
-
+	
 	if state.panels.active != nil {
 		if state.panels.active.type == .NULL {
 			push_quad_solid(state.panels.active.bar, state.col.active, state.panels.active.quad)

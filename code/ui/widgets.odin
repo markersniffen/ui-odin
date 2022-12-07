@@ -72,6 +72,59 @@ begin_floating_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .F
 // at end of each panel.
 //
 end :: proc() {
+	if mouse_in_quad(state.ctx.panel.quad) {
+		if ctrl() && shift() {
+			state.ctx.layer = 1
+			push_parent(state.ctx.panel.box)
+			axis(.Y)
+			size(.PCT_PARENT, 1, .PCT_PARENT, 1)
+			extra_flags({.NO_OFFSET})
+			empty()
+				axis(.Y)
+				size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+				ebox := create_box("empty", {.DRAWBACKGROUND})
+				ebox.bg_color = state.col.bg
+				axis(.Y)
+				size(.PCT_PARENT, 1, .TEXT, 2)
+				empty()
+					axis(.X)
+					size(.PCT_PARENT, .45, .PCT_PARENT, 1)
+					xops := button("SPLIT HORIZONTAL")
+					if xops.released do split_panel(.Y)
+					yops := button("SPLIT VERTICAL")
+					if yops.released do split_panel(.X)
+					size(.PCT_PARENT, .1, .PCT_PARENT, 1)
+					if button("<#>x").released do delete_panel(state.ctx.panel)
+				pop()
+				push_parent(ebox)
+				if yops.hovering {
+					axis(.X)
+					size(.PCT_PARENT, 0.5, .PCT_PARENT, 1)
+					create_box("yspacer", {.DRAWBORDER})
+					state.ctx.box.border_color = state.col.active	
+					size(.PIXELS, 2, .PCT_PARENT, 1)
+					bx := create_box("yline", {.DRAWBACKGROUND})
+					bx.bg_color = state.col.active
+					size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
+					create_box("yspacer2", {.DRAWBORDER})
+					state.ctx.box.border_color = state.col.active
+				} else if xops.hovering {
+					axis(.Y)
+					size(.PCT_PARENT, 1, .PCT_PARENT, 0.5)
+					create_box("xspacer", {.DRAWBORDER})
+					state.ctx.box.border_color = state.col.active
+					size(.PCT_PARENT, 1, .PIXELS, 2)
+					bx := create_box("xline", {.DRAWBACKGROUND})
+					bx.bg_color = state.col.active
+					size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+					create_box("xspacer2", {.DRAWBORDER})
+					state.ctx.box.border_color = state.col.active
+				}
+
+			pop()
+			state.ctx.layer = 0
+		}
+	}
 	state.boxes.index = 0
 	state.ctx.layer = 0
 }
@@ -460,7 +513,6 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 	state.ctx.layer = 1
 	buttons := make([]^Box, len(labels), context.temp_allocator)
 	active_button : ^Box
-	extra_flags({.DEBUG})
 	box := empty(name)
 		axis(.X)
 		size(.TEXT, 1, .TEXT, 1)

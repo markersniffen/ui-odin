@@ -45,6 +45,10 @@ queue_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, conte
 	state.panels.queued_parent = current
 }
 
+split_panel :: proc(axis: UI_Axis) {
+	queue_panel(state.ctx.panel, axis, .DYNAMIC, state.ctx.panel.content, 0.5)
+}
+
 create_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0}) -> ^Panel
 {
 	// current := state.ctx.panel
@@ -216,8 +220,9 @@ delete_panel :: proc(panel: ^Panel) {
 						if grandpa.child_b == panel.parent do grandpa.child_b = sibling
 						delete_key(&state.panels.all, parent.uid)
 						delete_key(&state.panels.all, panel.uid)
-						assert(pool_free(&state.boxes.pool, panel))
-						assert(pool_free(&state.boxes.pool, parent))
+						assert(pool_free(&state.panels.pool, panel))
+						assert(pool_free(&state.panels.pool, parent))
+						fmt.println("succesfully deleted panel")
 					} else {
 						fmt.println("failed to find sibling")
 					}

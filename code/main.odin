@@ -104,7 +104,6 @@ main_panel :: proc() {
 	ui.empty()
 		ui.axis(.X)
 		ui.size(.PIXELS, 600, .PCT_PARENT, 1)
-		ui.extra_flags({.DEBUG})
 		ui.empty()
 			ui.axis(.Y)
 			ui.size(.PCT_PARENT, 1, .TEXT, 1)
@@ -115,18 +114,15 @@ main_panel :: proc() {
 		ui.sizebar_x()
 		ui.axis(.X)
 		ui.size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
-		ui.extra_flags({.DEBUG})
 		ui.empty()
 			ui.axis(.Y)
 			ui.size(.PCT_PARENT, 1, .PIXELS, 400)
 			ui.empty()
-			ui.pop()
-			ui.sizebar_y()
-			ui.axis(.Y)
-			ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-			ui.extra_flags({.DEBUG})
-			ui.empty()
-
+				ui.pop()
+				ui.sizebar_y()
+				ui.axis(.Y)
+				ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+				ui.empty()
 			ui.pop()
 		ui.pop()
 	ui.end()
@@ -249,6 +245,9 @@ panel_colors :: proc() {
 		if ui.button("Create Panel | X").released {
 			ui.queue_panel(state.ctx.panel, .X, .DYNAMIC, panel_colors, 0.5)	
 		}
+		if ui.button("Del Panel").released {
+			ui.delete_panel(panel)
+		}
 	ui.pop()
 
 	ui.axis(.Y)
@@ -309,6 +308,7 @@ panel_colors :: proc() {
 				state.ctx.layer = 0
 				ui.pop()
 	}
+	ui.end()
 }
 
 panel_lorem :: proc() {
@@ -491,6 +491,7 @@ panel_pick_panel :: proc() {
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>x").released {
 			if state.panels.floating != nil {
+				fmt.println(state.panels.floating)
 				ui.delete_panel(state.panels.floating)
 			}
 		}

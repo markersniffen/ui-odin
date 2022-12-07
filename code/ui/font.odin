@@ -475,6 +475,12 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 	text_height: f32 = state.font.size
 	text_width: f32
 
+	quad_height := quad.b - quad.t
+
+	if quad_height > state.font.line_space {
+		top_align += (quad_height - state.font.line_space) / 2
+	}
+
 	if align != .LEFT
 	{
 		i := 0

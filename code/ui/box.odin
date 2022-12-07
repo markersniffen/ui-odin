@@ -274,8 +274,6 @@ process_ops :: proc(box: ^Box) {
 						box.ops.selected = !box.ops.selected
 					}
 					box.ops.released = true
-					fmt.println("Clocked me")
-
 				}
 			}
 			if lmb_up() {
