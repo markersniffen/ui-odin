@@ -4,12 +4,14 @@ import "/ui"
 import "core:fmt"
 import "core:os"
 import "core:path/filepath"
+import "core:mem"
 
 // demo app
 App :: struct {
 	path: ui.String,
 	panels: [5]Panel,
 	lorem: ui.String,
+	image: ui.Image,
 }
 
 Panel :: struct {
@@ -43,11 +45,13 @@ app_init :: proc() {
 	app.path = ui.from_odin_string("C:/Users/marxn/Desktop/")
 
 	//					parent			 	   direction	type			content						size
-	// ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	main_panel, 	1)
 	ui.create_panel(nil, 					.Y,			.STATIC, 	top_bar, 		0.3)
 	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_colors, 			0.1)
 	ui.create_panel(ui.state.ctx.panel, .X,			.DYNAMIC, 	panel_lorem, 					0.7)
 	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_tab_test, 	0.4)
+
+
+	ui.load_image("C:/Users/marxn/Desktop/jack.png", &app.image)
 }
 
 app_loop :: proc() {
@@ -73,53 +77,8 @@ app_load_text_file :: proc(_path:string="") {
 	app.lorem = ui.from_odin_string(string(data[:]))
 }
 
-main_panel :: proc() {
-	panel := ui.begin()
-	ui.size(.TEXT, 1, .TEXT, 1)
-	ui.axis(.X)
-	labels: []string = {"File", "Edit", "View"}
-	mbuttons, active := ui.menu("Main Menu", labels)
-	if active != nil {
-		ui.size(.TEXT, 1, .TEXT, 1)
-		if ui.button("BIG LONG BUTTON").hovering do fmt.println("BUX LONG BUTTON")
-		if ui.button("Another Test").hovering do fmt.println("ANOTEHR TEST")
-		if ui.button("Finally!").hovering do fmt.println("Finally")
-		ui.state.ctx.layer = 0
-	}
-	ui.push_parent(panel.box)
-	ui.bar()
-	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-	ui.empty()
-		ui.axis(.X)
-		ui.size(.PIXELS, 600, .PCT_PARENT, 1)
-		ui.empty()
-			ui.axis(.Y)
-			ui.size(.PCT_PARENT, 1, .TEXT, 1)
-			ui.button("Click Me")
-			ui.button("Click Me")
-			ui.button("Click Me")
-		ui.pop()
-		ui.sizebar_x()
-		ui.axis(.X)
-		ui.size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
-		ui.empty()
-			ui.axis(.Y)
-			ui.size(.PCT_PARENT, 1, .PIXELS, 400)
-			ui.empty()
-				ui.pop()
-				ui.sizebar_y()
-				ui.axis(.Y)
-				ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-				ui.empty()
-			ui.pop()
-		ui.pop()
-	ui.end()
-}
-
 // DEMO //
 top_bar :: proc() {
-	using ui
 	ui.begin()
 	ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
 	labels: []string = {"File", "Edit", "View"}
@@ -131,86 +90,42 @@ top_bar :: proc() {
 				switch labels[i] {
 					case "File":
 						if ui.menu_button("Open").released {
-							ui.queue_panel(state.ctx.panel, .Y, .FLOATING, file_browser, 1.0, state.ctx.panel.quad)
+							ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, file_browser, 1.0, ui.state.ctx.panel.quad)
 							active.ops.selected = false
 						}
 						ui.menu_button("Close")
-						if ui.menu_button("Exit").released do quit()
+						if ui.menu_button("Exit").released do ui.quit()
 					case "Edit":
 						ui.menu_button("Edit?")
 					case "View":
 						ui.menu_button("View?")
 				}
-				state.ctx.layer = 0
+				ui.state.ctx.layer = 0
 				ui.pop(3)
 			}
 		}
 	}
 	ui.axis(.X)
 	ui.size(.TEXT, 1, .TEXT, 1)
-	ui.value("scroll:", state.input.mouse.scroll)
+	ui.value("scroll:", ui.state.input.mouse.scroll)
 	ui.label("|")
-	ui.value("mouse pos:", state.input.mouse.pos)
+	ui.value("mouse pos:", ui.state.input.mouse.pos)
 	ui.label("|")
-	ui.value("window width:", state.window.size.x)
+	ui.value("window width:", ui.state.window.size.x)
 	ui.label("|")
-	ui.value("fb width:", state.window.framebuffer.x)
+	ui.value("fb width:", ui.state.window.framebuffer.x)
 	ui.label("|")
-	ui.value("boxes:", state.boxes.pool.nodes_used)
-	ui.value("/", state.boxes.pool.chunk_count)
+	ui.value("boxes:", ui.state.boxes.pool.nodes_used)
+	ui.value("/", ui.state.boxes.pool.chunk_count)
 	ui.label("|")
-	ui.value("panels:", state.panels.pool.nodes_used)
-	ui.value("/", state.panels.pool.chunk_count)
+	ui.value("panels:", ui.state.panels.pool.nodes_used)
+	ui.value("/", ui.state.panels.pool.chunk_count)
 	ui.spacer_pixels(6)
 	ui.end()
 }
 
-file_menu :: proc() {
-	using ui
-	panel := ui.begin_menu()
-	ui.axis(.Y)
-	ui.size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
-	ui.empty()
-		ui.size(.PIXELS, 200, .TEXT, 1)
-		ui.menu_button("New")
-		if ui.menu_button("Open").clicked {
-			ui.queue_panel(panel, .Y, .FLOATING, file_browser, 1.0, state.ctx.panel.quad)
-		}
-		ui.menu_button("Save")
-		ui.menu_button("Save As")
-		if ui.menu_button("Exit").clicked do quit()
-	ui.pop()
-}
-
-edit_menu :: proc() {
-	using ui
-	panel := ui.begin_menu()
-	ui.axis(.Y)
-	ui.size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
-	ui.empty()
-		ui.size(.PIXELS, 200, .TEXT, 1)
-		ui.menu_button("Cut")
-		ui.menu_button("Copy")
-		ui.menu_button("Paste")
-	ui.pop()
-}
-
-view_menu :: proc() {
-	using ui
-	panel := ui.begin_menu()
-	ui.axis(.Y)
-	ui.size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
-	ui.empty()
-		ui.size(.PIXELS, 200, .TEXT, 1)
-		ui.menu_button("Some Stuff")
-		ui.menu_button("More Stuff")
-		ui.menu_button("Everything")
-	ui.pop()
-}
-
 ctx_panel :: proc() {
-	using ui
-	panel := ui.begin_floating_menu()
+	panel := ui.begin()
 	ui.axis(.Y)
 	ui.size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
 	ui.empty()
@@ -222,20 +137,13 @@ ctx_panel :: proc() {
 }
 
 panel_colors :: proc() {
-	using ui
 	panel := ui.begin()
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
 	ui.empty()
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>p").released {
-			ui.queue_panel(state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, state.ctx.panel.quad)
-		}
-		if ui.button("Create Panel | X").released {
-			ui.queue_panel(state.ctx.panel, .X, .DYNAMIC, panel_colors, 0.5)	
-		}
-		if ui.button("Del Panel").released {
-			ui.delete_panel(panel)
+			ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.ctx.panel.quad)
 		}
 	ui.pop()
 
@@ -251,7 +159,7 @@ panel_colors :: proc() {
 		ui.label("<i>Value")
 		ui.label("<i>Alpha")
 	ui.pop()
-	ui.bar(state.col.highlight)
+	ui.bar(ui.state.col.highlight)
 
 	color_row :: proc(name: string, col:^ui.HSL) {
 		ui.axis(.Y)
@@ -270,20 +178,19 @@ panel_colors :: proc() {
 		ui.pop()
 	}
 
-	color_row("Backdrop:", &state.col.backdrop)
-	color_row("Background:", &state.col.bg)
-	color_row("Gradient:", &state.col.gradient)
-	color_row("Border:", &state.col.border)
-	color_row("Font:", &state.col.font)
-	color_row("Hot:", &state.col.hot)
-	color_row("Inactive:", &state.col.inactive)
-	color_row("Active:", &state.col.active)
-	color_row("Highlight:", &state.col.highlight)
+	color_row("Backdrop:", &ui.state.col.backdrop)
+	color_row("Background:", &ui.state.col.bg)
+	color_row("Gradient:", &ui.state.col.gradient)
+	color_row("Border:", &ui.state.col.border)
+	color_row("Font:", &ui.state.col.font)
+	color_row("Hot:", &ui.state.col.hot)
+	color_row("Inactive:", &ui.state.col.inactive)
+	color_row("Active:", &ui.state.col.active)
+	color_row("Highlight:", &ui.state.col.highlight)
 	ui.end()
 }
 
 panel_lorem :: proc() {
-	using ui
 	panel := ui.begin()
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
@@ -291,7 +198,7 @@ panel_lorem :: proc() {
 			ui.axis(.X)
 			ui.size(.TEXT, 1, .TEXT, 1)
 			if ui.button("<#>p").released {
-				ui.queue_panel(state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, state.ctx.panel.quad)
+				ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.ctx.panel.quad)
 			}
 		ui.pop()
 
@@ -301,7 +208,7 @@ panel_lorem :: proc() {
 			ui.axis(.X)
 			ui.size(.PCT_PARENT, 1, .TEXT, 1)
 			if ui.menu_button("Open Text File").clicked {
-				ui.queue_panel(panel, .Y, .FLOATING, file_browser, 1.0, state.ctx.panel.quad)
+				ui.queue_panel(panel, .Y, .FLOATING, file_browser, 1.0, ui.state.ctx.panel.quad)
 			}
 		ui.pop()
 		ui.axis(.Y)
@@ -315,7 +222,6 @@ panel_lorem :: proc() {
 }
 
 panel_tab_test :: proc() {
-	using ui
 	ui.begin()
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
@@ -323,7 +229,7 @@ panel_tab_test :: proc() {
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>p").released {
-			ui.queue_panel(state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, state.ctx.panel.quad)
+			ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.ctx.panel.quad)
 		}
 	ui.pop()
 
@@ -361,8 +267,8 @@ panel_tab_test :: proc() {
 
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.value("locked", state.panels.locked)
-		ui.value("active lyaer", state.sokol.current_layer)
+		ui.value("locked", ui.state.panels.locked)
+		ui.value("active lyaer", ui.state.sokol.current_layer)
 	ui.pop()
 	ui.end()
 }
@@ -412,6 +318,8 @@ panel_boxlist :: proc() {
 	ui.end()
 }
 
+
+
 panel_properties :: proc() {
 	ui.begin()
 	ui.axis(.Y)
@@ -424,35 +332,27 @@ panel_properties :: proc() {
 		}
 	ui.pop()
 	ui.axis(.Y)
-	ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-	ui.empty()
-		ui.scrollbox()
-			ui.axis(.Y)
-			ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1 )
-			ui.empty()
-				ui.size(.PCT_PARENT, 1, .TEXT, 1)
-				ui.empty("e frame")
-					ui.axis(.X)
-					ui.size(.PCT_PARENT, 0.5, .PCT_PARENT, 1)
-					ui.label("frame:")
-					ui.value("vframe", ui.state.frame)
-				ui.pop()
-				ui.axis(.Y)
-				ui.size(.PCT_PARENT, 1, .TEXT, 1)
-				ui.label(fmt.tprint("font size:", ui.state.font.size))
+	ui.size(.PCT_PARENT, 1, .TEXT, 1)
+	if ui.dropdown("State:").selected {
+		ui.label_values("Current Frame", {ui.state.frame})
+		ui.label_values("UID", {ui.state.uid})
+		ui.label_values("Number of Panels", {ui.state.panels.pool.nodes_used})
+		ui.label_values("Mouse Pos", {ui.state.input.mouse.pos.x, ui.state.input.mouse.pos.y})
+	}
+	ui.axis(.Y)
+	ui.size(.PCT_PARENT, 1, .TEXT, 1)
+	if ui.dropdown("Image").selected {
+		ui.axis(.Y)
+		ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+		ui.image(&app.image)
+	}
 
-				for i in 0..=22 {
-					label := fmt.tprint("Random Label", i)
-					ui.button(label)
-				}
-			ui.pop()
-	ui.pop()
+
 	ui.end()
 }
 
 panel_pick_panel :: proc() {
-	using ui
-	panel := ui.begin_floating()
+	panel := ui.begin()
 	ui.axis(.Y)
 	ui.size(.SUM_CHILDREN, 1, .TEXT, 1)
 	ui.empty()
@@ -461,9 +361,9 @@ panel_pick_panel :: proc() {
 		ui.drag_panel("Select Panel:")
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>x").released {
-			if state.panels.floating != nil {
-				fmt.println(state.panels.floating)
-				ui.delete_panel(state.panels.floating)
+			if ui.state.panels.floating != nil {
+				fmt.println(ui.state.panels.floating)
+				ui.delete_panel(ui.state.panels.floating)
 			}
 		}
 	ui.pop()
@@ -483,8 +383,7 @@ panel_pick_panel :: proc() {
 }
 
 file_browser :: proc () {
-	using ui
-	ui.begin_floating()
+	ui.begin()
 	ui.axis(.Y)
 	ui.size(.PIXELS, 600, .SUM_CHILDREN, 1)
 	ui.empty()
@@ -494,7 +393,7 @@ file_browser :: proc () {
 			ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
 			ui.drag_panel("Load file:")
 			ui.size(.TEXT, 1, .TEXT, 1)
-			if ui.button("<#>x").released do ui.delete_panel(state.panels.floating)
+			if ui.button("<#>x").released do ui.delete_panel(ui.state.panels.floating)
 		ui.pop()
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
@@ -513,12 +412,12 @@ file_browser :: proc () {
 }
 
 find_files_and_run :: proc(run:proc(string) -> ui.Box_Ops, filter:string="") {
-	using ui, filepath
+	using filepath
 	if app.path.mem[app.path.len] == '\\' {
 		app.path.mem[app.path.len] = 0
 		app.path.len -= 1
 	}
-	path := to_odin_string(&app.path)
+	path := ui.to_odin_string(&app.path)
 	if os.is_dir(path) {
 		handle, hok := os.open(path)
 		file_list, fok := os.read_dir(handle, 0)
@@ -536,7 +435,7 @@ find_files_and_run :: proc(run:proc(string) -> ui.Box_Ops, filter:string="") {
 		for file in file_list {
 			if file.is_dir {
 				if run(fmt.tprintf("%v%v", "<#>g<b>", file.name)).released {
-					replace_string(&app.path, fmt.tprintf("%v%v%v", path[:len(path)], '\\', file.name))
+					ui.replace_string(&app.path, fmt.tprintf("%v%v%v", path[:len(path)], '\\', file.name))
 				}
 			} else {
 				skip := false
@@ -547,8 +446,8 @@ find_files_and_run :: proc(run:proc(string) -> ui.Box_Ops, filter:string="") {
 							case ".txt":
 								app_load_text_file(file.fullpath)
 						}
-						state.boxes.editing = {}
-						ui.delete_panel(state.panels.floating)
+						ui.state.boxes.editing = {}
+						ui.delete_panel(ui.state.panels.floating)
 					}
 				}
 			}

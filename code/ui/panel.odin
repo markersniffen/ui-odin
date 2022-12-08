@@ -74,8 +74,6 @@ create_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, cont
 				if state.panels.floating.content == content {
 					panel.quad = state.panels.floating.quad
 				}
-				// note needed?
-				// delete_panel(state.panels.floating)
 			}
 			panel.parent = current
 			state.panels.floating = panel

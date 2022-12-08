@@ -6,7 +6,7 @@ import "core:mem"
 //______ BUILDER API ______//
 
 //
-// start each panel with:
+// start each panel's content() with:
 //   begin()
 // this creates a root box and set's it to the context parent
 
@@ -18,116 +18,107 @@ reset_colors :: proc() {
 
 begin :: proc() -> ^Panel {
 	reset_colors()
-	state.ctx.box = nil
-	state.ctx.parent = nil
-	quad := state.ctx.panel.quad
-	size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
-	box := create_box("root", { .ROOT, .CLIP })
-	process_ops(box)
-	box.offset = {quad.l, quad.t}
-	state.ctx.panel.box = box
-	push_parent(box)
-	size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
-	axis(.Y)
+	if state.ctx.panel.type == .FLOATING {
+		state.ctx.layer = 1
+		state.ctx.box = nil
+		state.ctx.parent = nil
+		size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
+		box := create_box("root_floating", {.ROOT, .DRAWBACKGROUND, .FLOATING})
+		process_ops(box)
+		state.ctx.panel.box = box
+		push_parent(box)
+	} else {
+		state.ctx.box = nil
+		state.ctx.parent = nil
+		quad := state.ctx.panel.quad
+		size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
+		box := create_box("root", { .ROOT, .CLIP })
+		process_ops(box)
+		box.offset = {quad.l, quad.t}
+		state.ctx.panel.box = box
+		push_parent(box)
+		size(.PIXELS, quad.r - quad.l, .PIXELS, quad.b - quad.t)
+		axis(.Y)
+	}
 	return state.ctx.panel
-}
-
-// use
-//   begin_floating()
-// at the beginning of floating panels instead of begin()
-//
-begin_floating :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING}) -> ^Panel {
-	state.ctx.layer = 1
-	reset_colors()
-	state.ctx.box = nil
-	state.ctx.parent = nil
-	size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
-	box := create_box("root_floating", flags)
-	process_ops(box)
-	state.ctx.panel.box = box
-	push_parent(box)
-	return state.ctx.panel
-}
-
-
-// TODO what's the difference between these two?
-// use
-//   begin_menu()
-// at the beginning of menu panels instead of begin()
-//
-begin_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND}) -> ^Panel {
-	return begin_floating(flags)
-}
-
-// use
-//   begin_floating_menu()
-// at the beginning of menu panels instead of begin()
-//
-begin_floating_menu :: proc(flags:bit_set[Box_Flags]={.ROOT, .DRAWBACKGROUND, .FLOATING }) -> ^Panel {
-	return begin_floating(flags)
 }
 
 // use 
 //   end()
-// at end of each panel.
+// at end of each panel's content().
 //
 end :: proc() {
-	if mouse_in_quad(state.ctx.panel.quad) {
-		if ctrl() && shift() {
-			state.panels.locked = true
-			state.ctx.layer = 1
-			push_parent(state.ctx.panel.box)
-			axis(.Y)
-			size(.PCT_PARENT, 1, .PCT_PARENT, 1)
-			extra_flags({.NO_OFFSET})
-			empty()
+	if state.ctx.panel.type == .FLOATING {
+		if state.ctx.panel.box != nil {
+			quad := state.ctx.panel.box.quad
+			wquad := state.window.quad
+
+			offset : [2]f32
+			if quad.r > wquad.r do offset.x = -(quad.r - wquad.r)
+			if quad.b > wquad.b do offset.y = -(quad.b - wquad.b)
+			if quad.l < wquad.l do offset.x = wquad.l - quad.l
+			if quad.t < wquad.t do offset.y = wquad.t - quad.t
+			
+			state.ctx.panel.box.offset += offset
+		}
+	} else {
+		if mouse_in_quad(state.ctx.panel.quad) {
+			if ctrl() && shift() {
+				state.panels.locked = true
+				state.ctx.layer = 1
+				push_parent(state.ctx.panel.box)
 				axis(.Y)
-				size(.PCT_PARENT, 1, .TEXT, 2)
+				size(.PCT_PARENT, 1, .PCT_PARENT, 1)
+				extra_flags({.NO_OFFSET})
 				empty()
-					axis(.X)
-					size(.PCT_PARENT, .45, .PCT_PARENT, 1)
-					xops := button("SPLIT HORIZONTAL")
-					if xops.released do split_panel(.Y)
-					yops := button("SPLIT VERTICAL")
-					if yops.released do split_panel(.X)
-					size(.PCT_PARENT, .1, .PCT_PARENT, 1)
-					if button("<#>x").released do delete_panel(state.ctx.panel)
-				pop()
-
-				axis(.Y)
-				size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-				ebox := create_box("empty", {.DRAWBACKGROUND, .HOVERABLE})
-				process_ops(ebox)
-				ebox.bg_color = state.col.bg
-				ebox.bg_color.a = .75
-				
-				push_parent(ebox)
-				if yops.hovering {
-					axis(.X)
-					size(.PCT_PARENT, 0.5, .PCT_PARENT, 1)
-					create_box("yspacer", {.DRAWBORDER})
-					state.ctx.box.border_color = state.col.active	
-					size(.PIXELS, 2, .PCT_PARENT, 1)
-					bx := create_box("yline", {.DRAWBACKGROUND})
-					bx.bg_color = state.col.active
-					size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
-					create_box("yspacer2", {.DRAWBORDER})
-					state.ctx.box.border_color = state.col.active
-				} else if xops.hovering {
 					axis(.Y)
-					size(.PCT_PARENT, 1, .PCT_PARENT, 0.5)
-					create_box("xspacer", {.DRAWBORDER})
-					state.ctx.box.border_color = state.col.active
-					size(.PCT_PARENT, 1, .PIXELS, 2)
-					bx := create_box("xline", {.DRAWBACKGROUND})
-					bx.bg_color = state.col.active
-					size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-					create_box("xspacer2", {.DRAWBORDER})
-					state.ctx.box.border_color = state.col.active
-				}
+					size(.PCT_PARENT, 1, .TEXT, 2)
+					empty()
+						axis(.X)
+						size(.PCT_PARENT, .45, .PCT_PARENT, 1)
+						xops := button("SPLIT HORIZONTAL")
+						if xops.released do split_panel(.Y)
+						yops := button("SPLIT VERTICAL")
+						if yops.released do split_panel(.X)
+						size(.PCT_PARENT, .1, .PCT_PARENT, 1)
+						if button("<#>x").released do delete_panel(state.ctx.panel)
+					pop()
 
-			pop()
-			state.ctx.layer = 0
+					axis(.Y)
+					size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+					ebox := create_box("empty", {.DRAWBACKGROUND, .HOVERABLE})
+					process_ops(ebox)
+					ebox.bg_color = state.col.bg
+					ebox.bg_color.a = .75
+					
+					push_parent(ebox)
+					if yops.hovering {
+						axis(.X)
+						size(.PCT_PARENT, 0.5, .PCT_PARENT, 1)
+						create_box("yspacer", {.DRAWBORDER})
+						state.ctx.box.border_color = state.col.active	
+						size(.PIXELS, 2, .PCT_PARENT, 1)
+						bx := create_box("yline", {.DRAWBACKGROUND})
+						bx.bg_color = state.col.active
+						size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
+						create_box("yspacer2", {.DRAWBORDER})
+						state.ctx.box.border_color = state.col.active
+					} else if xops.hovering {
+						axis(.Y)
+						size(.PCT_PARENT, 1, .PCT_PARENT, 0.5)
+						create_box("xspacer", {.DRAWBORDER})
+						state.ctx.box.border_color = state.col.active
+						size(.PCT_PARENT, 1, .PIXELS, 2)
+						bx := create_box("xline", {.DRAWBACKGROUND})
+						bx.bg_color = state.col.active
+						size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
+						create_box("xspacer2", {.DRAWBORDER})
+						state.ctx.box.border_color = state.col.active
+					}
+
+				pop()
+				state.ctx.layer = 0
+			}
 		}
 	}
 	state.boxes.index = 0
@@ -298,6 +289,44 @@ value :: proc(key: string, value: any) -> Box_Ops {
 	box := create_box(key,{ .DISPLAYVALUE }, value)
 	process_ops(box)
 	return box.ops	
+}
+
+label_value :: proc(text: string, val:any, pixels:f32=0) {
+	axis(.Y)
+	if pixels > 0 {
+		size(.PIXELS, pixels, .TEXT, 1)
+	} else {
+		size(.PCT_PARENT, 1, .TEXT, 1)
+	}
+	empty("label_value")
+		axis(.X)
+		size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
+		label(text)
+		size(.TEXT, 1, .PCT_PARENT, 1)
+		value(text, val)
+	pop()
+}
+
+label_values :: proc(text: string, vals:[]any, pixels:f32=0) {
+	axis(.Y)
+	if pixels > 0 {
+		size(.PIXELS, pixels, .TEXT, 1)
+	} else {
+		size(.PCT_PARENT, 1, .TEXT, 1)
+	}
+	empty("label_value")
+		axis(.X)
+		size(.PIXELS, state.ctx.parent.calc_size.x/2, .PCT_PARENT, 1)
+		label(text)
+		sizebar_x()
+		size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
+		empty("vals")
+			for val in vals {
+				size(.PCT_PARENT, 1/f32(len(vals)), .PCT_PARENT, 1)
+				value(text, val)
+			}
+		pop()
+	pop()
 }
 
 edit_value:: proc(key: string, ev: any) -> ^Box {
@@ -614,6 +643,13 @@ dropdown :: proc(key: string) -> Box_Ops {
 		box.name = from_odin_string(fmt.tprint("<#>d<r>", key))
 	}
 	box.text_align = .LEFT
+	return box.ops
+}
+
+image :: proc(image: ^Image) -> Box_Ops {
+	box := create_box("IMAGE", {
+		.DRAWIMAGE,
+	}, image)
 	return box.ops
 }
 

@@ -9,6 +9,7 @@ import "core:mem"
 import "core:fmt"
 import "core:os"
 import "core:strings"
+import "core:image/png"
 import lin "core:math/linalg"
 
 MAX_VERTICES :: 8 * 2048 * 40
@@ -23,7 +24,6 @@ Sokol :: struct {
 }
 
 Layer :: struct {
-	pip: sg.Pipeline,
 	bind: sg.Bindings,
 	vertices: []f32,
 	indices: []u32,
@@ -384,10 +384,32 @@ sokol_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {\
 	})
 
 	for layer in &state.sokol.layers {
+		fmt.println(">>", font.texture_unit)
 		layer.bind.fs_images[font.texture_unit] = tex_image
 	}
 
 	return true
+}
+
+sokol_load_texture :: proc(pixels:rawptr, image:^Image) {
+	sokol_destroy_texture()
+
+	tex_image := sg.make_image({
+		width = i32(image.width),
+		height = i32(image.height),
+		data = { subimage = { 0 = { 0 = { ptr = pixels, size = u64(image.width * image.height * 4) } } } },
+		pixel_format = .RGBA8,
+	})
+
+	for layer in &state.sokol.layers {
+		layer.bind.fs_images[5] = tex_image
+	}
+}
+
+sokol_destroy_texture :: proc() {
+	for layer in &state.sokol.layers {
+		sg.destroy_image(layer.bind.fs_images[5])
+	}
 }
 
 push_quad :: proc(quad:Quad,
@@ -401,6 +423,10 @@ push_quad :: proc(quad:Quad,
 						clip:			Quad= {0,0,0,0},
 					) {
 	sokol_push_quad(quad, cA, cB, cC, cD,border, uv, texture_id,	clip)
+}
+
+push_quad_texture :: proc(quad:Quad, uv:Quad = {0,1,1,1}, texture_id:f32=6) {
+	push_quad(quad, {0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}, 0.0, uv, texture_id, quad)
 }
 
 push_quad_solid :: proc(quad: Quad, color:HSL, clip: Quad) {

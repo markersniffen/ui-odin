@@ -11,7 +11,7 @@ Key :: struct {
 	len: int,
 }
 
-string_to_key :: proc(text: string) -> Key {
+odin_string_to_key :: proc(text: string) -> Key {
 	key: Key
 	key.len = min(len(text), KEY_LEN)
 

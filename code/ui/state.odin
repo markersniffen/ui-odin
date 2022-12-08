@@ -224,7 +224,8 @@ update :: proc() {
 
 		state.boxes.hot = nil
 		state.boxes.editing = {}
-
+		
+		fmt.println(q.type, q.size, q.quad)
 		create_panel(state.panels.queued_parent, q.axis, q.type, q.content, q.size, q.quad)
 		state.panels.queued = {}
 	}
@@ -375,6 +376,11 @@ draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 				push_quad_gradient_v(quad, state.col.active, state.col.active, box.clip)
 			} 
 		}
+
+		if .DRAWIMAGE in box.flags {
+			push_quad_texture(box.quad, {0,0,1,1})
+		}
+
 		if .DRAWBORDER in box.flags {
 			push_quad_border(quad, box.border_color, box.border, box.clip)
 		}

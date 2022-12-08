@@ -89,6 +89,7 @@ Box_Flags :: enum {
 	DRAWTEXT,
 	DRAWPARAGRAPH,
 	DISPLAYVALUE,
+	DRAWIMAGE,
 	EDITVALUE,
 	DRAWBORDER,
 	DRAWBACKGROUND,
@@ -118,7 +119,7 @@ Box_Ops :: struct {
 
 gen_key :: proc(name: string, id: string) -> Key {
 	text := fmt.tprint(args={name, id, state.ctx.panel.uid}, sep="_") //state.boxes.index,
-	key := string_to_key(text)
+	key := odin_string_to_key(text)
 	return key
 }
 
@@ -610,7 +611,7 @@ calc_boxes :: proc(root: ^Box) {
 		} else if !(.ROOT in box.flags) {
 			if box.prev == nil {
 				if box.parent != nil {
-					if .VIEWSCROLL in box.parent.flags {
+					if .VIEWSCROLL in box.parent.flags && box.panel.uid == state.panels.hot.uid {
 						 if mouse_in_quad(box.parent.parent.quad) {
 							box.scroll = box.scroll + (state.input.mouse.scroll*20)
 
@@ -636,6 +637,12 @@ calc_boxes :: proc(root: ^Box) {
 			}
 		}
 
+		if .DRAWIMAGE in box.flags {
+			// TODO fix aspect ratio here?
+			// img := cast(^Image)box.value.data
+			// box.calc_size.y = box.calc_size.x * (f32(img.width)/f32(img.height))
+			// fmt.println(box.calc_size, f32(img.width)/f32(img.height))
+		}
 
 		// calc quad
 		if box.parent == nil {
@@ -646,6 +653,7 @@ calc_boxes :: proc(root: ^Box) {
 			box.quad.r = box.quad.l + box.calc_size.x
 			box.quad.b = box.quad.t + box.calc_size.y
 		}
+
 	}
 
 	for box := root; box != nil; box = box.hash_next	{

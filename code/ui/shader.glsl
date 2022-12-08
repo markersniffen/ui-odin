@@ -36,6 +36,7 @@ uniform sampler2D bold;
 uniform sampler2D italic;
 uniform sampler2D light;
 uniform sampler2D icons;
+uniform sampler2D tex;
 
 in vec4 vertex_color;
 in vec2 tex_coords;
@@ -59,6 +60,8 @@ void main()
 			frag_color = vec4(vertex_color.rgb, texture(light, tex_coords).r);
 		} else if (texture_id == 5) {
 			frag_color = vec4(vertex_color.rgb, texture(icons, tex_coords).r);
+		} else if (texture_id == 6) {
+			frag_color = vec4(texture(tex, tex_coords).rgba);
 		}
 	}
 }
