@@ -31,11 +31,7 @@ void main() {
 @end
 
 @fs fs
-uniform sampler2D regular;
-uniform sampler2D bold;
-uniform sampler2D italic;
-uniform sampler2D light;
-uniform sampler2D icons;
+uniform sampler2D font;
 uniform sampler2D tex;
 
 in vec4 vertex_color;
@@ -51,16 +47,8 @@ void main()
 		{
 			frag_color = vertex_color;
 		} else if (texture_id == 1) {
-			frag_color = vec4(vertex_color.rgb, texture(regular, tex_coords).r);
+			frag_color = vec4(vertex_color.rgb, texture(font, tex_coords).r);
 		} else if (texture_id == 2) {
-			frag_color = vec4(vertex_color.rgb, texture(bold, tex_coords).r);
-		} else if (texture_id == 3) {
-			frag_color = vec4(vertex_color.rgb, texture(italic, tex_coords).r);
-		} else if (texture_id == 4) {
-			frag_color = vec4(vertex_color.rgb, texture(light, tex_coords).r);
-		} else if (texture_id == 5) {
-			frag_color = vec4(vertex_color.rgb, texture(icons, tex_coords).r);
-		} else if (texture_id == 6) {
 			frag_color = vec4(texture(tex, tex_coords).rgba);
 		}
 	}

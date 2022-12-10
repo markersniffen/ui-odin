@@ -32,15 +32,15 @@ State :: struct {
 	window: 	Window,
 	input: 	Input,
 	
-	font: 	UI_Font,
-	panels: 	UI_Panels,
-	boxes: 	UI_Boxes,
-	col: 		UI_Colors,
-	ctx: 		UI_Context,
+	font: 	Font,
+	panels: 	Panels,
+	boxes: 	Boxes,
+	col: 		Colors,
+	ctx: 		Context,
 }
 
-UI_Font :: struct {
-	fonts: UI_Fonts,
+Font :: struct {
+	weight: [4]Weight,
 	size: f32,			// NOTE pixels tall
 	offset_y: f32,
 	margin: f32,
@@ -99,7 +99,7 @@ Keys :: struct {
 	v: bool,
 }
 
-UI_Panels :: struct {
+Panels :: struct {
 	pool: Pool,
 	all: map[Uid]^Panel,
 	root: ^Panel,
@@ -111,7 +111,7 @@ UI_Panels :: struct {
 	locked: bool,
 }
 
-UI_Boxes :: struct {
+Boxes :: struct {
 	pool: Pool,
 	all: map[Key]^Box,
 	to_delete: [MAX_BOXES]rawptr,
@@ -123,15 +123,7 @@ UI_Boxes :: struct {
 	index: int,
 }
 
-UI_Fonts :: struct {
-	regular: Font,
-	bold: Font,
-	italic: Font,
-	light: Font,
-	icons: Font,
-}
-
-UI_Context :: struct {
+Context :: struct {
 	panel: ^Panel,
 
 	box: ^Box,
@@ -139,7 +131,7 @@ UI_Context :: struct {
 
 	editable_string: String,
 
-	axis: UI_Axis,
+	axis: Axis,
 	size: [XY]Box_Size,
 
 	bg_color: HSL,
@@ -158,7 +150,7 @@ HSL :: struct {
 	a:f32,
 }
 
-UI_Colors :: struct {
+Colors :: struct {
 	backdrop: HSL,
 	bg: HSL,
 	gradient: HSL,
@@ -172,7 +164,7 @@ UI_Colors :: struct {
 }
 
 
-UI_Axis :: enum {
+Axis :: enum {
 	X,
 	Y,
 }
@@ -188,26 +180,24 @@ init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", widt
 	state.window.title = title
 	state.window.size = {width, height}
 
+	// SET DEFAULT COLORS ------------------------------
 	state.col.backdrop 	= {0.0,   0.0,  .05,   1.0}
-	state.col.bg 		= {0.56,   0.0,  0.1,   1.0}
+	state.col.bg 			= {0.56,   0.0,  0.1,  1.0}
 	state.col.gradient	= {0.56,  0.55, .74,   0.2}
-	state.col.border 	= {0.56,  0.0,  0.0,   1.0}
+	state.col.border 		= {0.56,  0.0,  0.0,   1.0}
 	state.col.font 		= {0.56,  1.0,  1.0,   1.0}
-	state.col.hot 		= {0.56,  .35,  0.28,  1.0}
+	state.col.hot 			= {0.56,  .35,  0.28,  1.0}
 	state.col.inactive   = {0.56,  .67,  0.34,  1.0}
-	state.col.active 	= {0.56,  1,    0.41,  1.0}
+	state.col.active 		= {0.56,  1,    0.41,  1.0}
 	state.col.highlight 	= {0.56,  1,    0.17,  1.0}
 	
-	state.font.line_space = 20
-
-	pool_init(&state.panels.pool, size_of(Panel), MAX_PANELS, "Panels")
-	pool_init(&state.boxes.pool, size_of(Box), MAX_BOXES, "Boxes")
-	
-	// SET DEFAULT COLORS ------------------------------
 	state.ctx.font_color = { 1, 1, 1, 1 }
 	state.ctx.bg_color = state.col.bg
 	state.ctx.border = 1
 	state.ctx.font_color = state.col.border
+	
+	pool_init(&state.panels.pool, size_of(Panel), MAX_PANELS, "Panels")
+	pool_init(&state.boxes.pool, size_of(Box), MAX_BOXES, "Boxes")
 
 	sokol()
 }

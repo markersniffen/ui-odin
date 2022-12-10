@@ -40,7 +40,7 @@ Box :: struct {
 	hot_t: f32,
 	active_t: f32,
 
-	axis: UI_Axis,
+	axis: Axis,
 	size: [XY]Box_Size,
 	calc_size: v2,
 	offset: v2,		// from parent
@@ -344,7 +344,7 @@ string_editing :: proc(box: ^Box) {
 	if box.parent.ops.clicked || lmb_drag() {
 		for i in 0..=es.len {
 			if i < es.len {
-				quad.r += state.font.fonts.regular.char_data[rune(es.mem[i])].advance
+				quad.r += state.font.weight[Weight_Type.REGULAR].char_data[rune(es.mem[i])].advance
 			} else {
 				quad.r = box.quad.r
 			}
@@ -358,7 +358,7 @@ string_editing :: proc(box: ^Box) {
 					break
 				}
 			}
-			quad.l += state.font.fonts.regular.char_data[rune(es.mem[i])].advance
+			quad.l += state.font.weight[Weight_Type.REGULAR].char_data[rune(es.mem[i])].advance
 		}
 	}
 
@@ -611,7 +611,7 @@ calc_boxes :: proc(root: ^Box) {
 		} else if !(.ROOT in box.flags) {
 			if box.prev == nil {
 				if box.parent != nil {
-					if .VIEWSCROLL in box.parent.flags && box.panel.uid == state.panels.hot.uid {
+					if .VIEWSCROLL in box.parent.flags && box.panel == state.panels.hot {
 						 if mouse_in_quad(box.parent.parent.quad) {
 							box.scroll = box.scroll + (state.input.mouse.scroll*20)
 

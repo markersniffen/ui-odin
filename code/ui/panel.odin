@@ -18,7 +18,7 @@ Panel :: struct {
 	next: ^Panel,
 	prev: ^Panel,
 
-	axis: UI_Axis,
+	axis: Axis,
 	size: f32,
 	type: Panel_Type,
 	quad: Quad,
@@ -35,7 +35,7 @@ Panel_Type :: enum {
 	FLOATING,
 }
 
-queue_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0})
+queue_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0})
 {
 	state.panels.queued.axis = axis
 	state.panels.queued.type = type
@@ -45,11 +45,11 @@ queue_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, conte
 	state.panels.queued_parent = current
 }
 
-split_panel :: proc(axis: UI_Axis) {
+split_panel :: proc(axis: Axis) {
 	queue_panel(state.ctx.panel, axis, .DYNAMIC, state.ctx.panel.content, 0.5)
 }
 
-create_panel :: proc(current:^Panel=nil, axis:UI_Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0}) -> ^Panel
+create_panel :: proc(current:^Panel=nil, axis:Axis=.X, type: Panel_Type, content:proc(), size:f32, quad:Quad={0,0,0,0}) -> ^Panel
 {
 	// current := state.ctx.panel
 	panel := cast(^Panel)pool_alloc(&state.panels.pool)

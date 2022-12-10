@@ -155,7 +155,7 @@ pop :: proc(pops:int=1) {
 //   axis(.Y)
 // you can think of it of setting the context for a row or column.
 //
-axis 				:: proc(axis: UI_Axis) 	{ state.ctx.axis = axis }
+axis 				:: proc(axis: Axis) 	{ state.ctx.axis = axis }
 
 // the size of each box is determined by the size context
 // you set this with the function:
@@ -245,7 +245,7 @@ empty :: proc(_name:string="") -> ^Box {
 	return box
 }
 
-bar :: proc(color:HSL={}, _axis:UI_Axis=.Y) -> ^Box {
+bar :: proc(color:HSL={}, _axis:Axis=.Y) -> ^Box {
 	axis(_axis)
 	if _axis == .Y {
 		size(.PCT_PARENT, 1, .PIXELS, state.font.margin/2)
@@ -437,7 +437,7 @@ paragraph :: proc(value: ^String) -> Box_Ops {
 				value.lines += 1
 				width = 0
 			} else {
-				width += state.font.fonts.regular.char_data[rune(char)].advance
+				width += state.font.weight[Weight_Type.REGULAR].char_data[rune(char)].advance
 			}
 			i += 1
 		}

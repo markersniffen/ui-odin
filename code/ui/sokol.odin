@@ -293,7 +293,7 @@ cursor :: proc(type: Cursor_Type) {
 	}
 }
 
-cursor_size :: proc(axis: UI_Axis) {
+cursor_size :: proc(axis: Axis) {
 	if axis == .X {
 		cursor(.X)
 	} else {
@@ -375,40 +375,27 @@ sokol_push_quad :: proc(quad:Quad,
 	}
 }
 
-sokol_load_font_texture :: proc(font: ^Font, image: rawptr) -> bool {\
-	tex_image := sg.make_image({
-		width = font.texture_size,
-		height = font.texture_size,
-		pixel_format = .R8,
-		data = { subimage = { 0 = { 0 = { ptr = image, size = u64(font.texture_size * font.texture_size) } } } },
-	})
-
-	for layer in &state.sokol.layers {
-		fmt.println(">>", font.texture_unit)
-		layer.bind.fs_images[font.texture_unit] = tex_image
-	}
-
-	return true
-}
-
-sokol_load_texture :: proc(pixels:rawptr, image:^Image) {
+sokol_load_texture :: proc(pixels:rawptr, width, height, depth: i32) {
 	sokol_destroy_texture()
 
+	pf := sg.Pixel_Format.RGBA8
+	if depth == 1 do pf = .R8
+
 	tex_image := sg.make_image({
-		width = i32(image.width),
-		height = i32(image.height),
-		data = { subimage = { 0 = { 0 = { ptr = pixels, size = u64(image.width * image.height * 4) } } } },
-		pixel_format = .RGBA8,
+		width = width,
+		height = height,
+		data = { subimage = { 0 = { 0 = { ptr = pixels, size = u64(width * height * depth) } } } },
+		pixel_format = pf,
 	})
 
 	for layer in &state.sokol.layers {
-		layer.bind.fs_images[5] = tex_image
+		layer.bind.fs_images[1] = tex_image
 	}
 }
 
 sokol_destroy_texture :: proc() {
 	for layer in &state.sokol.layers {
-		sg.destroy_image(layer.bind.fs_images[5])
+		sg.destroy_image(layer.bind.fs_images[1])
 	}
 }
 

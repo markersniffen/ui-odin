@@ -8,12 +8,13 @@ Very unstable and very much a work in progress. Use at your own risk!
 - The build-run.bat file uses floooh's shader tool if you want to regenerate the shader: https://github.com/floooh/sokol-tools  
 - Uses odin-tracy to profile unless you comment out the includes: https://github.com/oskarnp/odin-tracy
 
-## Major TODOs:
+## TODOs:
 
+#### Major changes:
+- [x] store all font glyphs in 1 font texture
 - [ ] better string system (not fixed length? use Odin's strings? Use a string arena?)
 - [ ] redo memory pools/arena - make growable (use odin's arena?)
 - [ ] figure out a better way to make unique keys for boxes - level/index system?
-- [ ] store all font glyphs in 1 font texture
 - [ ] rewrite input system to use callbacks?
 - [ ] redo panel system - just use boxes?
 - [ ] make a scrollbar value per box?
@@ -23,10 +24,10 @@ Very unstable and very much a work in progress. Use at your own risk!
 - [ ] render while resizing window
 
 #### Things to add:
-- [ ] drawing a custom image to a box
+- [-] drawing a custom image to a box
 - [ ] color picker
 
-#### Things to Fix:
+#### Things to fix:
 - [x] scrolling on floating panel also scrolls panels beneath
 - [ ] hovering bleeds through layers (does clicking do this too?)
 - [x] force floating panels to stay in bounds on creation
@@ -46,12 +47,13 @@ Very unstable and very much a work in progress. Use at your own risk!
 - [x] dropdown
 - [x] radio
 - [x] tab
-- [x] spacer_file
+- [x] spacer_fill
 - [x] spacer_pixels
 - [x] scrollbox
 - [x] sizebar_x
 - [x] sizebar_y
-- [x] drag)panel
+- [x] drag_panel
+- [x] image
 
 - [ ] checkbox
 - [ ] copy/paste values

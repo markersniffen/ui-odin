@@ -18,5 +18,5 @@ load_image :: proc(path: string, image:^Image) {
 	image.width = img.width
 	image.aspect = f32(img.height)/f32(img.width)
 	image.path = from_odin_string(path)
-	sokol_load_texture(raw_data(bytes.buffer_to_bytes(&img.pixels)), image)
+	sokol_load_texture(raw_data(bytes.buffer_to_bytes(&img.pixels)), i32(image.width), i32(image.height), 4)
 }

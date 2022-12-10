@@ -51,7 +51,7 @@ app_init :: proc() {
 	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_tab_test, 	0.4)
 
 
-	ui.load_image("C:/Users/marxn/Desktop/jack.png", &app.image)
+	// ui.load_image("C:/Users/marxn/Desktop/jack2.png", &app.image)
 }
 
 app_loop :: proc() {

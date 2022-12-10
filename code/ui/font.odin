@@ -3,6 +3,7 @@ package ui
 when PROFILER do import tracy "../../../odin-tracy"
 
 import stb "vendor:stb/truetype"
+import sg "../../../sokol-odin/sokol/gfx"
 import "core:os"
 import "core:mem"
 import "core:fmt"
@@ -45,16 +46,17 @@ import "core:math"
 // default_icons_info := ""
 // default_icons_image : [65536]u8
 
-Font :: struct {
-	name: string,
-	path: string,
-	label: string,
-	texture: u32,
-	texture_size: i32,
-	texture_unit: u32,
+Weight :: struct {
+	type : Weight_Type,
+	path : string,
 	char_data: map[rune]Char_Data,
-	default_info: ^string,
-	default_image: ^[65536]u8,
+}
+
+Weight_Type :: enum {
+	REGULAR,
+	BOLD,
+	ITALIC,
+	ICONS,
 }
 
 Char_Data :: struct {
@@ -73,81 +75,60 @@ Text_Align :: enum {
 
 init_font :: proc(size:f32=18) {
 	state.font.size = size
+	
+	state.font.weight[Weight_Type.REGULAR].path = "fonts/Roboto-Regular.ttf"
+	state.font.weight[Weight_Type.BOLD].path = "fonts/Roboto-Bold.ttf"
+	state.font.weight[Weight_Type.ITALIC].path = "fonts/Roboto-Italic.ttf"
+	state.font.weight[Weight_Type.ICONS].path = "fonts/ui_icons.ttf"
 
-	// set font default values
-
-	state.font.fonts.regular.name = "Roboto-Regular"
-	state.font.fonts.regular.path = "fonts/Roboto-Regular.ttf"
-	state.font.fonts.regular.default_info = &default_font_info
-	state.font.fonts.regular.default_image = &default_font_image
-	state.font.fonts.regular.label = "regular_texture"
-	state.font.fonts.regular.texture_size = 256 // size of font bitmap
-	state.font.fonts.regular.texture_unit = 0
-
-	state.font.fonts.bold.name = "Roboto-Bold"
-	state.font.fonts.bold.path = "fonts/Roboto-Bold.ttf"
-	state.font.fonts.bold.default_info = &default_bold_info
-	state.font.fonts.bold.default_image = &default_bold_image
-	state.font.fonts.bold.label = "bold_texture"
-	state.font.fonts.bold.texture_size = 256 // size of font bitmap
-	state.font.fonts.bold.texture_unit = 1
-
-	state.font.fonts.italic.name = "Roboto-Italic"
-	state.font.fonts.italic.path = "fonts/Roboto-Italic.ttf"
-	state.font.fonts.italic.default_info = &default_font_info
-	state.font.fonts.italic.default_image = &default_font_image
-	state.font.fonts.italic.label = "italic_texture"
-	state.font.fonts.italic.texture_size = 256 // size of font bitmap
-	state.font.fonts.italic.texture_unit = 2
-
-	state.font.fonts.light.name = "Roboto-Light"
-	state.font.fonts.light.path = "fonts/Roboto-Light.ttf"
-	state.font.fonts.light.default_info = &default_font_info
-	state.font.fonts.light.default_image = &default_font_image
-	state.font.fonts.light.label = "light_texture"
-	state.font.fonts.light.texture_size = 256 // size of font bitmap
-	state.font.fonts.light.texture_unit = 3
-
-	state.font.fonts.icons.name = "ui_icons"
-	state.font.fonts.icons.path = "fonts/ui_icons.ttf"
-	state.font.fonts.icons.default_info = &default_icons_info
-	state.font.fonts.icons.default_image = &default_icons_image
-	state.font.fonts.icons.label = "icon_texture"
-	state.font.fonts.icons.texture_size = 256
-	state.font.fonts.icons.texture_unit = 4
-
-	load_font(&state.font.fonts.regular)
-	load_font(&state.font.fonts.bold)
-	load_font(&state.font.fonts.italic)
-	load_font(&state.font.fonts.light)
-	load_font(&state.font.fonts.icons)
+	load_font()
 }
 
-load_font :: proc(font: ^Font) -> bool {
-	using stb, mem, fmt
-	NUM_CHARS :: 96
+load_font :: proc() {
+	runes : []rune = {' ','!','"','#','$','%','&','\'','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[','\\',']','^','_','`','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','|','}','~'}
+	// icon_runes : []rune = {'+','-','a','d','w','s','n','m','b','v','g','f','c','x','o','q','p','r','u','y'}
+	num_runes := i32(len(runes))
+	first_rune :i32= 32
 	
-	fmt.println(fmt.tprint("trying to load", font.path))
-	data, data_ok := os.read_entire_file(font.path)
-	defer delete(data)
+
+	ctx : stb.pack_context
 	
-	if !data_ok {
-		fmt.println("failed to load font file:", font.name)
-		return false
-	} else {
-		image:= alloc(int(font.texture_size * font.texture_size))
-		defer free(image)
+	width :i32= 512
+	height :i32= 512
+	pixels := make([^]byte, width*height)
 
-		stb_char_data, char_data_ok:= make([]bakedchar, NUM_CHARS)
-		defer delete(stb_char_data)
+	if stb.PackBegin(&ctx, pixels, width, height, 0, 1, nil) == 0 {
+		fmt.println("FONT PACK INIT FAILED")
+		return
+	}
 
-		BakeFontBitmap(raw_data(data), 0, state.font.size, cast([^]u8)image, font.texture_size, font.texture_size, 32, NUM_CHARS, raw_data(stb_char_data))
+	// TODO oversampling?
+	// stb.PackSetOversampling(&ctx, 2, 2)
 
-		imger := cast([^]u8)image
+	for font, type in &state.font.weight {
+		font.type = Weight_Type(type)
 
-		for b, i in stb_char_data
+		char_data, char_data_ok := make([]stb.packedchar, num_runes)
+		defer delete(char_data)
+
+		rng : stb.pack_range = {
+			font_size = 20,
+			first_unicode_codepoint_in_range = first_rune,
+			array_of_unicode_codepoints = raw_data(runes),
+			num_chars = num_runes,
+			chardata_for_range = &char_data[0],
+		}
+
+		fmt.println(font.path)
+		fontdata, data_ok := os.read_entire_file(font.path)
+		defer delete(fontdata)
+		if data_ok do fmt.println(font.path, "loaded.")
+
+		stb.PackFontRanges(&ctx, raw_data(fontdata), 0, &rng, 1)
+
+		for b, i in char_data
 		{
-			pixel_divider := 1.0 / f32(font.texture_size)
+			pixel_divider := 1.0 / f32(512)
 
 			char_data: Char_Data
 			
@@ -163,131 +144,131 @@ load_font :: proc(font: ^Font) -> bool {
 
 			font.char_data[rune(i + 32)] = char_data
 		}
-
-		if sokol_load_font_texture(font, image) {
-			fmt.println("Font loaded:", font.name)
-		}
-
-		// fmt.println("------- FOR PRINTING FONT INFO --------")
-		// for char in font.char_data {
-		// 	cc, ok := font.char_data[char]
-		// 	fmt.print(int(char), cc.offset.x, cc.offset.y, cc.width, cc.height, cc.advance, cc.uv.l, cc.uv.t, cc.uv.r, cc.uv.b, "\n")
-		// }
-
-		// fmt.println("--------- FOR PRINTING IMAGE INFO ----------")
-		// for i in 0..<int(font.texture_size * font.texture_size) {
-		// 	fmt.print(fmt.tprint("%v%v", (cast([^]u8)image)[i], ','))
-		// }
 	}
-	
-	if font.label == "regular_texture" {
-		letter_data := state.font.fonts.regular.char_data['W']
-		state.font.offset_y = math.round((state.font.size - letter_data.height) * 0.5)
-		state.font.margin = 4
-		state.font.line_space = state.font.size + (state.font.margin * 2) // state.font.margin * 2 + state.font.size
+	letter_data := state.font.weight[Weight_Type.REGULAR].char_data['W']
+	state.font.offset_y = math.round((state.font.size - letter_data.height) * 0.5)
+	state.font.margin = 4
+	state.font.line_space = state.font.size + (state.font.margin * 2) // state.font.margin * 2 + state.font.size
+
+	image : Image = {
+		width = int(width),
+		height = int(height),
+		aspect = 0.5,
+		path = from_odin_string("gah"),
 	}
-	fmt.println("Loaded font file:", font.name)
-	return true
+
+	tex_image := sg.make_image({
+		width = width,
+		height = width,
+		pixel_format = .R8,
+		data = { subimage = { 0 = { 0 = { ptr = pixels, size = u64(width * width) } } } },
+	})
+
+	for layer in &state.sokol.layers {
+		layer.bind.fs_images[0] = tex_image
+	}
+
+	sokol_load_texture(pixels, width, height, 1)
 }
 
-load_default_font :: proc(font: ^Font) {
-	start : int
-	item : int
-	char : rune
-	for char_id, index in font.default_info {
-		if rune(char_id) == ' ' || rune(char_id) == '\n' {
-			val_string := font.default_info[start:index]
-			if item == 0 {
-					char_data : Char_Data
-					val, vok := strconv.parse_int(val_string)
-					char = rune(val)
-					font.char_data[char] = char_data
-			} else {
-				cc, c_ok := &font.char_data[char]
-				val, vok := strconv.parse_f32(val_string)
-				if vok && c_ok {
-					switch item {
-						case 1:
-						cc.offset.x = val
-						case 2:
-						cc.offset.y = val
-						case 3:
-						cc.width = val
-						case 4:
-						cc.height = val
-						case 5:
-						cc.advance = val
-						case 6:
-						cc.uv.l = val
-						case 7:
-						cc.uv.t = val
-						case 8:
-						cc.uv.r = val
-						case 9:
-						cc.uv.b = val
-					}
-				} else {
-				}
-			}
-
-			item += 1
-			start = index+1
-		}
-		if rune(char_id) == '\n' {
-			item = 0
-			start = index + 1
-		}
-	}
-	if font.label == "regular_texture" {
-		letter_data := state.font.fonts.regular.char_data['W']
-		state.font.offset_y = math.round((state.font.size - letter_data.height) * 0.5)
-		state.font.margin = 4
-		state.font.line_space = state.font.size + (state.font.margin * 2) // state.font.margin * 2 + state.font.size
-	}
-	// if opengl_load_font_texture(font, font.default_image) {
-	// 	fmt.println(fmt.tprint("DEFAULT Font loaded:", font.name))
-	// }	
+set_font :: proc(weight: ^Weight, name, path: string) {
+	// weight.name = name
+	weight.path = path
+	init_font(state.font.size)
 }
 
-set_font_size :: proc(size: f32 = 18) {
-	state.font.size = size
+set_font_regular :: proc(name, path: string) { set_font(&state.font.weight[Weight_Type.REGULAR], name, path) }
+set_font_bold :: proc(name, path: string) { set_font(&state.font.weight[Weight_Type.BOLD], name, path) }
+set_font_italic :: proc(name, path: string) { set_font(&state.font.weight[Weight_Type.ITALIC], name, path) }
+set_font_icons :: proc(name, path: string) { set_font(&state.font.weight[Weight_Type.ICONS], name, path) }
 
-	if !load_font(&state.font.fonts.regular) {
-		if !set_font_regular("Arial", "C:/Windows/Fonts/ARIAL.ttf") {
-			load_default_font(&state.font.fonts.regular)
-		}
-	}
-	if !load_font(&state.font.fonts.bold) {
-		if !set_font_bold("Arial", "C:/Windows/Fonts/ARIALBD.ttf") {
-			load_default_font(&state.font.fonts.bold)
-		}
-	}
-	if !load_font(&state.font.fonts.italic) {
-		if !set_font_italic("Arial", "C:/Windows/Fonts/ARIALI.ttf") {
-			load_default_font(&state.font.fonts.italic)
-		}
-	}
-	if !load_font(&state.font.fonts.light) {
-		if !set_font_light("Arial", "C:/Windows/Fonts/ARIALN.ttf") {
-			load_default_font(&state.font.fonts.light)
-		}
-	}
-	if !load_font(&state.font.fonts.icons) {
-		load_default_font(&state.font.fonts.icons)
-	}
-}
+// load_default_font :: proc(font: ^Font) {
+// 	start : int
+// 	item : int
+// 	char : rune
+// 	for char_id, index in font.default_info {
+// 		if rune(char_id) == ' ' || rune(char_id) == '\n' {
+// 			val_string := font.default_info[start:index]
+// 			if item == 0 {
+// 					char_data : Char_Data
+// 					val, vok := strconv.parse_int(val_string)
+// 					char = rune(val)
+// 					font.char_data[char] = char_data
+// 			} else {
+// 				cc, c_ok := &font.char_data[char]
+// 				val, vok := strconv.parse_f32(val_string)
+// 				if vok && c_ok {
+// 					switch item {
+// 						case 1:
+// 						cc.offset.x = val
+// 						case 2:
+// 						cc.offset.y = val
+// 						case 3:
+// 						cc.width = val
+// 						case 4:
+// 						cc.height = val
+// 						case 5:
+// 						cc.advance = val
+// 						case 6:
+// 						cc.uv.l = val
+// 						case 7:
+// 						cc.uv.t = val
+// 						case 8:
+// 						cc.uv.r = val
+// 						case 9:
+// 						cc.uv.b = val
+// 					}
+// 				} else {
+// 				}
+// 			}
 
-set_font :: proc(font: ^Font, name, path: string) -> bool {
-	font.name = name
-	font.path = path
-	return load_font(font)
-}
+// 			item += 1
+// 			start = index+1
+// 		}
+// 		if rune(char_id) == '\n' {
+// 			item = 0
+// 			start = index + 1
+// 		}
+// 	}
+// 	if font.label == "regular_texture" {
+// 		letter_data := state.font.weight[Weight_Type.REGULAR].char_data['W']
+// 		state.font.offset_y = math.round((state.font.size - letter_data.height) * 0.5)
+// 		state.font.margin = 4
+// 		state.font.line_space = state.font.size + (state.font.margin * 2) // state.font.margin * 2 + state.font.size
+// 	}
+// 	// if opengl_load_font_texture(font, font.default_image) {
+// 	// 	fmt.println(fmt.tprint("DEFAULT Font loaded:", font.name))
+// 	// }	
+// }
 
-set_font_regular :: proc(name, path: string) -> bool { return set_font(&state.font.fonts.regular, name, path) }
-set_font_bold :: proc(name, path: string) -> bool { return set_font(&state.font.fonts.bold, name, path) }
-set_font_italic :: proc(name, path: string) -> bool { return set_font(&state.font.fonts.italic, name, path) }
-set_font_light :: proc(name, path: string) -> bool { return set_font(&state.font.fonts.light, name, path) }
-set_font_icons :: proc(name, path: string) -> bool { return set_font(&state.font.fonts.icons, name, path) }
+// set_font_size :: proc(size: f32 = 18) {
+// 	state.font.size = size
+
+// 	if !load_font(&state.font.weight[Weight_Type.regular) {
+// 		if !set_font_regular("Arial", "C:/Windows/Fonts/ARIAL.ttf") {
+// 			load_default_font(&state.font.fonts.regular)
+// 		}
+// 	}
+// 	if !load_font(&state.font.fonts.bold) {
+// 		if !set_font_bold("Arial", "C:/Windows/Fonts/ARIALBD.ttf") {
+// 			load_default_font(&state.font.fonts.bold)
+// 		}
+// 	}
+// 	if !load_font(&state.font.fonts.italic) {
+// 		if !set_font_italic("Arial", "C:/Windows/Fonts/ARIALI.ttf") {
+// 			load_default_font(&state.font.fonts.italic)
+// 		}
+// 	}
+// 	if !load_font(&state.font.fonts.light) {
+// 		if !set_font_light("Arial", "C:/Windows/Fonts/ARIALN.ttf") {
+// 			load_default_font(&state.font.fonts.light)
+// 		}
+// 	}
+// 	if !load_font(&state.font.fonts.icons) {
+// 		load_default_font(&state.font.fonts.icons)
+// 	}
+// }
+
 
 draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}, clip:Quad) {
 	using stb
@@ -313,7 +294,7 @@ draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: 
 			}
 		}
 		if i < len(text) {
-			text_width += state.font.fonts.regular.char_data[rune(text[i])].advance
+			text_width += state.font.weight[Weight_Type.REGULAR].char_data[rune(text[i])].advance
 		}
 	}
 
@@ -342,7 +323,7 @@ draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: 
 
 	for letter, i in text
 	{
-		letter_data : Char_Data = state.font.fonts.regular.char_data[letter]
+		letter_data : Char_Data = state.font.weight[Weight_Type.REGULAR].char_data[letter]
 		if letter != ' '
 		{
 			char_quad : Quad
@@ -360,21 +341,21 @@ draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: 
 	}
 }
 
-get_font_from_pattern :: proc(text: string, i: int, current_font: Font) -> (Font, bool) {
+get_font_from_pattern :: proc(text: string, i: int, current_font: Weight) -> (Weight, bool) {
 	if text[i] == '<' {
 		if i+2 < len(text) {
 			if text[i+2] == '>' {
 				switch text[i+1] {
 					case 'r':
-					return state.font.fonts.regular, true
+						return state.font.weight[Weight_Type.REGULAR], true
 					case 'b':
-					return state.font.fonts.bold, true
+						return state.font.weight[Weight_Type.BOLD], true
 					case 'i':
-					return state.font.fonts.italic, true
+						return state.font.weight[Weight_Type.ITALIC], true
 					case 'l':
-					return state.font.fonts.light, true
+						return state.font.weight[Weight_Type.REGULAR], true
 					case '#':
-					return state.font.fonts.icons, true
+						return state.font.weight[Weight_Type.ICONS], true
 				}
 			}
 		}
@@ -396,7 +377,7 @@ draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Q
 	if align != .LEFT || editing
 	{
 		i := 0
-		font := state.font.fonts.regular
+		font := state.font.weight[Weight_Type.REGULAR]
 		found_start := false
 		for i < len(text)+1 {
 			if editing {
@@ -438,7 +419,7 @@ draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Q
 	push_quad_solid(cursor, state.col.active, quad) // NOTE Special
 
 	i := 0
-	font := state.font.fonts.regular
+	font := state.font.weight[Weight_Type.REGULAR]
 	for i < len(text) {
 		letter := rune(text[i])
 		_font, change_font := get_font_from_pattern(text, i, font)
@@ -456,8 +437,7 @@ draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Q
 				clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
 				if ok  {
 					skip :f32= 1
-					push_quad_font(quad, color, font.char_data[letter].uv, f32(font.texture_unit+1), clamped_quad)
-
+					push_quad_font(quad, color, font.char_data[letter].uv, 1, clamped_quad)
 				}
 			}
 			top_left.x += font.char_data[letter].advance
@@ -484,7 +464,7 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 	if align != .LEFT
 	{
 		i := 0
-		font := state.font.fonts.regular
+		font := state.font.weight[Weight_Type.REGULAR]
 		for i < len(text) {
 			letter := rune(text[i])
 			_font, change_font := get_font_from_pattern(text, i, font)
@@ -509,7 +489,7 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 	top_left : v2 = { left_align, top_align }
 
 	i := 0
-	font := state.font.fonts.regular
+	font := state.font.weight[Weight_Type.REGULAR]
 	for i < len(text) {
 		letter := rune(text[i])
 		_font, change_font := get_font_from_pattern(text, i, font)
@@ -527,7 +507,7 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 				clamped_quad, ok := quad_clamp_or_reject(char_quad, clip)
 				if ok  {
 					skip :f32= 1
-					push_quad_font(char_quad, color, font.char_data[letter].uv, f32(font.texture_unit+1), clamped_quad)
+					push_quad_font(char_quad, color, font.char_data[letter].uv, 1, clamped_quad)
 				}
 			}
 			top_left.x += font.char_data[letter].advance
@@ -556,9 +536,9 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 				}
 			}
 			if skip == 0 {
-				text_width += state.font.fonts.regular.char_data[letter].advance
+				text_width += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
 			} else if skip == 1 {
-				text_width += state.font.fonts.icons.char_data[letter].advance
+				text_width += state.font.weight[Weight_Type.ICONS].char_data[letter].advance
 			}
 			skip = clamp(skip - 1, 0, 4)
 		}
@@ -584,8 +564,8 @@ draw_text_OLD :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color
 				}
 			}
 		}
-		letter_data : Char_Data = state.font.fonts.regular.char_data[letter]
-		if skip == 2 do letter_data = state.font.fonts.icons.char_data[letter]
+		letter_data : Char_Data = state.font.weight[Weight_Type.REGULAR].char_data[letter]
+		if skip == 2 do letter_data = state.font.weight[Weight_Type.ICONS].char_data[letter]
 		if skip > 2 {
 		} else {
 			if letter != ' '
@@ -651,7 +631,7 @@ draw_text_multiline :: proc(value:^String, quad:Quad, align:Text_Align=.LEFT, ke
 			width = 0
 			lines += 1
 		} else {
-			width += state.font.fonts.regular.char_data[rune(char)].advance
+			width += state.font.weight[Weight_Type.REGULAR].char_data[rune(char)].advance
 		}
 		i += 1
 
@@ -662,7 +642,7 @@ text_size :: proc(axis: int, text: ^String) -> f32 {
 	size: f32
 	if axis == X {
 		for letter in to_odin_string(text) {
-			size += state.font.fonts.regular.char_data[letter].advance
+			size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
 		}
 	} else if axis == Y {
 		lines: f32 = 1
@@ -678,7 +658,7 @@ text_string_size :: proc(axis: int, text: string) -> f32 {
 	size: f32
 	if axis == X {
 		for letter in text {
-			size += state.font.fonts.regular.char_data[letter].advance
+			size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
 		}
 	} else if axis == Y {
 		lines: f32 = 1
@@ -695,7 +675,7 @@ String_size :: proc(axis: int, editable: ^String) -> f32 {
 	text := to_odin_string(editable)
 	if axis == X {
 		for letter in text {
-			size += state.font.fonts.regular.char_data[letter].advance
+			size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
 		}
 	} else if axis == Y {
 		lines: f32 = 1
