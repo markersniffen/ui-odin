@@ -12,14 +12,13 @@ Very unstable and very much a work in progress. Use at your own risk!
 
 #### Major changes:
 - [x] store all font glyphs in 1 font texture
+- [-] redo memory pools/arena - make growable (use odin's arena?)
 - [ ] better string system (not fixed length? use Odin's strings? Use a string arena?)
-- [ ] redo memory pools/arena - make growable (use odin's arena?)
 - [ ] figure out a better way to make unique keys for boxes - level/index system?
 - [ ] rewrite input system to use callbacks?
+- [ ] redo scrollbar - make a scrollbar value per box?
 - [ ] redo panel system - just use boxes?
-- [ ] make a scrollbar value per box?
-- [ ] auto scrollbar boxes that are bigger than panel/parent?
-- [ ] have boxes adjust size dynamically if too big to fit on screen?
+- [ ] have boxes adjust size dynamically if too big to fit on screen? (finish layout algorithm)
 - [ ] rebuild the layer rendering system...I don't really know what I'm doing
 - [ ] render while resizing window
 

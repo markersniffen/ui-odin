@@ -5,7 +5,8 @@ when PROFILER do import tracy "../../../odin-tracy"
 
 import "core:fmt"
 
-MAX_PANELS :: 40
+NUM_PANELS_PER_MEM_PAGE :: 16
+MAX_PANELS :: 40 // TODO: not used
 PANEL_MARGIN :: 1
 
 Panel :: struct {

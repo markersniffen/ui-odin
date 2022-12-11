@@ -5,7 +5,8 @@ when PROFILER do import tracy "../../../odin-tracy"
 import "core:fmt"
 import "core:strconv"
 
-MAX_BOXES :: 16384
+NUM_BOXES_PER_MEM_PAGE :: 128
+MAX_BOXES :: 16384 // TODO not used
 
 Box :: struct {
 	key: Key,						// unique ID
@@ -532,8 +533,10 @@ calc_boxes :: proc(root: ^Box) {
 	}
 
 
-	// CALC OFFSET & QUAD ----------------------
+	// CALC OFFSET & QUAD / SCROLLBAR /  ----------------------
 	for box := root; box != nil; box = box.hash_next	{
+
+		// CALC SCROLLBAR
 		if box.parent != nil {
 			if .SCROLLBOX in box.parent.flags {
 				
@@ -598,7 +601,7 @@ calc_boxes :: proc(root: ^Box) {
 			}
 		}
 
-
+		// DRAG PANEL
 		if .DRAGGABLE in box.flags {
 			if box.ops.pressed {
 				if box.ops.clicked {
@@ -609,6 +612,7 @@ calc_boxes :: proc(root: ^Box) {
 				}
 			}
 		} else if !(.ROOT in box.flags) {
+			// SCROLLING
 			if box.prev == nil {
 				if box.parent != nil {
 					if .VIEWSCROLL in box.parent.flags && box.panel == state.panels.hot {
@@ -632,11 +636,13 @@ calc_boxes :: proc(root: ^Box) {
 						}
 					}
 				}
+			// OFFSET
 			} else if !(.NO_OFFSET in box.flags) {
 				box.offset[box.axis] = box.prev.offset[box.axis] + box.prev.calc_size[box.axis]
 			}
 		}
 
+		// RESIZE TO IMAGE ASPECT RATIO? (probably get rid of this)
 		if .DRAWIMAGE in box.flags {
 			// TODO fix aspect ratio here?
 			// img := cast(^Image)box.value.data
@@ -644,7 +650,7 @@ calc_boxes :: proc(root: ^Box) {
 			// fmt.println(box.calc_size, f32(img.width)/f32(img.height))
 		}
 
-		// calc quad
+		// CALC QUAD
 		if box.parent == nil {
 			box.quad = {box.offset.x, box.offset.y, box.offset.x + box.calc_size.x, box.offset.y + box.calc_size.y}
 		} else {

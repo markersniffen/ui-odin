@@ -196,8 +196,8 @@ init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", widt
 	state.ctx.border = 1
 	state.ctx.font_color = state.col.border
 	
-	pool_init(&state.panels.pool, size_of(Panel), MAX_PANELS, "Panels")
-	pool_init(&state.boxes.pool, size_of(Box), MAX_BOXES, "Boxes")
+	pool_init(&state.panels.pool, size_of(Panel), NUM_PANELS_PER_MEM_PAGE, "Panels")
+	pool_init(&state.boxes.pool, size_of(Box), NUM_BOXES_PER_MEM_PAGE, "Boxes")
 
 	sokol()
 }

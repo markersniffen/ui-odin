@@ -4,7 +4,6 @@ import "core:fmt"
 import "core:mem"
 
 //- NOTE Simple Pool allocator 
-// TODO make this growable...
 Node :: struct 
 {
 	next: ^Node,
@@ -13,80 +12,83 @@ Node :: struct
 Pool :: struct
 {
 	name: string,
-	memory: []byte,
-	chunk_size: int,
-	chunk_count: int,
-	original_size: int,
-	head: ^Node,
+	pages: [dynamic][]byte,
+	node_size:int,					// size of each node
+	page_size: int,
+	nodes_per_page: int,
 
 	nodes_used: int,
+	num_pages: int,
+	
+	head: ^Node,
 }
 
 pool_init :: proc(pool: ^Pool, size: int, count: int, name: string)
 {
 	pool.name = name
-	pool.chunk_size = size								// set chunk_size
-	pool.chunk_count = count							// set count
-	pool.original_size = size
-	ok: any
-	pool.memory, ok = mem.alloc_bytes(size * count) 	// allocated the total bytes
-	pool.head = nil										// sets the head to null
-	pool_free_all(pool)
+	pool.node_size = size										// set chunk_size
+	pool.nodes_per_page = count
+	pool.page_size = size * count
+	pool.num_pages = 1
 
+	first_page, ok := mem.alloc_bytes(pool.page_size)	// allocated the total bytes
+	append(&pool.pages, first_page)
 	
-	fmt.println(fmt.tprintf("Initialized >>%v<< Pool | Size: %v | Count: %v | Kb: %v", name, size, count, len(pool.memory)/1024))
+	pool_free_page(pool, 0)
+	
+	fmt.println(fmt.tprintf("Initialized >>%v<< Pool | Size: %v | Count: %v | Head: %v", name, size, count, pool.head))
 }
 
-pool_free_all :: proc(pool: ^Pool)
+pool_free_page :: proc(pool: ^Pool, page_number: int)
 {
-	mem.zero(&pool.memory[0], pool.chunk_count * pool.chunk_size)
-
-	for chunk in 0..<pool.chunk_count					// loop through number of chunks
+	mem.zero(&pool.pages[page_number][0], pool. node_size * pool.nodes_per_page)
+	
+	prev := pool.head
+	for index in 0..<pool.nodes_per_page
 	{
-		ptr := &pool.memory[chunk * pool.chunk_size]	// get pointer to the Chunk memory
-		node: ^Node = cast(^Node)ptr					// create  cast the pointer we just created to a Node object,
-		node.next = pool.head							// Set the Node's "next" value to the current pool's "head" (^Node)
-		pool.head = node								// set the pool's "head" to the current Node
+		ptr := &pool.pages[page_number][index * pool.node_size]
+		node: ^Node = cast(^Node)ptr
+		if prev == nil {
+			pool.head = node
+		} else {
+			prev.next = node
+		}
+		prev = node
 	}
-
-	pool.nodes_used = 0
 }
 
 pool_alloc :: proc(pool: ^Pool) -> rawptr
 {
-	if pool.nodes_used >= pool.chunk_count-1 do fmt.println("TOO MUCH MEMORY USED IN POOL", pool.name)
-	assert(pool.nodes_used < pool.chunk_count)
-	// fmt.println("allocing memory >>", pool.name)
 	new_alloc := pool.head
-	if new_alloc != nil
-	{
-		pool.head = pool.head.next
-		mem.zero(new_alloc, pool.chunk_size)
-		
-		pool.nodes_used += 1
-		return new_alloc
+	if new_alloc.next == nil {
+		new_page, ok := mem.alloc_bytes(pool.page_size)
+		append(&pool.pages, new_page)
+		pool.num_pages += 1
+		pool_free_page(pool, pool.num_pages-1)
 	}
-	assert(0 != 0)
-	return nil
+	
+	pool.head = pool.head.next
+	mem.zero(new_alloc, pool.node_size)		
+	pool.nodes_used += 1
+	return new_alloc
 }
-
-// pool_grow :: proc(pool: ^Pool) -> bool
-// {
-// 	// TODO implement
-// }
 
 pool_free :: proc(pool: ^Pool, ptr: rawptr) -> bool
 {
 	node : ^Node
 	
-	start := &pool.memory[0]
-	length := (pool.chunk_size * pool.chunk_count) - 1
-	end := &pool.memory[length]
-	
 	if ptr == nil do return false
-	if !(start <= ptr && ptr < end) do return false
+
+	in_page := false
+	for page in pool.pages {
+		start := &page[0]
+		length := pool.page_size - 1
+		end := &page[length]
+		if (start <= ptr && ptr < end) do in_page = true
+	}
+	assert(in_page, "ptr to Pool Node not found in any page!")
 	
-	mem.zero(ptr, pool.chunk_size)
+	mem.zero(ptr, pool.node_size)
 	
 	// Push free Node
 	node = cast(^Node)ptr
@@ -99,5 +101,5 @@ pool_free :: proc(pool: ^Pool, ptr: rawptr) -> bool
 
 pool_delete :: proc(pool: ^Pool)
 {
-	free(&pool.memory[0])
+	// free(&pool.memory[0])
 }
