@@ -16,11 +16,11 @@ Box :: struct {
 
 	panel: ^Panel,
 
-	parent: ^Box,		// parent
-	first: ^Box,		// first child
-	last: ^Box,			// last child
-	next: ^Box,			// next sibling
-	prev: ^Box,			// prev sibling
+	parent: ^Box,
+	first: ^Box,
+	last: ^Box,
+	next: ^Box,
+	prev: ^Box,
 	hash_next: ^Box,
 	hash_prev: ^Box,
 
@@ -118,8 +118,8 @@ Box_Ops :: struct {
 	editing: bool,
 }
 
-gen_key :: proc(name: string, id: string) -> Key {
-	text := fmt.tprint(args={name, id, state.ctx.panel.uid}, sep="_") //state.boxes.index,
+gen_key :: proc(name: string) -> Key {
+	text := concat(name, state.ctx.panel.uid) //state.boxes.index,
 	key := odin_string_to_key(text)
 	return key
 }
@@ -135,7 +135,7 @@ generate_box :: proc(key: Key) -> ^Box {
 
 create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -> ^Box {
 	name := _name
-	id := fmt.tprint(state.boxes.index)
+	id := "" //fmt.tprint(state.boxes.index)
 	// check if "###" exists in string, and use the left half for name, right half for the ID
 	for letter, index in _name {
 		if letter == '#' {
@@ -146,8 +146,10 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 		}
 	}
 
-	key := gen_key(name, id)
+	key := gen_key(_name)
 	box, box_ok := state.boxes.all[key]
+	assert(!(key in state.boxes.no_duplicates), concat("DUPLICATE KEY USED!! >> ", _name, flags))
+	state.boxes.no_duplicates[key] = true
 	parent := state.ctx.parent
 	
 	// if box doesn't exist, create it
@@ -479,7 +481,7 @@ calc_boxes :: proc(root: ^Box) {
 	// RELATIVE TO SIBLINGS ------------------------------
 	for box := root; box != nil; box = box.hash_next	{
 		if box.hash_next == nil do last = box
-	for size, axis in box.size {
+		for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
 			if size.type == .MIN_SIBLINGS	{
 				calc_size^ = 0
@@ -514,7 +516,7 @@ calc_boxes :: proc(root: ^Box) {
 				
 	// SUM CHILDREN / MAX CHILD ------------------------------
 	for box := last; box != nil; box = box.hash_prev	{
-	for size, axis in box.size {
+		for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
 			if .VIEWSCROLL in box.flags || size.type == .SUM_CHILDREN {
 				if size.type == .SUM_CHILDREN do calc_size^ = 0
@@ -531,7 +533,6 @@ calc_boxes :: proc(root: ^Box) {
 			}
 		}
 	}
-
 
 	// CALC OFFSET & QUAD / SCROLLBAR /  ----------------------
 	for box := root; box != nil; box = box.hash_next	{

@@ -1,5 +1,7 @@
 package ui
 
+import "core:fmt"
+
 new_uid :: proc() -> Uid
 {
 	if state.uid == 0 do state.uid += 1
@@ -17,4 +19,8 @@ v2_f32 :: proc(value: v2i) -> v2 {
 
 linear :: proc(value, OldMin, OldMax, NewMin, NewMax: f32) -> f32 {
 	return (((value - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+}
+
+concat :: proc(texts: ..any) -> string {
+	return fmt.tprint(args=texts, sep="")
 }

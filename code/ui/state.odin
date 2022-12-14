@@ -114,6 +114,7 @@ Panels :: struct {
 Boxes :: struct {
 	pool: Pool,
 	all: map[Key]^Box,
+	no_duplicates: map[Key]bool,
 	to_delete: [MAX_BOXES]rawptr,
 	root: ^Box,
 	pressed: ^Box,
@@ -272,16 +273,16 @@ update :: proc() {
 	}
 
 	// CALC BOXES ------------------------------------------------	
-	panels : [MAX_PANELS]^Panel
-	index:= 0
-	for _, panel in state.panels.all {
-		panels[index] = panel
-		index += 1
-	}
+	// panels : [MAX_PANELS]^Panel
+	// index:= 0
+	// for panel in panels {
+	// 	panels[index] = panel
+	// 	index += 1
+	// }
 	
 	{
 		when PROFILER do tracy.ZoneN("CALC BOXES")
-		for panel in panels {
+		for _, panel in state.panels.all {
 			if panel != nil {
 				if panel.box != nil do calc_boxes(panel.box)
 			}
@@ -333,6 +334,8 @@ update :: proc() {
 	// state.input.keys.ctrl = false
 	state.input.keys.n_plus = false
 	state.input.keys.n_minus = false
+
+	clear(&state.boxes.no_duplicates)
 }
 
 // recursive draw boxes

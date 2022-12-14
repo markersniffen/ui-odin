@@ -72,14 +72,14 @@ app_load_text_file :: proc(_path:string="") {
 	data, ok := os.read_entire_file(path)
 	if !ok {
 		fmt.println("Failed to load file!")
-		return
-	}
+		return	
+}
 	app.lorem = ui.from_odin_string(string(data[:]))
 }
 
 // DEMO //
 top_bar :: proc() {
-	ui.begin()
+	panel := ui.begin()
 	ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
 	labels: []string = {"File", "Edit", "View"}
 	mbuttons, active := ui.menu("Main Menu", labels)
@@ -105,15 +105,16 @@ top_bar :: proc() {
 			}
 		}
 	}
+	ui.menu_end()
 	ui.axis(.X)
 	ui.size(.TEXT, 1, .TEXT, 1)
-	// ui.value("scroll:", ui.state.input.mouse.scroll)
-	// ui.label("|")
-	// ui.value("mouse pos:", ui.state.input.mouse.pos)
-	// ui.label("|")
-	// ui.value("window width:", ui.state.window.size.x)
-	// ui.label("|")
-	// ui.value("fb width:", ui.state.window.framebuffer.x)
+	ui.value("scroll:", ui.state.input.mouse.scroll)
+	ui.label("|###1")
+	ui.value("mouse pos:", ui.state.input.mouse.pos)
+	ui.label("|###2")
+	ui.value("window width:", ui.state.window.size.x)
+	ui.label("|###3")
+	ui.value("fb width:", ui.state.window.framebuffer.x)
 	ui.label("pages")
 	ui.value("pages:", ui.state.boxes.pool.num_pages)
 	ui.label("boxes")
@@ -121,10 +122,10 @@ top_bar :: proc() {
 	ui.label("nodes per pg")
 	ui.value("nodes per page:", ui.state.boxes.pool.nodes_per_page)
 	ui.label(fmt.tprint("total memory alloced:", ui.state.boxes.pool.num_pages * ui.state.boxes.pool.page_size))
-	ui.label("|")
+	ui.label("|###4")
 	ui.value("panels:", ui.state.panels.pool.nodes_used)
 	ui.value("/", ui.state.panels.pool.nodes_per_page)
-	ui.spacer_pixels(6)
+	ui.spacer_pixels("topbar", 6)
 	ui.end()
 }
 
@@ -132,7 +133,7 @@ ctx_panel :: proc() {
 	panel := ui.begin()
 	ui.axis(.Y)
 	ui.size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
-	ui.empty()
+	ui.empty("ctx panel")
 		ui.size(.PIXELS, 200, .TEXT, 1)
 		ui.menu_button("Cut")
 		ui.menu_button("Copy")
@@ -143,7 +144,7 @@ ctx_panel :: proc() {
 panel_colors :: proc() {
 	panel := ui.begin()
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
+	ui.empty("panel_switcher_icon")
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>p").released {
@@ -153,32 +154,32 @@ panel_colors :: proc() {
 
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
+	ui.empty("color_labels")
 		ui.axis(.X)
 		ui.label("<b>UI Colors")
-		ui.spacer_fill()
+		ui.spacer_fill("color_labels")
 		ui.size(.PCT_PARENT, .2, .TEXT, 1)
 		ui.label("<i>Hue")
 		ui.label("<i>Saturation")
 		ui.label("<i>Value")
 		ui.label("<i>Alpha")
 	ui.pop()
-	ui.bar(ui.state.col.highlight)
+	ui.bar("color_separator", ui.state.col.highlight)
 
 	color_row :: proc(name: string, col:^ui.HSL) {
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.empty()
+		ui.empty(ui.concat(name, "color_values"))
 			ui.axis(.X)
 			ui.size(.PCT_PARENT, .15, .TEXT, 1)
 			ui.label(name)
 			ui.size(.PCT_PARENT, .05, .TEXT, 1)
-			ui.color(col^)
+			ui.color(ui.concat(name, "col"), col^)
 			ui.size(.PCT_PARENT, .2, .TEXT, 1)
-			ui.slider("h:", &col.h)
-			ui.slider("s:", &col.s)
-			ui.slider("l:", &col.l)
-			ui.slider("v:", &col.a)
+			ui.slider(ui.concat(name, "h:"), &col.h)
+			ui.slider(ui.concat(name, "s:"), &col.s)
+			ui.slider(ui.concat(name, "l:"), &col.l)
+			ui.slider(ui.concat(name, "v:"), &col.a)
 		ui.pop()
 	}
 
@@ -198,7 +199,7 @@ panel_lorem :: proc() {
 	panel := ui.begin()
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.empty()
+		ui.empty("panel_switcher_icon")
 			ui.axis(.X)
 			ui.size(.TEXT, 1, .TEXT, 1)
 			if ui.button("<#>p").released {
@@ -208,7 +209,7 @@ panel_lorem :: proc() {
 
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.empty()
+		ui.empty("open_text_file_header")
 			ui.axis(.X)
 			ui.size(.PCT_PARENT, 1, .TEXT, 1)
 			if ui.menu_button("Open Text File").clicked {
@@ -217,9 +218,9 @@ panel_lorem :: proc() {
 		ui.pop()
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-		ui.empty()
+		ui.empty("text_body")
 		ui.size(.PCT_PARENT, 1, .PCT_PARENT, 1)
-			ui.paragraph(&app.lorem)
+			ui.paragraph("main_text", &app.lorem)
 			ui.pop()
 		ui.pop()
 	ui.end()
@@ -229,7 +230,7 @@ panel_tab_test :: proc() {
 	ui.begin()
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
+	ui.empty("panel_switcher_icon")
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>p").released {
@@ -241,15 +242,15 @@ panel_tab_test :: proc() {
 	
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-	ui.empty()
+	ui.empty("etab_test")
 		ui.axis(.X)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		tabs, index := ui.tab(tab_names)
+		tabs, index := ui.tab("tab_test", tab_names)
 		
 
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
-		ui.empty()
+		ui.empty("tab_test2")
 		ui.size(.TEXT, 1, .TEXT, 1)
 		ui.axis(.Y)
 		if len(tabs) > 0 {
@@ -272,7 +273,7 @@ panel_tab_test :: proc() {
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
 		ui.value("locked", ui.state.panels.locked)
-		ui.value("active lyaer", ui.state.sokol.current_layer)
+		ui.value("active layer", ui.state.sokol.current_layer)
 	ui.pop()
 	ui.end()
 }
@@ -281,7 +282,7 @@ panel_boxlist :: proc() {
 	ui.begin()
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
+	ui.empty("panel_switcher_icon")
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>p").released {
@@ -290,33 +291,37 @@ panel_boxlist :: proc() {
 	ui.pop()
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-	ui.scrollbox()
+	ui.scrollbox("panel_boxlist")
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
-		ui.empty()
+		ui.empty("panel_list")
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
 		ui.label("Panel List:")
+		index := 0
 		for key, panel in ui.state.panels.all {
 			if panel.box != nil {
 				ui.axis(.Y)
 				ui.size(.PCT_PARENT, 1, .TEXT, 1)
-				ui.label(fmt.tprint("PANEL ID:", panel.uid))
+				ui.label(ui.concat("PANEL ID:", panel.uid, "###_", index))
 				indent :f32= 0
 				for first := panel.box; first != nil; first = first.first {
 					indent += 1
 					for next := first.next; next != nil; next = next.next {
 						ui.axis(.Y)
 						ui.size(.PCT_PARENT, 1, .TEXT, 1)
-						ui.empty()
-						ui.spacer_pixels(10*indent)
-						ui.axis(.X)
-						ui.size(.TEXT, 1, .TEXT, 1)
-						ui.label(fmt.tprint(" <> ", ui.key_to_odin_string(&next.key)))
+						ui.empty(ui.concat("row_holder", panel.uid, index))
+							ui.spacer_pixels(ui.concat("row_spacer", index), 10*indent)
+							ui.axis(.X)
+							ui.size(.TEXT, 1, .TEXT, 1)
+							ui.label(ui.concat(" <> ", ui.to_odin_string(&next.name), "###", index))
 						ui.pop()
+						index += 1
 					}
+					index += 1
 				}
 			} else {
 			}
+			index += 1
 		}
 		ui.pop()
 	ui.end()
@@ -328,7 +333,7 @@ panel_properties :: proc() {
 	ui.begin()
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
-	ui.empty()
+	ui.empty("panel_switcher_icon")
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>p").released {
@@ -341,14 +346,14 @@ panel_properties :: proc() {
 		ui.label_values("Current Frame", {ui.state.frame})
 		ui.label_values("UID", {ui.state.uid})
 		ui.label_values("Number of Panels", {ui.state.panels.pool.nodes_used})
-		ui.label_values("Mouse Pos", {ui.state.input.mouse.pos.x, ui.state.input.mouse.pos.y})
+		ui.label_values("Mouse Pos",  {ui.state.input.mouse.pos.x, ui.state.input.mouse.pos.y})
 	}
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .TEXT, 1)
 	if ui.dropdown("Image").selected {
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
-		ui.image(&app.image)
+		ui.image("myimage", &app.image)
 	}
 
 
@@ -359,10 +364,10 @@ panel_pick_panel :: proc() {
 	panel := ui.begin()
 	ui.axis(.Y)
 	ui.size(.SUM_CHILDREN, 1, .TEXT, 1)
-	ui.empty()
+	ui.empty("pick_panel")
 		ui.axis(.X)
 		ui.size(.PIXELS, 250, .TEXT, 1)
-		ui.drag_panel("Select Panel:")
+		ui.drag_panel("sel_panel", "Select Panel:")
 		ui.size(.TEXT, 1, .TEXT, 1)
 		if ui.button("<#>x").released {
 			if ui.state.panels.floating != nil {
@@ -374,7 +379,7 @@ panel_pick_panel :: proc() {
 
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
-	ui.empty()
+	ui.empty("list_of_panels")
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
 		for p in app.panels {
 			if ui.button(p.name).released {
@@ -390,12 +395,12 @@ file_browser :: proc () {
 	ui.begin()
 	ui.axis(.Y)
 	ui.size(.PIXELS, 600, .SUM_CHILDREN, 1)
-	ui.empty()
+	ui.empty("file_browser_header")
 		ui.axis(.X)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.empty()
+		ui.empty("file_browser")
 			ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
-			ui.drag_panel("Load file:")
+			ui.drag_panel("load_file", "Load file:")
 			ui.size(.TEXT, 1, .TEXT, 1)
 			if ui.button("<#>x").released do ui.delete_panel(ui.state.panels.floating)
 		ui.pop()
@@ -403,10 +408,10 @@ file_browser :: proc () {
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
 		ui.edit_text("file browser", &app.path)
 		ui.size(.PCT_PARENT, 1, .TEXT, 12)
-		ui.scrollbox()
+		ui.scrollbox("file_browser")
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
-		ui.empty()
+		ui.empty("files_list")
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
 
