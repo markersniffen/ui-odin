@@ -1,4 +1,4 @@
-#### Imgui-style ui library atop a sokol base layer for Odin.
+### Imgui-style ui library atop a sokol base layer for Odin.
 
 Suggested use: None. \
 Very unstable and very much a work in progress. Use at your own risk!
@@ -8,7 +8,7 @@ Very unstable and very much a work in progress. Use at your own risk!
 - The build-run.bat file uses floooh's shader tool if you want to regenerate the shader: https://github.com/floooh/sokol-tools  
 - Uses odin-tracy to profile unless you comment out the includes: https://github.com/oskarnp/odin-tracy
 
-## TODOs:
+### TODOs:
 
 #### Major changes:
 - [x] store all font glyphs in 1 font texture
@@ -24,12 +24,15 @@ Very unstable and very much a work in progress. Use at your own risk!
 
 #### Things to add:
 - [-] drawing a custom image to a box
-- [ ] color picker
+- [ ] copy/paste values
+- [ ] load defaults from file
+- [ ] "x_end()" functions for widgets that have weird conditional pop(n)'s?
 
 #### Things to fix:
 - [x] scrolling on floating panel also scrolls panels beneath
-- [ ] hovering bleeds through layers (does clicking do this too?)
 - [x] force floating panels to stay in bounds on creation
+- [ ] hovering bleeds through layers (does clicking do this too?)
+- [ ] text width for labels and other general widgets with text
 
 #### Widgets:
 - [x] empty
@@ -53,12 +56,5 @@ Very unstable and very much a work in progress. Use at your own risk!
 - [x] sizebar_y
 - [x] drag_panel
 - [x] image
-
+- [ ] color picker
 - [ ] checkbox
-- [ ] copy/paste values
-- [ ] load defaults from file
-
-
-## Example:
-
-

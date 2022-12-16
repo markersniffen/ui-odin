@@ -142,6 +142,7 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 			if _name[index:min(index+3, len(_name)-1)] == "###" {
 				name = _name[:index]
 				id = _name[index+3:]
+				break
 			}
 		}
 	}

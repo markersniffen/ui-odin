@@ -202,6 +202,10 @@ set_border_color 	:: proc(color: HSL) 		{ state.ctx.border_color = color }
 
 set_border_thickness :: proc(value: f32)		{ state.ctx.border = value }
 
+// set text justification
+
+just :: proc(align: Text_Align)					{ state.ctx.text_align = align }
+
 // sets extra flags to add to next box (gets reset by create_box())
 
 extra_flags :: proc(flags:bit_set[Box_Flags]) { state.ctx.flags = flags }
@@ -237,31 +241,33 @@ extra_flags :: proc(flags:bit_set[Box_Flags]) { state.ctx.flags = flags }
 // returns the box itself 
 
 empty :: proc(name:string) -> ^Box {
-	box := create_box(concat("empty", name), { })
+	box := create_box(concat(name, "_empty"), { })
 	process_ops(box)
 	push_parent(box)
 	return box
 }
 
 bar :: proc(name:string, color:HSL={}, _axis:Axis=.Y) -> ^Box {
+	old_size := state.ctx.size
 	axis(_axis)
 	if _axis == .Y {
 		size(.PCT_PARENT, 1, .PIXELS, state.font.margin/2)
 	} else {
 		size(.PIXELS, state.font.margin, .PCT_PARENT, 1)
 	}
-	bar := create_box(fmt.tprint("bar", name), { .DRAWBACKGROUND })
+	bar := create_box(fmt.tprint(name, "_bar"), { .DRAWBACKGROUND })
 	process_ops(bar)
 
 	if color != {} do bar.bg_color = color
-
+	
+	state.ctx.size = old_size
 	return bar
 }
 
 // draws a color filled box
 
 color :: proc(name:string, color:HSL) -> ^Box {
-	box := create_box(concat("color", name), {
+	box := create_box(concat(name, "_color"), {
 		.DRAWBACKGROUND,
 		.DRAWBORDER,
 	})
@@ -274,7 +280,7 @@ color :: proc(name:string, color:HSL) -> ^Box {
 // don't use this for values that change
 
 label :: proc(text: string) -> ^Box {
-	box := create_box(text, { .DRAWTEXT, })
+	box := create_box(concat(text, "###_label"), { .DRAWTEXT, })
 	process_ops(box)
 	return box
 }
@@ -284,19 +290,19 @@ label :: proc(text: string) -> ^Box {
 // uses fmt.tprint() to convert value to text
 
 value :: proc(name: string, value: any) -> Box_Ops {
-	box := create_box(name, { .DISPLAYVALUE }, value)
+	box := create_box(concat(name, "_value"), { .DISPLAYVALUE }, value)
 	process_ops(box)
 	return box.ops	
 }
 
 label_value :: proc(text: string, val:any, pixels:f32=0) {
-	axis(.Y)
+	// axis(.Y)
 	if pixels > 0 {
 		size(.PIXELS, pixels, .TEXT, 1)
 	} else {
 		size(.PCT_PARENT, 1, .TEXT, 1)
 	}
-	empty("label_value")
+	empty(text)
 		axis(.X)
 		size(.MIN_SIBLINGS, 1, .PCT_PARENT, 1)
 		label(text)
@@ -328,7 +334,7 @@ label_values :: proc(text: string, vals:[]any, pixels:f32=0) {
 }
 
 edit_value:: proc(key: string, ev: any) -> ^Box {
-	box := create_box(fmt.tprint("parent", key), {
+	box := create_box(concat(key, "_parent"), {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWBACKGROUND,
@@ -341,7 +347,7 @@ edit_value:: proc(key: string, ev: any) -> ^Box {
 	process_ops(box)
 
 	size(.PCT_PARENT, 1, .PCT_PARENT, 1)
-	text_box := create_box(key, {
+	text_box := create_box(concat(key, "_text_box"), {
 		.EDITVALUE,
 		.CLIP,
 	}, ev)
@@ -367,7 +373,8 @@ edit_value:: proc(key: string, ev: any) -> ^Box {
 // creates single line editable text
 
 edit_text :: proc(key: string, es: ^String) -> Box_Ops {
-	box := create_box(concat("edit_text", key), {
+	old_size := state.ctx.size
+	box := create_box(concat(key, "_edit_text"), {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWBACKGROUND,
@@ -381,7 +388,7 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 	process_ops(box)
 
 	size(.TEXT, 1, .PCT_PARENT, 1)
-	text_box := create_box(concat("editable_text_box", key), {
+	text_box := create_box(concat(key, "editable_text_box"), {
 		.EDITTEXT,
 	})
 	text_box.editable_string = es
@@ -403,6 +410,7 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 		text_box.scroll.x = state.input.mouse.pos.x - state.input.mouse.delta_temp.x
 	}
 
+	state.ctx.size = old_size
 	return box.ops
 }
 
@@ -457,7 +465,7 @@ paragraph :: proc(name:string, value: ^String) -> Box_Ops {
 
 slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 	old_size := state.ctx.size
-	box := create_box(concat("slider", label), {
+	box := create_box(concat(label, "_slider"), {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWBACKGROUND,
@@ -469,7 +477,7 @@ slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 	process_ops(box)
 	push_parent(box)
 	size(.PCT_PARENT, value^, .PCT_PARENT, 1)
-	highlight := create_box(concat("highlight", label), {
+	highlight := create_box(concat(label, "_highlight"), {
 		.DRAWBACKGROUND,
 		.DRAWGRADIENT,
 		.ACTIVEANIMATION,
@@ -481,7 +489,7 @@ slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 	process_ops(highlight)
 	
 	size(.PCT_PARENT, 1, .PCT_PARENT, 1)
-	display_value := create_box(concat("disp val", label), {
+	display_value := create_box(concat(label, "_display_val"), {
 		.EDITVALUE,
 		.NO_OFFSET,
 	}, value^)
@@ -525,8 +533,8 @@ slider :: proc(label:string, value:^f32, min:f32=0, max:f32=1) -> Box_Ops {
 
 // creates a button box
 
-button :: proc(key: string) -> Box_Ops {
-	box := create_box(concat(key, "###button"), {
+button :: proc(name: string) -> Box_Ops {
+	box := create_box(concat(name, "###_button"), {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWTEXT,
@@ -545,7 +553,7 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 	state.ctx.layer = 1
 	buttons := make([]^Box, len(labels), context.temp_allocator)
 	active_button : ^Box
-	box := empty(concat("menu", name))
+	box := empty(name)
 		axis(.X)
 		size(.TEXT, 1, .TEXT, 1)
 		released_button : int = -1
@@ -578,7 +586,7 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 		axis(.Y)
 		state.ctx.layer = 1
 		size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
-		container = create_box(concat("menu elements", name), { .NOCLIP, .CLIP, .DRAWBACKGROUND })
+		container = create_box(concat(name, "_menu elements"), { .NOCLIP, .CLIP, .DRAWBACKGROUND })
 		process_ops(container)
 		container.offset.y = state.font.line_space
 		push_parent(container)
@@ -613,8 +621,8 @@ menu_end :: proc() {
 }
 
 // creates a button without a border (for use in menus)
-menu_button :: proc(key: string) -> Box_Ops {
-	box := create_box(concat(key, "###menu_button"), {
+menu_button :: proc(name: string) -> Box_Ops {
+	box := create_box(concat(name, "###menu_button"), {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWTEXT,
@@ -629,8 +637,8 @@ menu_button :: proc(key: string) -> Box_Ops {
 
 // creates a selectable box (for making dropdowns, checkboxes)
 
-dropdown :: proc(key: string) -> Box_Ops {
-	box := create_box(concat(key, "###dropdown"), {
+dropdown :: proc(name: string) -> Box_Ops {
+	box := create_box(concat(name, "###_dropdown"), {
 		.CLICKABLE,
 		.SELECTABLE,
 		.HOVERABLE,
@@ -642,16 +650,18 @@ dropdown :: proc(key: string) -> Box_Ops {
 	})
 	process_ops(box)
 	if box.ops.selected {
-		box.name = from_odin_string(fmt.tprint("<#>s<r>", key))
+		box.name = from_odin_string(concat("<#>s<r>", name))
 	} else {
-		box.name = from_odin_string(fmt.tprint("<#>d<r>", key))
+		box.name = from_odin_string(concat("<#>d<r>", name))
 	}
+
+	fmt.println(to_odin_string(&box.name))
 	box.text_align = .LEFT
 	return box.ops
 }
 
 image :: proc(key: string, image: ^Image) -> Box_Ops {
-	box := create_box(concat("image", key), {
+	box := create_box(concat(key, "_image"), {
 		.DRAWIMAGE,
 	}, image)
 	return box.ops
@@ -660,7 +670,7 @@ image :: proc(key: string, image: ^Image) -> Box_Ops {
 // creates a radio button
 
 radio :: proc(key: string) -> ^Box {
-	box := create_box(concat(key, "###radio"), {
+	box := create_box(concat(key, "###_radio"), {
 		.CLICKABLE,
 		.HOVERABLE,
 		.DRAWTEXT,
@@ -697,7 +707,7 @@ tab :: proc(_name:string, names: []string, close_button:bool=false, select_tab:i
 		process_ops(tab)
 		push_parent(tab)
 			size(.TEXT, 1, .TEXT, 1)
-			label := label(concat(name, "###", _name, i))
+			label := label(concat(name, "###", i))
 			
 			if close_button {
 				close := button(fmt.tprint("<#>x###close", _name, name, i))
@@ -736,8 +746,8 @@ tab :: proc(_name:string, names: []string, close_button:bool=false, select_tab:i
 			}
 		}
 
-		bar("tabbar1", state.col.active)
-		bar("tabbar2", state.col.active)
+		bar(concat(_name, "_tabbar1"), state.col.active)
+		bar(concat(_name, "_tabbar2"), state.col.active)
 	}
 
 	pop()
@@ -751,7 +761,7 @@ tab :: proc(_name:string, names: []string, close_button:bool=false, select_tab:i
 spacer_fill :: proc(name: string) -> Box_Ops {
 	oldsize := state.ctx.size[X]
 	size_x(.MIN_SIBLINGS, 1)
-	box := create_box(concat("spacer_fill", name), {
+	box := create_box(concat(name, "_spacer_fill"), {
 	})
 	process_ops(box)
 	size_x(oldsize.type, oldsize.value)
@@ -764,7 +774,7 @@ spacer_fill :: proc(name: string) -> Box_Ops {
 spacer_pixels :: proc(name: string, pixels: f32) -> Box_Ops {
 	oldsize := state.ctx.size.x
 	size_x(.PIXELS, pixels)
-	box := create_box(concat("spacer_pixels", name), {})
+	box := create_box(concat(name, "_spacer_pixels"), {})
 	process_ops(box)
 	size_x(oldsize.type, oldsize.value)
 	return box.ops
@@ -774,133 +784,40 @@ spacer_pixels :: proc(name: string, pixels: f32) -> Box_Ops {
 // and offset the first child by x and y
 
 scrollbox :: proc(name:string, _x:bool=false, _y:bool=false) -> ^Box {
-	scrollbox := create_box(concat("scrollbox", name), { })
+	scrollbox := create_box(concat(name, "_scrollbox"), { })
 	process_ops(scrollbox)
 	push_parent(scrollbox)
 
 	axis(.X)
 	size(.NONE, 0, .NONE, 0)
-	viewport := create_box(concat("viewport", name), { .CLIP, .VIEWSCROLL, .SCROLLBOX, .NO_OFFSET })
+	viewport := create_box(concat(name, "_viewport"), { .CLIP, .VIEWSCROLL, .SCROLLBOX, .NO_OFFSET })
 	process_ops(viewport)
 
 	size(.NONE, 0, .NONE, 0)
-	sby := create_box(concat("scrollbar_y", name), { .NO_OFFSET, .DRAWBACKGROUND })
+	sby := create_box(concat(name, "_scrollbar_y"), { .NO_OFFSET, .DRAWBACKGROUND })
 	process_ops(sby)
 	// TODO sby.offset.x = viewport_width
 	push_parent(sby)
 
 	size(.NONE, 1, .NONE, 0)
-	y_handle := create_box(concat("y_handle", name), { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
+	y_handle := create_box(concat(name, "_y_handle"), { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
 	process_ops(y_handle)
 	y_handle.bg_color = state.col.inactive
 	// TODO y_handle.offset.y = -handle_value.y 
 	pop()
 
 	size(.NONE, 0, .NONE, 0)
-	sbx := create_box(concat("scrollbar_x", name), { .NO_OFFSET, .DRAWBACKGROUND })
+	sbx := create_box(concat(name, "_scrollbar_x"), { .NO_OFFSET, .DRAWBACKGROUND })
 	process_ops(sbx)
 	// sbx.offset.y = viewport_height
 	push_parent(sbx)
 
 	size(.NONE, 0, .NONE, 0)
-	x_handle := create_box(concat("x_handle", name), { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
+	x_handle := create_box(concat(name, "_x_handle"), { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
 	process_ops(x_handle)
 	x_handle.bg_color = state.col.inactive
 	// x_handle.offset.x = -handle_value.x
 	pop()
-
-	push_parent(viewport)
-	return viewport
-}
-
-scrollbox_old :: proc(_x:bool=false, _y:bool=false) -> ^Box {
-	scrollbox := create_box("scrollbox", { })
-	process_ops(scrollbox)
-	push_parent(scrollbox)
-
-	bar_width :f32= 14
-	x := _x
-	y := _y
-
-	if scrollbox.first != nil {
-		if scrollbox.first.first != nil {
-			first := scrollbox.first.first
-			x = (first.calc_size.x > scrollbox.first.calc_size.x)
-			y = (first.calc_size.y > scrollbox.first.calc_size.y)
-		}
-	}
-	
-	viewport_width := scrollbox.calc_size.x
-	if y do viewport_width -= bar_width
-
-	viewport_height := scrollbox.calc_size.y
-	if x do viewport_height -= bar_width
-
-	axis(.X)
-	size(.PIXELS, viewport_width, .PIXELS, viewport_height)
-	viewport := create_box("viewport", { .CLIP, .VIEWSCROLL  })
-	process_ops(viewport)
-
-	if viewport.first != nil {
-		db_size := ((viewport.calc_size + viewport.expand) / viewport.first.calc_size) * (viewport.calc_size + viewport.expand)
-		db_size.x = max(db_size.x, 40)
-		db_size.y = max(db_size.y, 40)
-		db_range := (viewport.calc_size + viewport.expand) - db_size
-		scr_range := viewport.first.calc_size - (viewport.calc_size + viewport.expand)
-		scr_value := viewport.first.offset
-		mpl := scr_value / scr_range
-		db_value := db_range * mpl
-		if y {
-			size(.PIXELS, bar_width, .PIXELS, viewport_height)
-			sby := create_box("scrollbar_y", { .NO_OFFSET, .DRAWBACKGROUND })
-			process_ops(sby)
-			sby.offset.x = viewport_width
-			push_parent(sby)
-
-			size(.PCT_PARENT, 1, .PIXELS, db_size.y)
-			y_handle := create_box("y_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
-			process_ops(y_handle)
-			y_handle.bg_color = state.col.inactive
-			y_handle.offset.y = -db_value.y
-			pop()
-
-			if y_handle.ops.pressed {
-				state.panels.locked = true
-				if y_handle.ops.clicked {
-					state.input.mouse.delta_temp.y = state.input.mouse.pos.y * (scr_range.y/db_range.y) + viewport.first.offset.y
-				}
-				viewport.first.scroll.y = ((state.input.mouse.pos.y*(scr_range.y/db_range.y)) - state.input.mouse.delta_temp.y) * -1
-			}
-		}
-		if x {
-			size(.PIXELS, viewport_width, .PIXELS, bar_width)
-			sbx := create_box("scrollbar_x", { .NO_OFFSET, .DRAWBACKGROUND })
-			process_ops(sbx)
-			sbx.offset.y = viewport_height
-			push_parent(sbx)
-
-			size(.PIXELS, db_size.x, .PCT_PARENT, 1)
-			x_handle := create_box("x_handle", { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
-			process_ops(x_handle)
-			x_handle.bg_color = state.col.inactive
-			x_handle.offset.x = -db_value.x
-			pop()
-
-			if x_handle.ops.pressed {
-				if x_handle.ops.clicked {
-					state.input.mouse.delta_temp.x = state.input.mouse.pos.x * (scr_range.x/db_range.x) + viewport.first.offset.x
-				}
-				viewport.first.scroll.x = ((state.input.mouse.pos.x*(scr_range.x/db_range.x)) - state.input.mouse.delta_temp.x) * -1
-			}
-		}
-
-		if viewport.ops.middle_dragged {
-			if viewport.ops.middle_clicked {
-				state.input.mouse.delta_temp = state.input.mouse.pos - viewport.first.offset
-			}
-			viewport.first.scroll = state.input.mouse.pos - state.input.mouse.delta_temp
-		}
-	}
 
 	push_parent(viewport)
 	return viewport
@@ -912,7 +829,7 @@ scrollbox_old :: proc(_x:bool=false, _y:bool=false) -> ^Box {
 sizebar_y :: proc(name:string) -> ^Box {
 	axis(.Y)
 	size(.PCT_PARENT, 1, .PIXELS, 4)
-	box := create_box(concat("sizebar_y", name), { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
+	box := create_box(concat(name, "sizebar_y"), { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
 	process_ops(box)
 	if box.ops.pressed {
 		if box.ops.clicked {
@@ -927,7 +844,7 @@ sizebar_y :: proc(name:string) -> ^Box {
 sizebar_x :: proc(name:string) -> ^Box {
 	axis(.X)
 	size(.PIXELS, 4, .PCT_PARENT, 1)
-	box := create_box(concat("sizebar_x", name), { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
+	box := create_box(concat(name, "_sizebar_x"), { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
 	process_ops(box)
 	if box.ops.pressed {
 		if box.ops.clicked {
@@ -945,7 +862,7 @@ sizebar_x :: proc(name:string) -> ^Box {
 drag_panel :: proc(name:string, label:string="") -> ^Box {
 	box: ^Box
 	if label == "" {
-		box = create_box(concat("drag_panel", name), {
+		box = create_box(concat(name, "drag_panel"), {
 			.CLICKABLE,
 			.HOVERABLE,
 			.DRAGGABLE,

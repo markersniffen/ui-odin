@@ -10,6 +10,11 @@ import "core:fmt"
 import "core:strconv"
 import "core:math"
 
+import "core:encoding/json"
+
+default_font_pixels :: #load("default_font_pixels.txt")
+default_char_data := #load("default_font_char_data.txt", []Char_Data)
+
 // + icon-plus
 // - icon-minus
 
@@ -76,10 +81,10 @@ Text_Align :: enum {
 init_font :: proc(size:f32=18) {
 	state.font.size = size
 	
-	state.font.weight[Weight_Type.REGULAR].path = "fonts/Roboto-Regular.ttf"
-	state.font.weight[Weight_Type.BOLD].path = "fonts/Roboto-Bold.ttf"
-	state.font.weight[Weight_Type.ITALIC].path = "fonts/Roboto-Italic.ttf"
-	state.font.weight[Weight_Type.ICONS].path = "fonts/ui_icons.ttf"
+	state.font.weight[Weight_Type.REGULAR].path 	= "fontsx/Roboto-Regular.ttf"
+	state.font.weight[Weight_Type.BOLD].path 		= "fontsx/Roboto-Bold.ttf"
+	state.font.weight[Weight_Type.ITALIC].path 	= "fontsx/Roboto-Italic.ttf"
+	state.font.weight[Weight_Type.ICONS].path 	= "fontsx/ui_icons.ttf"
 
 	load_font()
 }
@@ -90,9 +95,17 @@ load_font :: proc() {
 	num_runes := i32(len(runes))
 	first_rune :i32= 32
 	
+	// check font files
+	files_ok := true
+	for font in state.font.weight {
+		handle, err := os.open(font.path)
+		defer os.close(handle)
+		if err != 0 do files_ok = false
+	}
+
+	fmt.println("FILES LOADED OK?", files_ok)
 
 	ctx : stb.pack_context
-	
 	width :i32= 512
 	height :i32= 512
 	pixels := make([^]byte, width*height)
@@ -102,49 +115,62 @@ load_font :: proc() {
 		return
 	}
 
+	temp_char_data:= make([]Char_Data, len(runes) * 4, context.temp_allocator)
+	temp_char_data_index := 0
+
 	// TODO oversampling?
 	// stb.PackSetOversampling(&ctx, 2, 2)
 
-	for font, type in &state.font.weight {
-		font.type = Weight_Type(type)
+	for font, index in &state.font.weight {
+		fmt.println(">>>>> FONT", font.path)
+		if files_ok {
+			font.type = Weight_Type(index)
+			char_data, char_data_ok := make([]stb.packedchar, num_runes)
+			defer delete(char_data)
 
-		char_data, char_data_ok := make([]stb.packedchar, num_runes)
-		defer delete(char_data)
+			rng : stb.pack_range = {
+				font_size = 20,
+				first_unicode_codepoint_in_range = first_rune,
+				array_of_unicode_codepoints = raw_data(runes),
+				num_chars = num_runes,
+				chardata_for_range = &char_data[0],
+			}
 
-		rng : stb.pack_range = {
-			font_size = 20,
-			first_unicode_codepoint_in_range = first_rune,
-			array_of_unicode_codepoints = raw_data(runes),
-			num_chars = num_runes,
-			chardata_for_range = &char_data[0],
-		}
+			fontdata, data_ok := os.read_entire_file(font.path)
+			defer delete(fontdata)
+			if data_ok {
+				fmt.println(font.path, "loaded.")
+				stb.PackFontRanges(&ctx, raw_data(fontdata), 0, &rng, 1)
 
-		fmt.println(font.path)
-		fontdata, data_ok := os.read_entire_file(font.path)
-		defer delete(fontdata)
-		if data_ok do fmt.println(font.path, "loaded.")
+				for b, i in char_data
+				{
+					pixel_divider := 1.0 / f32(512)
 
-		stb.PackFontRanges(&ctx, raw_data(fontdata), 0, &rng, 1)
+					char_data: Char_Data
+					
+					char_data.offset = {f32(b.xoff), f32(b.yoff + state.font.size)}
+					char_data.width = f32(b.x1 - b.x0)
+					char_data.height = f32(b.y1 - b.y0)
+					char_data.advance = b.xadvance
 
-		for b, i in char_data
-		{
-			pixel_divider := 1.0 / f32(512)
+					char_data.uv.l = f32(b.x0) * pixel_divider
+					char_data.uv.t = f32(b.y0) * pixel_divider
+					char_data.uv.r = f32(b.x1) * pixel_divider
+					char_data.uv.b = f32(b.y1) * pixel_divider
 
-			char_data: Char_Data
-			
-			char_data.offset = {f32(b.xoff), f32(b.yoff + state.font.size)}
-			char_data.width = f32(b.x1 - b.x0)
-			char_data.height = f32(b.y1 - b.y0)
-			char_data.advance = b.xadvance
-
-			char_data.uv.l = f32(b.x0) * pixel_divider
-			char_data.uv.t = f32(b.y0) * pixel_divider
-			char_data.uv.r = f32(b.x1) * pixel_divider
-			char_data.uv.b = f32(b.y1) * pixel_divider
-
-			font.char_data[rune(i + 32)] = char_data
+					font.char_data[rune(i + 32)] = char_data
+					temp_char_data[temp_char_data_index] = char_data
+					temp_char_data_index += 1
+				}
+			}
+		} else {
+			// load default char_data
+			for i in 0..<len(runes) {
+				font.char_data[runes[i]] = default_char_data[i + (index * (len(default_char_data)/4))]
+			}
 		}
 	}
+
 	letter_data := state.font.weight[Weight_Type.REGULAR].char_data['W']
 	state.font.offset_y = math.round((state.font.size - letter_data.height) * 0.5)
 	state.font.margin = 4
@@ -156,6 +182,17 @@ load_font :: proc() {
 		aspect = 0.5,
 		path = from_odin_string("gah"),
 	}
+
+	// for saving default font files...
+	// file, _ := os.open("../code/ui/default_font_pixels.txt", os.O_CREATE)
+	// os.write_ptr(file, pixels, int(width*height))
+	// os.close(file)
+
+	// file, _ := os.open("../code/ui/default_font_char_data.txt", os.O_CREATE)
+	// os.write_ptr(file, raw_data(temp_char_data), len(temp_char_data) * size_of(Char_Data))
+	// os.close(file)
+
+	if !files_ok do pixels = raw_data(default_font_pixels)
 
 	tex_image := sg.make_image({
 		width = width,
@@ -181,94 +218,6 @@ set_font_regular :: proc(name, path: string) { set_font(&state.font.weight[Weigh
 set_font_bold :: proc(name, path: string) { set_font(&state.font.weight[Weight_Type.BOLD], name, path) }
 set_font_italic :: proc(name, path: string) { set_font(&state.font.weight[Weight_Type.ITALIC], name, path) }
 set_font_icons :: proc(name, path: string) { set_font(&state.font.weight[Weight_Type.ICONS], name, path) }
-
-// load_default_font :: proc(font: ^Font) {
-// 	start : int
-// 	item : int
-// 	char : rune
-// 	for char_id, index in font.default_info {
-// 		if rune(char_id) == ' ' || rune(char_id) == '\n' {
-// 			val_string := font.default_info[start:index]
-// 			if item == 0 {
-// 					char_data : Char_Data
-// 					val, vok := strconv.parse_int(val_string)
-// 					char = rune(val)
-// 					font.char_data[char] = char_data
-// 			} else {
-// 				cc, c_ok := &font.char_data[char]
-// 				val, vok := strconv.parse_f32(val_string)
-// 				if vok && c_ok {
-// 					switch item {
-// 						case 1:
-// 						cc.offset.x = val
-// 						case 2:
-// 						cc.offset.y = val
-// 						case 3:
-// 						cc.width = val
-// 						case 4:
-// 						cc.height = val
-// 						case 5:
-// 						cc.advance = val
-// 						case 6:
-// 						cc.uv.l = val
-// 						case 7:
-// 						cc.uv.t = val
-// 						case 8:
-// 						cc.uv.r = val
-// 						case 9:
-// 						cc.uv.b = val
-// 					}
-// 				} else {
-// 				}
-// 			}
-
-// 			item += 1
-// 			start = index+1
-// 		}
-// 		if rune(char_id) == '\n' {
-// 			item = 0
-// 			start = index + 1
-// 		}
-// 	}
-// 	if font.label == "regular_texture" {
-// 		letter_data := state.font.weight[Weight_Type.REGULAR].char_data['W']
-// 		state.font.offset_y = math.round((state.font.size - letter_data.height) * 0.5)
-// 		state.font.margin = 4
-// 		state.font.line_space = state.font.size + (state.font.margin * 2) // state.font.margin * 2 + state.font.size
-// 	}
-// 	// if opengl_load_font_texture(font, font.default_image) {
-// 	// 	fmt.println(fmt.tprint("DEFAULT Font loaded:", font.name))
-// 	// }	
-// }
-
-// set_font_size :: proc(size: f32 = 18) {
-// 	state.font.size = size
-
-// 	if !load_font(&state.font.weight[Weight_Type.regular) {
-// 		if !set_font_regular("Arial", "C:/Windows/Fonts/ARIAL.ttf") {
-// 			load_default_font(&state.font.fonts.regular)
-// 		}
-// 	}
-// 	if !load_font(&state.font.fonts.bold) {
-// 		if !set_font_bold("Arial", "C:/Windows/Fonts/ARIALBD.ttf") {
-// 			load_default_font(&state.font.fonts.bold)
-// 		}
-// 	}
-// 	if !load_font(&state.font.fonts.italic) {
-// 		if !set_font_italic("Arial", "C:/Windows/Fonts/ARIALI.ttf") {
-// 			load_default_font(&state.font.fonts.italic)
-// 		}
-// 	}
-// 	if !load_font(&state.font.fonts.light) {
-// 		if !set_font_light("Arial", "C:/Windows/Fonts/ARIALN.ttf") {
-// 			load_default_font(&state.font.fonts.light)
-// 		}
-// 	}
-// 	if !load_font(&state.font.fonts.icons) {
-// 		load_default_font(&state.font.fonts.icons)
-// 	}
-// }
-
 
 draw_editable_text :: proc(editing: bool, editable: ^String, quad: Quad, align: Text_Align = .LEFT, color: HSL = {1,1,1,1}, clip:Quad) {
 	using stb

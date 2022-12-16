@@ -173,8 +173,6 @@ sokol_frame :: proc "c" () {
 			sg.apply_bindings(layer.bind)
 			
 			sg.draw(0, layer.iindex, 1)
-		} else {
-			fmt.println("LAYER", i, "HAS NO VERTS")
 		}
 	}
 	sg.end_pass()

@@ -108,6 +108,7 @@ top_bar :: proc() {
 	ui.menu_end()
 	ui.axis(.X)
 	ui.size(.TEXT, 1, .TEXT, 1)
+	ui.label("scroll:")
 	ui.value("scroll:", ui.state.input.mouse.scroll)
 	ui.label("|###1")
 	ui.value("mouse pos:", ui.state.input.mouse.pos)
