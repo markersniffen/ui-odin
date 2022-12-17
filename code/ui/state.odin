@@ -31,7 +31,7 @@ State :: struct {
 	sokol:	Sokol,
 	window: 	Window,
 	input: 	Input,
-	
+
 	font: 	Font,
 	panels: 	Panels,
 	boxes: 	Boxes,
@@ -216,7 +216,6 @@ update :: proc() {
 		state.boxes.hot = nil
 		state.boxes.editing = {}
 		
-		fmt.println(q.type, q.size, q.quad)
 		create_panel(state.panels.queued_parent, q.axis, q.type, q.content, q.size, q.quad)
 		state.panels.queued = {}
 	}
@@ -273,13 +272,6 @@ update :: proc() {
 	}
 
 	// CALC BOXES ------------------------------------------------	
-	// panels : [MAX_PANELS]^Panel
-	// index:= 0
-	// for panel in panels {
-	// 	panels[index] = panel
-	// 	index += 1
-	// }
-	
 	{
 		when PROFILER do tracy.ZoneN("CALC BOXES")
 		for _, panel in state.panels.all {
@@ -328,7 +320,6 @@ update :: proc() {
 			}
 		}
 	}
-
 	state.font.last_char = 0
 
 	// state.input.keys.ctrl = false
@@ -421,7 +412,6 @@ draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		if .DEBUGCLIP in box.flags {
 			push_quad_border(box.clip, {0.23,1,0.5,1}, 1, box.clip)
 		}
-
 	}
 
 	draw_boxes(box.next, clip_to)

@@ -122,7 +122,6 @@ load_font :: proc() {
 	// stb.PackSetOversampling(&ctx, 2, 2)
 
 	for font, index in &state.font.weight {
-		fmt.println(">>>>> FONT", font.path)
 		if files_ok {
 			font.type = Weight_Type(index)
 			char_data, char_data_ok := make([]stb.packedchar, num_runes)
@@ -192,7 +191,10 @@ load_font :: proc() {
 	// os.write_ptr(file, raw_data(temp_char_data), len(temp_char_data) * size_of(Char_Data))
 	// os.close(file)
 
-	if !files_ok do pixels = raw_data(default_font_pixels)
+	if !files_ok {
+		pixels = raw_data(default_font_pixels)
+		fmt.println("ttf fonts failed to load, using defaults...")
+	}
 
 	tex_image := sg.make_image({
 		width = width,

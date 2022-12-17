@@ -149,7 +149,7 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 
 	key := gen_key(_name)
 	box, box_ok := state.boxes.all[key]
-	assert(!(key in state.boxes.no_duplicates), concat("DUPLICATE KEY USED!! >> ", _name, flags))
+	assert(!(key in state.boxes.no_duplicates), concat("DUPLICATE KEY USED!! >> ", key_to_odin_string(&key), " << Flags: ", flags))
 	state.boxes.no_duplicates[key] = true
 	parent := state.ctx.parent
 	
@@ -217,6 +217,7 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 
 	state.boxes.index += 1
 	box.last_frame_touched = state.frame
+
 	return(box)
 }
 
@@ -537,11 +538,9 @@ calc_boxes :: proc(root: ^Box) {
 
 	// CALC OFFSET & QUAD / SCROLLBAR /  ----------------------
 	for box := root; box != nil; box = box.hash_next	{
-
 		// CALC SCROLLBAR
 		if box.parent != nil {
 			if .SCROLLBOX in box.parent.flags {
-				
 				viewport := box.parent
 				scrollbox := viewport.parent
 				sby := viewport.next
@@ -599,7 +598,6 @@ calc_boxes :: proc(root: ^Box) {
 				y_handle.offset.y = -handle_value.y
 				x_handle.calc_size = {handle_size.x, sbx.calc_size.y}
 				x_handle.offset.x = -handle_value.x
-
 			}
 		}
 
@@ -661,7 +659,6 @@ calc_boxes :: proc(root: ^Box) {
 			box.quad.r = box.quad.l + box.calc_size.x
 			box.quad.b = box.quad.t + box.calc_size.y
 		}
-
 	}
 
 	for box := root; box != nil; box = box.hash_next	{

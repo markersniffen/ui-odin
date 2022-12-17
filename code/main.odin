@@ -293,38 +293,40 @@ panel_boxlist :: proc() {
 	ui.axis(.Y)
 	ui.size(.PCT_PARENT, 1, .MIN_SIBLINGS, 1)
 	ui.scrollbox("panel_boxlist")
+	{
 		ui.axis(.Y)
-		ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
+		ui.size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
 		ui.empty("panel_list")
-		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.label("Panel List:")
-		index := 0
-		for key, panel in ui.state.panels.all {
-			if panel.box != nil {
-				ui.axis(.Y)
-				ui.size(.PCT_PARENT, 1, .TEXT, 1)
-				ui.label(ui.concat("PANEL ID:", panel.uid, "###_", index))
-				indent :f32= 0
-				for first := panel.box; first != nil; first = first.first {
-					indent += 1
-					for next := first.next; next != nil; next = next.next {
-						ui.axis(.Y)
-						ui.size(.PCT_PARENT, 1, .TEXT, 1)
-						ui.empty(ui.concat("row_holder", panel.uid, index))
-							ui.spacer_pixels(ui.concat("row_spacer", index), 10*indent)
-							ui.axis(.X)
-							ui.size(.TEXT, 1, .TEXT, 1)
-							ui.label(ui.concat(" <> ", ui.to_odin_string(&next.name), "###", index))
-						ui.pop()
+			ui.size(.TEXT, 1, .TEXT, 1)
+			ui.label("Panel List:")
+			index := 0
+			for key, panel in ui.state.panels.all {
+				if panel.box != nil {
+					ui.axis(.Y)
+					ui.size(.TEXT, 1, .TEXT, 1)
+					ui.label(ui.concat("PANEL ID:", panel.uid, "###_", index))
+					indent :f32= 0
+					for first := panel.box; first != nil; first = first.first {
+						indent += 1
+						for next := first.next; next != nil; next = next.next {
+							ui.axis(.Y)
+							ui.size(.SUM_CHILDREN, 1, .TEXT, 1)
+							ui.empty(ui.concat("row_holder", panel.uid, index))
+								ui.spacer_pixels(ui.concat("row_spacer", index), 10*indent)
+								ui.axis(.X)
+								ui.size(.TEXT, 1, .TEXT, 1)
+								ui.label(ui.concat(" <> ", ui.to_odin_string(&next.name), "###", index))
+							ui.pop()
+							index += 1
+						}
 						index += 1
 					}
-					index += 1
 				}
-			} else {
+				index += 1
 			}
-			index += 1
-		}
 		ui.pop()
+	}
+	ui.pop()
 	ui.end()
 }
 

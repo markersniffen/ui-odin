@@ -138,6 +138,7 @@ sokol_init :: proc "c" () {
 
 sokol_frame :: proc "c" () {
 	context = runtime.default_context()
+
 	state.loop()
 
 	col := v4(lin.vector4_hsl_to_rgb(state.col.backdrop.h, state.col.backdrop.s, state.col.backdrop.l, state.col.backdrop.a))
@@ -171,7 +172,6 @@ sokol_frame :: proc "c" () {
 			})
 
 			sg.apply_bindings(layer.bind)
-			
 			sg.draw(0, layer.iindex, 1)
 		}
 	}
@@ -192,7 +192,6 @@ sokol_frame :: proc "c" () {
 	}
 
 	state.font.last_char = 0
-
 }
 
 sokol_event :: proc "c" (e: ^sapp.Event) {

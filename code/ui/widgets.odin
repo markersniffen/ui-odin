@@ -593,8 +593,6 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 	}
 
 	if selected_button >= 0 && off_clicked && container != nil {
-		if off_clicked do fmt.println("------------------------------------------------------------------")
-
 		if !mouse_in_quad(container.quad) {
 			buttons[selected_button].ops.selected = false
 			active_button = nil
@@ -655,7 +653,6 @@ dropdown :: proc(name: string) -> Box_Ops {
 		box.name = from_odin_string(concat("<#>d<r>", name))
 	}
 
-	fmt.println(to_odin_string(&box.name))
 	box.text_align = .LEFT
 	return box.ops
 }
@@ -823,6 +820,14 @@ scrollbox :: proc(name:string, _x:bool=false, _y:bool=false) -> ^Box {
 	return viewport
 }
 
+
+// set size of window
+// axis(.Y)
+// size(.PCT_PARENT, 1, .PCT_PARENT, 1)
+scroller :: proc(name: string) {
+	
+}
+ 
 // add this at the end of an empty to be able to manually change the scale
 // TODO only works in the .Y axis for right now
 
