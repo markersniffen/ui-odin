@@ -100,7 +100,7 @@ top_bar :: proc() {
 					case "View":
 						ui.menu_button("View?")
 				}
-				ui.state.ctx.layer = 0
+				ui.layer(0)
 				ui.pop(3)
 			}
 		}

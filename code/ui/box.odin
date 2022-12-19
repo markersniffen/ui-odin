@@ -98,6 +98,7 @@ Box_Flags :: enum {
 	DRAWGRADIENT,
 	CLIP,
 	NOCLIP,
+	CUSTOMCLIP,
 
 	HOTANIMATION,
 	ACTIVEANIMATION,
@@ -243,31 +244,34 @@ process_ops :: proc(box: ^Box) {
 	if .HOVERABLE in box.flags {
 		if mouse_over && !lmb_drag() {
 			is_hot := true
-			if state.boxes.hot != nil {
-				if box.layer < state.boxes.hot.layer do is_hot = false
+			if state.boxes.hovering != nil {
+				if box.layer < state.boxes.hovering.layer do is_hot = false
 			}
 			box.ops.hovering = is_hot
-			if is_hot do state.boxes.hot = box
+			if is_hot do state.boxes.hovering = box
 			if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
 				cursor(.TEXT)
 			}
 		} else {
 			box.ops.hovering = false
-			if state.boxes.hot == box do state.boxes.hot = nil
+			if state.boxes.hovering == box do state.boxes.hovering = nil
 		}
 	}
 
 	if .CLICKABLE in box.flags {
 		if mouse_over {
+ 			// ON THE INITIAL CLICK
 			if lmb_click() {
-				is_pressed := true
+				is_clicked := true
 				if state.boxes.pressed != nil {
-					if box.layer < state.boxes.pressed.layer do is_pressed = false
+					if box.layer < state.boxes.pressed.layer {
+						is_clicked = false
+					} 
 				}
-				box.ops.pressed = is_pressed
-				box.ops.clicked = is_pressed
+				box.ops.pressed = is_clicked
+				box.ops.clicked = is_clicked
 
-				if is_pressed {
+				if is_clicked {
 					if ctrl() do box.ops.ctrl_clicked = true
 					state.boxes.pressed = box
 				}
@@ -556,7 +560,7 @@ calc_boxes :: proc(root: ^Box) {
 				y_handle := sby.first
 				sbx := sby.next
 				x_handle := sbx.first
-
+				
 				bar_width :f32= 14
 				x := (box.calc_size.x > scrollbox.calc_size.x)
 				y := (box.calc_size.y > scrollbox.calc_size.y)

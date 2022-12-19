@@ -117,9 +117,9 @@ Boxes :: struct {
 	no_duplicates: map[Key]bool,
 	to_delete: [MAX_BOXES]rawptr,
 	root: ^Box,
+	hovering: ^Box,
 	pressed: ^Box,
 	editing: Key,
-	hot: ^Box,
 	
 	index: int,
 }
@@ -215,7 +215,7 @@ update :: proc() {
 	if state.panels.queued != {} {
 		q := state.panels.queued
 
-		state.boxes.hot = nil
+		state.boxes.hovering = nil
 		state.boxes.editing = {}
 		
 		create_panel(state.panels.queued_parent, q.axis, q.type, q.content, q.size, q.quad)
@@ -232,7 +232,7 @@ update :: proc() {
 	{
 	when PROFILER do tracy.ZoneN("Build Boxes")
 		state.panels.locked = false
-		state.boxes.hot = nil
+		state.boxes.hovering = nil
 		// NOTE build boxes
 		for _, panel in state.panels.all {
 			state.ctx.panel = panel
@@ -332,18 +332,22 @@ update :: proc() {
 }
 
 // recursive draw boxes
-draw_boxes :: proc(box: ^Box, clip_to:Quad) {
+draw_boxes :: proc(box: ^Box, _clip_to:Quad) {
 	if box == nil do return
 
 	state.sokol.current_layer = box.layer
 	
 	quad := box.quad
 	clip_ok := true
+	clip_to := _clip_to
 
-	box.clip, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
 	if .NOCLIP in box.flags {
 		box.clip = quad
 		clip_ok = true
+	} else if .CUSTOMCLIP in box.flags {
+		clip_to = box.clip
+	} else {
+		box.clip, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
 	}
 
 	// NOTE COLORS
@@ -392,7 +396,7 @@ draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 			draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.font.offset_y}, quad), box.text_align, box.font_color, box.clip)
 		} else if .EDITVALUE in box.flags {
 			if is_editing {
-				push_quad_border(box.parent.quad, state.col.active, box.border, box.parent.quad)
+				push_quad_border(box.parent.quad, state.col.active, box.border, box.parent.clip)
 				if box.editable_string != nil {
 					draw_editable_text(is_editing, box.editable_string, pt_offset_quad({0, -state.font.offset_y}, quad), box.text_align, box.font_color, box.clip)
 				}

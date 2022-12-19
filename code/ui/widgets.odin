@@ -19,7 +19,7 @@ reset_colors :: proc() {
 begin :: proc() -> ^Panel {
 	reset_colors()
 	if state.ctx.panel.type == .FLOATING {
-		state.ctx.layer = 1
+		layer(1)
 		state.ctx.box = nil
 		state.ctx.parent = nil
 		size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
@@ -65,7 +65,7 @@ end :: proc() {
 		if mouse_in_quad(state.ctx.panel.quad) {
 			if ctrl() && shift() {
 				state.panels.locked = true
-				state.ctx.layer = 1
+				layer(1)
 				push_parent(state.ctx.panel.box)
 				axis(.Y)
 				size(.PCT_PARENT, 1, .PCT_PARENT, 1)
@@ -117,12 +117,12 @@ end :: proc() {
 					}
 
 				pop()
-				state.ctx.layer = 0
+				layer(0)
 			}
 		}
 	}
 	state.boxes.index = 0
-	state.ctx.layer = 0
+	layer(0)
 }
 
 //______ PUSH and POP parent ______//
@@ -145,6 +145,8 @@ pop :: proc(pops:int=1) {
 		}
 	}
 }
+
+layer :: proc(_layer:int) { state.ctx.layer = _layer }
 
 //______ SIZE and AXIS for new boxes ______//
 //
@@ -550,7 +552,7 @@ button :: proc(name: string) -> Box_Ops {
 }
 
 menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
-	state.ctx.layer = 1
+	layer(1)
 	buttons := make([]^Box, len(labels), context.temp_allocator)
 	active_button : ^Box
 	box := empty(name)
@@ -584,7 +586,7 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 		active_button = buttons[selected_button]
 		push_parent(active_button)
 		axis(.Y)
-		state.ctx.layer = 1
+		layer(1)
 		size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
 		container = create_box(concat(name, "_menu elements"), { .NOCLIP, .CLIP, .DRAWBACKGROUND })
 		process_ops(container)
@@ -607,7 +609,7 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 		}
 	}
 	if active_button == nil {
-		state.ctx.layer = 0
+		layer(0)
 	} else {
 		state.panels.locked = true
 	}
@@ -786,40 +788,30 @@ scrollbox :: proc(name:string, freeze:bool=false) -> ^Box {
 
 	axis(.X)
 	size(.NONE, 0, .NONE, 0)
-	// if freeze {
-	// 	extra_flags({ .NO_OFFSET })
-	// } else {
-	// 	extra_flags({ .NO_OFFSET })
-	// }
-	viewport := create_box(concat(name, "_viewport"), { .CLIP, .VIEWSCROLL, .SCROLLBOX, .NO_OFFSET })
+	viewport := create_box(concat(name, "_viewport"), { .CLIP, .VIEWSCROLL, .SCROLLBOX, .NO_OFFSET, .DRAWBACKGROUND })
 	process_ops(viewport)
 
 	size(.NONE, 0, .NONE, 0)
 	sby := create_box(concat(name, "_scrollbar_y"), { .NO_OFFSET, .DRAWBACKGROUND })
 	process_ops(sby)
-	// TODO sby.offset.x = viewport_width
 	push_parent(sby)
 
 	size(.NONE, 1, .NONE, 0)
 	y_handle := create_box(concat(name, "_y_handle"), { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
 	process_ops(y_handle)
 	y_handle.bg_color = state.col.inactive
-	// TODO y_handle.offset.y = -handle_value.y 
 	pop()
 
 	size(.NONE, 0, .NONE, 0)
 	sbx := create_box(concat(name, "_scrollbar_x"), { .NO_OFFSET, .DRAWBACKGROUND })
 	process_ops(sbx)
-	// sbx.offset.y = viewport_height
 	push_parent(sbx)
 
 	size(.NONE, 0, .NONE, 0)
 	x_handle := create_box(concat(name, "_x_handle"), { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
 	process_ops(x_handle)
 	x_handle.bg_color = state.col.inactive
-	// x_handle.offset.x = -handle_value.x
 	pop()
-
 	push_parent(viewport)
 	return viewport
 }

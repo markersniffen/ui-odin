@@ -7,7 +7,7 @@ import "core:fmt"
 
 NUM_PANELS_PER_MEM_PAGE :: 16
 MAX_PANELS :: 40 // TODO: not used
-PANEL_MARGIN :: 1
+PANEL_MARGIN :: 2
 
 Panel :: struct {
 	uid: Uid,
@@ -129,17 +129,18 @@ calc_panel :: proc(panel: ^Panel, quad: Quad) {
 			{
 				a = { quad.l, quad.t, quad.l + size_w - PANEL_MARGIN, quad.b }
 				b = { quad.l + size_w + PANEL_MARGIN, a.t, quad.r, quad.b }
-				bar = {quad.l + size_w - PANEL_MARGIN, quad.t, quad.l + size_w + PANEL_MARGIN, quad.b}
+				bar = {quad.l + size_w - PANEL_MARGIN+1, quad.t, quad.l + size_w + PANEL_MARGIN-1, quad.b}
 			} else if panel.axis == .Y {
 				a	= { quad.l, quad.t, quad.r, quad.t + size_h - PANEL_MARGIN }
 				b	= { quad.l, quad.t + size_h + PANEL_MARGIN, quad.r, quad.b }
-				bar = { quad.l, quad.t + size_h - PANEL_MARGIN, quad.r, quad.t + size_h + PANEL_MARGIN}
+				bar = { quad.l, quad.t + size_h - PANEL_MARGIN + 1, quad.r, quad.t + size_h + PANEL_MARGIN - 1}
 			}
 			panel.bar = bar
 
 			//NOTE - CODE FOR SIZING PANELS
 			if panel.child_a.type != .STATIC  {
 				if state.panels.active == panel {
+					state.panels.locked = true
 					cb := panel.child_b
 					if panel.axis == .X {
 						panel.size = (f32(state.input.mouse.pos.x) - quad.l) * (1 / (quad.r - quad.l))
@@ -185,6 +186,14 @@ calc_panel :: proc(panel: ^Panel, quad: Quad) {
 			}
 			if lmb_release_up() && state.panels.active == panel {
 				state.panels.active = nil
+			}
+		} else {
+			if state.panels.active != nil {
+				if state.panels.active.type == .NULL {
+					if lmb_release_up() {
+						state.panels.locked = false
+					}
+				}
 			}
 		}
 	}

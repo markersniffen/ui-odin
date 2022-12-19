@@ -4,8 +4,6 @@ import "core:fmt"
 import "core:strconv"
 
 start_editing_value :: proc(box: ^Box) {
-	fmt.println("starting editing value")
-	
 	ebox, eok := state.boxes.all[state.boxes.editing]
 	if eok do end_editing_value(ebox)
 
@@ -16,7 +14,6 @@ start_editing_value :: proc(box: ^Box) {
 }
 
 end_editing_value :: proc(box: ^Box, commit:bool=true) {
-	fmt.println("ending editing value. commit:", commit)
 	if commit {
 		switch box.value.id {
 			case string:
@@ -37,5 +34,4 @@ end_editing_value :: proc(box: ^Box, commit:bool=true) {
 	box.editable_string = nil
 	state.ctx.editable_string = {}
 	state.boxes.editing = {}
-	fmt.println("box value", box.value)
 }
