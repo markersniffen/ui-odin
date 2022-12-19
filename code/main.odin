@@ -257,9 +257,10 @@ panel_tab_test :: proc() {
 		if len(tabs) > 0 {
 			switch index {
 				case 0:
-					ui.button("Tab one | Button 1")
-					ui.button("Tab one | Button 2")
-					ui.button("Tab one | Button 3")
+					ui.label("Pressed:")
+					ui.value("pressed:", ui.state.boxes.pressed)
+					ui.label("Locked")
+					ui.value("locked:", ui.state.panels.locked)
 				case 1:
 					ui.button("Tab two | Button 1")
 					ui.button("Tab two | Button 2")
@@ -273,7 +274,7 @@ panel_tab_test :: proc() {
 
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.value("locked", ui.state.panels.locked)
+		ui.label("Sokol Active Layer:")
 		ui.value("active layer", ui.state.sokol.current_layer)
 	ui.pop()
 	ui.end()

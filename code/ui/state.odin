@@ -207,7 +207,7 @@ init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", widt
 //______ UI UPDATE ______//
 update :: proc() {
 	when PROFILER do tracy.Zone()
-	state.boxes.pressed = nil
+	// state.boxes.pressed = nil
 	
 	// create queued panel
 	if state.panels.queued != {} {
@@ -222,7 +222,6 @@ update :: proc() {
 
 	cursor(.ARROW)
 	
-	state.panels.locked = false
 	calc_panel(state.panels.root, state.window.quad)
 	if state.panels.floating != nil {
 		calc_panel(state.panels.floating, state.panels.floating.quad)
@@ -230,6 +229,7 @@ update :: proc() {
 	
 	{
 	when PROFILER do tracy.ZoneN("Build Boxes")
+		state.panels.locked = false
 		state.boxes.hot = nil
 		// NOTE build boxes
 		for _, panel in state.panels.all {

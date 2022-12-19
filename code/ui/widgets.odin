@@ -780,13 +780,18 @@ spacer_pixels :: proc(name: string, pixels: f32) -> Box_Ops {
 // creates a box that will clip it's contents by it's height
 // and offset the first child by x and y
 
-scrollbox :: proc(name:string, _x:bool=false, _y:bool=false) -> ^Box {
+scrollbox :: proc(name:string, freeze:bool=false) -> ^Box {
 	scrollbox := create_box(concat(name, "_scrollbox"), { })
 	process_ops(scrollbox)
 	push_parent(scrollbox)
 
 	axis(.X)
 	size(.NONE, 0, .NONE, 0)
+	// if freeze {
+	// 	extra_flags({ .NO_OFFSET })
+	// } else {
+	// 	extra_flags({ .NO_OFFSET })
+	// }
 	viewport := create_box(concat(name, "_viewport"), { .CLIP, .VIEWSCROLL, .SCROLLBOX, .NO_OFFSET })
 	process_ops(viewport)
 

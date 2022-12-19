@@ -31,6 +31,7 @@ Very unstable and very much a work in progress. Use at your own risk!
 #### Things to fix:
 - [x] scrolling on floating panel also scrolls panels beneath
 - [x] force floating panels to stay in bounds on creation
+- [ ] scrolling doesn't lock (because I got rid of "active"???)
 - [ ] hovering bleeds through layers (does clicking do this too?)
 - [ ] text width for labels and other general widgets with text
 

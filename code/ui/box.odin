@@ -284,6 +284,9 @@ process_ops :: proc(box: ^Box) {
 			}
 			if lmb_up() {
 				box.ops.pressed = false
+				if state.boxes.pressed == box {
+					state.boxes.pressed = nil
+				}
 			}
 			
 			if mmb_click() {
@@ -300,7 +303,6 @@ process_ops :: proc(box: ^Box) {
 				box.ops.off_clicked = true
 			}
 		}
-
 	}
 
 	if .DRAGGABLE in box.flags {
@@ -309,12 +311,10 @@ process_ops :: proc(box: ^Box) {
 		}
 		if lmb_release_up() {
 			box.ops.dragging = false
-			state.panels.locked = false
 		}
 		
 		if box.ops.clicked {
 			box.ops.dragging = true
-			state.panels.locked = true
 		}
 	}
 
@@ -322,17 +322,25 @@ process_ops :: proc(box: ^Box) {
 		if mouse_over {
 			if mmb_click() {
 				box.ops.middle_clicked = true
-				box.ops.middle_dragged = true
 			} else {
 				box.ops.middle_clicked = false
 			}
-			if mmb_release_up() {
-				box.ops.middle_dragged = false
-			}
+		}
+		
+		if box.ops.middle_clicked == true {
+			box.ops.middle_dragged = true
+		}
+
+		if mmb_release_up() {
+			box.ops.middle_clicked = false
+			box.ops.middle_dragged = false
 		}
 	}
 
-	if box.ops.pressed || box.ops.dragging do state.panels.locked = true
+	if box.ops.pressed || box.ops.dragging || box.ops.middle_dragged {
+		fmt.println(to_odin_string(&box.name))
+		state.panels.locked = true
+	}
 
 	if box.ops.editing do string_editing(box)
 }
@@ -576,6 +584,7 @@ calc_boxes :: proc(root: ^Box) {
 				}
 
 				if x_handle.ops.pressed {
+					state.panels.locked = true
 					if x_handle.ops.clicked {
 						state.input.mouse.delta_temp.x = state.input.mouse.pos.x * (scr_range.x/handle_range.x) + box.offset.x
 					}
@@ -616,12 +625,11 @@ calc_boxes :: proc(root: ^Box) {
 			if box.prev == nil {
 				if box.parent != nil {
 					if .VIEWSCROLL in box.parent.flags && box.panel == state.panels.hot {
-						 if mouse_in_quad(box.parent.parent.quad) {
+						if mouse_in_quad(box.parent.parent.quad) {
 							box.scroll = box.scroll + (state.input.mouse.scroll*20)
 
 							if box.ops.middle_dragged {
 								if box.ops.middle_clicked {
-									fmt.println("MIDDLE CLICKED IN THING")
 									state.input.mouse.delta_temp = state.input.mouse.pos - box.offset
 								}
 								box.scroll = state.input.mouse.pos - state.input.mouse.delta_temp
