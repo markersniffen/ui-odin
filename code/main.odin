@@ -165,7 +165,7 @@ panel_colors :: proc() {
 		ui.label("<i>Value")
 		ui.label("<i>Alpha")
 	ui.pop()
-	ui.bar("color_separator", ui.state.col.highlight)
+	ui.bar("color_separator", 1, ui.state.col.highlight)
 
 	color_row :: proc(name: string, col:^ui.HSL) {
 		ui.axis(.Y)

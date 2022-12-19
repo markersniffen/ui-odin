@@ -31,9 +31,10 @@ Box :: struct {
 	flags: bit_set[Box_Flags],
 	ops: Box_Ops,
 
-	bg_color: 		HSL,
-	border_color: HSL,
-	font_color:		HSL,
+	bg_color: 			HSL,
+	border_color:		HSL,
+	font_color:			HSL,
+	gradient_color:	HSL,
 
 	border: f32,
 	text_align: Text_Align,
@@ -176,6 +177,7 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 	box.bg_color = state.ctx.bg_color
 	box.border_color = state.ctx.border_color
 	box.font_color = state.ctx.font_color
+	box.gradient_color = state.ctx.gradient_color
 	box.border = state.ctx.border
 	box.text_align = state.ctx.text_align
 	box.panel = state.ctx.panel
@@ -338,7 +340,6 @@ process_ops :: proc(box: ^Box) {
 	}
 
 	if box.ops.pressed || box.ops.dragging || box.ops.middle_dragged {
-		fmt.println(to_odin_string(&box.name))
 		state.panels.locked = true
 	}
 
@@ -376,7 +377,7 @@ string_editing :: proc(box: ^Box) {
 	}
 
 	// SCROLL IF CURSOR OUT OF BOUNDS
-	end_pos := box.quad.l + text_string_size(X, string(es.mem[:es.end]))
+	end_pos := box.quad.l + text_string_size(.X, string(es.mem[:es.end]))
 	end_offset := end_pos - box.parent.quad.r
 	start_offset := end_offset + box.parent.quad.r - box.parent.quad.l
 	if end_offset > -10 do box.scroll.x -= 5
@@ -477,11 +478,11 @@ calc_boxes :: proc(root: ^Box) {
 				calc_size^ = box.expand[axis] + size.value
 			} else if size.type == .TEXT || size.type == .MAX_SIBLING {
 				if axis == X {
-					calc_size^ = text_size(X, &box.name) + (state.font.margin*2)
-					if .DISPLAYVALUE in box.flags do calc_size^ = text_string_size(X, fmt.tprint(" ", box.value, " "))
-					if .EDITTEXT in box.flags do calc_size^ = String_size(X, box.editable_string) + state.font.margin*2
+					calc_size^ = text_size(.X, &box.name) + (state.font.margin*2)
+					if .DISPLAYVALUE in box.flags do calc_size^ = text_string_size(.X, fmt.tprint(" ", box.value, " "))
+					if .EDITTEXT in box.flags do calc_size^ = String_size(.X, box.editable_string) + state.font.margin*2
 				} else if axis == Y {
-					calc_size^ = text_size(Y, &box.name) * size.value
+					calc_size^ = text_size(.Y, &box.name) * size.value
 				}
 			}
 		}

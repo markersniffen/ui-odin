@@ -247,13 +247,13 @@ empty :: proc(name:string) -> ^Box {
 	return box
 }
 
-bar :: proc(name:string, color:HSL={}, _axis:Axis=.Y) -> ^Box {
+bar :: proc(name:string, pixels:f32=1, color:HSL={}, _axis:Axis=.Y) -> ^Box {
 	old_size := state.ctx.size
 	axis(_axis)
 	if _axis == .Y {
-		size(.PCT_PARENT, 1, .PIXELS, state.font.margin/2)
+		size(.PCT_PARENT, 1, .PIXELS, pixels)
 	} else {
-		size(.PIXELS, state.font.margin, .PCT_PARENT, 1)
+		size(.PIXELS, pixels, .PCT_PARENT, 1)
 	}
 	bar := create_box(fmt.tprint(name, "_bar"), { .DRAWBACKGROUND })
 	process_ops(bar)
@@ -743,8 +743,7 @@ tab :: proc(_name:string, names: []string, close_button:bool=false, select_tab:i
 			}
 		}
 
-		bar(concat(_name, "_tabbar1"), state.col.active)
-		bar(concat(_name, "_tabbar2"), state.col.active)
+		bar(concat(_name, "_tabbar1"), 2, state.col.active)
 	}
 
 	pop()
@@ -836,10 +835,11 @@ scroller :: proc(name: string) {
 // add this at the end of an empty to be able to manually change the scale
 // TODO only works in the .Y axis for right now
 
-sizebar_y :: proc(name:string) -> ^Box {
+sizebar_y :: proc(name:string, pixels:f32=4, color:HSL={}) -> ^Box {
 	axis(.Y)
-	size(.PCT_PARENT, 1, .PIXELS, 4)
+	size(.PCT_PARENT, 1, .PIXELS, pixels)
 	box := create_box(concat(name, "sizebar_y"), { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
+	if color != {} do box.bg_color = color
 	process_ops(box)
 	if box.ops.pressed {
 		if box.ops.clicked {
@@ -851,10 +851,11 @@ sizebar_y :: proc(name:string) -> ^Box {
 	return box
 }
 
-sizebar_x :: proc(name:string) -> ^Box {
+sizebar_x :: proc(name:string, pixels:f32=4, color:HSL={}) -> ^Box {
 	axis(.X)
-	size(.PIXELS, 4, .PCT_PARENT, 1)
+	size(.PIXELS, pixels, .PCT_PARENT, 1)
 	box := create_box(concat(name, "_sizebar_x"), { .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE })
+	if color != {} do box.bg_color = color
 	process_ops(box)
 	if box.ops.pressed {
 		if box.ops.clicked {

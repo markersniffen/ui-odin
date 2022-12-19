@@ -138,6 +138,7 @@ Context :: struct {
 	bg_color: HSL,
 	border_color: HSL,
 	font_color: HSL,
+	gradient_color: HSL,
 	border: f32,
 	text_align: Text_Align,
 	flags: bit_set[Box_Flags],
@@ -196,6 +197,7 @@ init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", widt
 	state.ctx.bg_color = state.col.bg
 	state.ctx.border = 1
 	state.ctx.font_color = state.col.border
+	state.ctx.gradient_color = state.col.gradient
 	
 	pool_init(&state.panels.pool, size_of(Panel), NUM_PANELS_PER_MEM_PAGE, "Panels")
 	pool_init(&state.boxes.pool, size_of(Box), NUM_BOXES_PER_MEM_PAGE, "Boxes")
@@ -378,9 +380,9 @@ draw_boxes :: proc(box: ^Box, clip_to:Quad) {
 		}
 		if .DRAWGRADIENT in box.flags {
 			if is_editing {
-				push_quad_gradient_v(quad, {0,0,0,0}, state.col.gradient, box.clip)
+				push_quad_gradient_v(quad, {0,0,0,0}, box.gradient_color, box.clip)
 			} else {
-				push_quad_gradient_v(quad, state.col.gradient, {0,0,0,0}, box.clip)
+				push_quad_gradient_v(quad, box.gradient_color, {0,0,0,0}, box.clip)
 			}
 		}
 		if .DRAWTEXT in box.flags {

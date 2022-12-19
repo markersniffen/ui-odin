@@ -589,13 +589,13 @@ draw_text_multiline :: proc(value:^String, quad:Quad, align:Text_Align=.LEFT, ke
 	}
 }
 
-text_size :: proc(axis: int, text: ^String) -> f32 {
+text_size :: proc(axis: Axis, text: ^String) -> f32 {
 	size: f32
-	if axis == X {
+	if axis == .X {
 		for letter in to_odin_string(text) {
 			size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
 		}
-	} else if axis == Y {
+	} else if axis == .Y {
 		lines: f32 = 1
 		for letter in to_odin_string(text) {
 			if letter == '\n' do lines += 1
@@ -605,13 +605,13 @@ text_size :: proc(axis: int, text: ^String) -> f32 {
 	return size
 }
 
-text_string_size :: proc(axis: int, text: string) -> f32 {
+text_string_size :: proc(axis: Axis, text: string) -> f32 {
 	size: f32
-	if axis == X {
+	if axis == .X {
 		for letter in text {
 			size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
 		}
-	} else if axis == Y {
+	} else if axis == .Y {
 		lines: f32 = 1
 		for letter in text {
 			if letter == '\n' do lines += 1
@@ -621,14 +621,14 @@ text_string_size :: proc(axis: int, text: string) -> f32 {
 	return size
 }
 
-String_size :: proc(axis: int, editable: ^String) -> f32 {
+String_size :: proc(axis: Axis, editable: ^String) -> f32 {
 	size: f32
 	text := to_odin_string(editable)
-	if axis == X {
+	if axis == .X {
 		for letter in text {
 			size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
 		}
-	} else if axis == Y {
+	} else if axis == .Y {
 		lines: f32 = 1
 		for letter in text {
 			if letter == '\n' do lines += 1
