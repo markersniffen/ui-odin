@@ -413,7 +413,7 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 	}
 
 	state.ctx.size = old_size
-	return box.ops
+	return text_box.ops
 }
 
 
@@ -649,10 +649,11 @@ dropdown :: proc(name: string) -> Box_Ops {
 		.ACTIVEANIMATION,
 	})
 	process_ops(box)
+	real_name, _ := split_key(name)
 	if box.ops.selected {
-		box.name = from_odin_string(concat("<#>s<r>", name))
+		box.name = from_odin_string(concat("<#>s<r>", real_name))
 	} else {
-		box.name = from_odin_string(concat("<#>d<r>", name))
+		box.name = from_odin_string(concat("<#>d<r>", real_name))
 	}
 
 	box.text_align = .LEFT
@@ -800,7 +801,7 @@ scrollbox :: proc(name:string, freeze:bool=false) -> ^Box {
 	y_handle := create_box(concat(name, "_y_handle"), { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE } )
 	process_ops(y_handle)
 	y_handle.bg_color = state.col.inactive
-	pop()
+	push_parent(scrollbox)
 
 	size(.NONE, 0, .NONE, 0)
 	sbx := create_box(concat(name, "_scrollbar_x"), { .NO_OFFSET, .DRAWBACKGROUND })
@@ -811,7 +812,8 @@ scrollbox :: proc(name:string, freeze:bool=false) -> ^Box {
 	x_handle := create_box(concat(name, "_x_handle"), { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .CLICKABLE } )
 	process_ops(x_handle)
 	x_handle.bg_color = state.col.inactive
-	pop()
+
+
 	push_parent(viewport)
 	return viewport
 }

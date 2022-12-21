@@ -210,7 +210,7 @@ init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", widt
 update :: proc() {
 	when PROFILER do tracy.Zone()
 	// state.boxes.pressed = nil
-	
+
 	// create queued panel
 	if state.panels.queued != {} {
 		q := state.panels.queued

@@ -135,6 +135,25 @@ generate_box :: proc(key: Key) -> ^Box {
 	return box
 }
 
+split_key :: proc(_name: string) -> (string, string) {
+	name: string
+	key: string
+	for letter, index in _name {
+		if letter == '#' {
+			if _name[index:min(index+3, len(_name)-1)] == "###" {
+				key = _name[index+3:]
+				if index == 0 {
+					name = ""
+				} else {
+					name = _name[:index]
+				}
+				return name, key
+			}
+		}
+	}
+	return "", ""
+}
+
 create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -> ^Box {
 	name := _name
 	id := "" //fmt.tprint(state.boxes.index)
@@ -142,8 +161,12 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 	for letter, index in _name {
 		if letter == '#' {
 			if _name[index:min(index+3, len(_name)-1)] == "###" {
-				name = _name[:index]
 				id = _name[index+3:]
+				if index == 0 {
+					name = ""
+				} else {
+					name = _name[:index]
+				}
 				break
 			}
 		}
@@ -499,6 +522,7 @@ calc_boxes :: proc(root: ^Box) {
 		for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
 			if size.type == .MIN_SIBLINGS	{
+				assert((box.prev != nil) || (box.next != nil), concat(((box.prev != nil) || (box.next != nil))))
 				calc_size^ = 0
 				for prev:= box.prev; prev != nil; prev = prev.prev {
 					calc_size^ += prev.calc_size[axis]
@@ -604,14 +628,40 @@ calc_boxes :: proc(root: ^Box) {
 				}
 
 				viewport.calc_size = {viewport_width, viewport_height}
-				sby.calc_size = {bar_width, viewport_height}
-				sby.offset.x = viewport_width
-				sbx.calc_size = {viewport_width, bar_width}
-				sbx.offset.y = viewport_height
-				y_handle.calc_size = {sby.calc_size.x, handle_size.y}
-				y_handle.offset.y = -handle_value.y
-				x_handle.calc_size = {handle_size.x, sbx.calc_size.y}
-				x_handle.offset.x = -handle_value.x
+				
+				if y {
+					sby.flags = { .NO_OFFSET, .DRAWBACKGROUND }
+					y_handle.flags = { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE }
+					incl(&sby.flags, Box_Flags.DRAWBACKGROUND)
+					incl(&y_handle.flags, Box_Flags.DRAWBACKGROUND)
+					sby.calc_size = {bar_width, viewport_height}
+					sby.offset.x = viewport_width
+					y_handle.calc_size = {sby.calc_size.x, handle_size.y}
+					y_handle.offset.y = -handle_value.y
+				} else {
+					sby.flags = {}
+					y_handle.flags = {}
+					excl(&sby.flags, Box_Flags.DRAWBACKGROUND)
+					excl(&y_handle.flags, Box_Flags.DRAWBACKGROUND)
+				}
+
+				if x {
+					sbx.flags = { .NO_OFFSET, .DRAWBACKGROUND }
+					x_handle.flags = { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE }
+					incl(&sbx.flags, Box_Flags.DRAWBACKGROUND)
+					incl(&x_handle.flags, Box_Flags.DRAWBACKGROUND)
+					sbx.calc_size = {viewport_width, bar_width}
+					sbx.offset.y = viewport_height
+					x_handle.calc_size = {handle_size.x, sbx.calc_size.y}
+					x_handle.offset.x = -handle_value.x
+				} else {
+					sbx.quad = {}
+					x_handle.quad = {}
+					sbx.flags = {}
+					x_handle.flags = {}
+					excl(&sbx.flags, Box_Flags.DRAWBACKGROUND)
+					excl(&x_handle.flags, Box_Flags.DRAWBACKGROUND)
+				}
 			}
 		}
 
@@ -629,7 +679,7 @@ calc_boxes :: proc(root: ^Box) {
 			// SCROLLING
 			if box.prev == nil {
 				if box.parent != nil {
-					if .VIEWSCROLL in box.parent.flags && box.panel == state.panels.hot {
+					if .VIEWSCROLL in box.parent.flags { // && box.panel == state.panels.hot {
 						if mouse_in_quad(box.parent.parent.quad) {
 							box.scroll = box.scroll + (state.input.mouse.scroll*20)
 
