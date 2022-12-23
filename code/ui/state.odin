@@ -206,6 +206,14 @@ init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", widt
 }
 
 
+debug_check_boxes :: proc(message:string) {
+	if state.ctx.box == nil do return
+	fmt.println(message)
+	for box := state.ctx.box.panel.box; box != nil; box = box.hash_next {
+		fmt.println("| - >", key_to_odin_string(&box.key))
+	}
+}
+
 //______ UI UPDATE ______//
 update :: proc() {
 	when PROFILER do tracy.Zone()
@@ -272,6 +280,8 @@ update :: proc() {
 		ebox, eok := state.boxes.all[state.boxes.editing]
 		if !eok do state.boxes.editing = {}
 	}
+
+
 
 	// CALC BOXES ------------------------------------------------	
 	{
@@ -348,6 +358,7 @@ draw_boxes :: proc(box: ^Box, _clip_to:Quad) {
 		clip_to = box.clip
 	} else {
 		box.clip, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
+		box.clip, clip_ok = quad_clamp_or_reject(box.clip, box.panel.quad)
 	}
 
 	// NOTE COLORS
@@ -413,7 +424,7 @@ draw_boxes :: proc(box: ^Box, _clip_to:Quad) {
 
 		// TODO DEBUG
 		if .DEBUG in box.flags {
-			push_quad_border(quad, {0.85,1,0.5,1}, 1, box.clip)
+			push_quad_border(quad, {0.85,1,0.5,1}, 1, quad)
 		}
 		if .DEBUGCLIP in box.flags {
 			push_quad_border(box.clip, {0.23,1,0.5,1}, 1, box.clip)
@@ -421,11 +432,8 @@ draw_boxes :: proc(box: ^Box, _clip_to:Quad) {
 	}
 
 	draw_boxes(box.next, clip_to)
-
 	clip_quad := clip_to
-	if .CLIP in box.flags {
-		clip_quad = quad
-	}
+	if .CLIP in box.flags do clip_quad = quad
 	draw_boxes(box.first, clip_quad)
 }
 

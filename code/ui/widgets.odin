@@ -397,7 +397,7 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 
 	if box.ops.clicked {
 		state.boxes.editing = text_box.key
-	} else if box.ops.off_clicked || box.ops.right_clicked {
+	} if box.ops.off_clicked && state.boxes.editing == text_box.key {
 		state.boxes.editing = {}
 	}
 
@@ -629,6 +629,7 @@ menu_button :: proc(name: string) -> Box_Ops {
 		.DRAWBACKGROUND,
 		.DRAWGRADIENT,
 		.HOTANIMATION,
+		.NOCLIP,
 	})
 	process_ops(box)
 	box.text_align = .LEFT
@@ -782,14 +783,16 @@ spacer_pixels :: proc(name: string, pixels: f32) -> Box_Ops {
 // creates a box that will clip it's contents by it's height
 // and offset the first child by x and y
 
-scrollbox :: proc(name:string, freeze:bool=false) -> ^Box {
+scrollbox :: proc(name:string, show_x:int=true, show_y:bool=true) -> ^Box {
 	scrollbox := create_box(concat(name, "_scrollbox"), { })
 	process_ops(scrollbox)
 	push_parent(scrollbox)
 
 	axis(.X)
 	size(.NONE, 0, .NONE, 0)
-	viewport := create_box(concat(name, "_viewport"), { .CLIP, .VIEWSCROLL, .SCROLLBOX, .NO_OFFSET, .DRAWBACKGROUND })
+	viewport := create_box(concat(name, "_viewport"), { .CLIP, .VIEWSCROLL, .SCROLLBOX, .NO_OFFSET, .DRAWBACKGROUND, .DRAWGRADIENT })
+	if show_x do incl(&viewport.flags, Box_Flags.SCROLLHANDLE_X)
+	if show_y do incl(&viewport.flags, Box_Flags.SCROLLHANDLE_Y)
 	process_ops(viewport)
 
 	size(.NONE, 0, .NONE, 0)
@@ -813,19 +816,10 @@ scrollbox :: proc(name:string, freeze:bool=false) -> ^Box {
 	process_ops(x_handle)
 	x_handle.bg_color = state.col.inactive
 
-
 	push_parent(viewport)
 	return viewport
 }
 
-
-// set size of window
-// axis(.Y)
-// size(.PCT_PARENT, 1, .PCT_PARENT, 1)
-scroller :: proc(name: string) {
-	
-}
- 
 // add this at the end of an empty to be able to manually change the scale
 // TODO only works in the .Y axis for right now
 

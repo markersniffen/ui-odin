@@ -415,11 +415,11 @@ file_browser :: proc () {
 		ui.scrollbox("file_browser")
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
-		ui.empty("files_list")
-		ui.axis(.Y)
-		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-
-		find_files_and_run(ui.button, ".txt")
+		ui.empty("file_scroller")
+			ui.axis(.Y)
+			ui.size(.PCT_PARENT, 1, .TEXT, 1)
+			find_files_and_run(ui.button, ".txt")
+		ui.pop()
 	ui.pop()
 	ui.end()
 }

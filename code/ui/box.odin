@@ -48,6 +48,7 @@ Box :: struct {
 	offset: v2,		// from parent
 	scroll: v2,
 	expand: v2,
+	scrollbars: [2]bool,
 
 	quad: Quad,
 	clip: Quad,
@@ -72,6 +73,7 @@ Box_Size :: struct {
 }
 
 Box_Flags :: enum {
+	_MARKER,
 	DEBUG,
 	DEBUGCLIP,
 	ROOT,
@@ -85,8 +87,10 @@ Box_Flags :: enum {
 	DRAGGABLE,
 	MIDDLEDRAGGABLE,
 	VIEWSCROLL,
-	SCROLLBOX,
 	EDITTEXT,
+	SCROLLBOX,
+	SCROLLHANDLE_X,
+	SCROLLHANDLE_Y,
  
 	DRAWTEXT,
 	DRAWPARAGRAPH,
@@ -177,7 +181,6 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 	assert(!(key in state.boxes.no_duplicates), concat("DUPLICATE KEY USED!! >> ", key_to_odin_string(&key), " << Flags: ", flags))
 	state.boxes.no_duplicates[key] = true
 	parent := state.ctx.parent
-	
 	// if box doesn't exist, create it
 	if !box_ok {
 		box = generate_box(key)
@@ -211,7 +214,8 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 	// box.last = nil
 	box.next = nil
 	box.prev = nil
-	// box.hash_next = nil
+	box.hash_next = nil
+	box.hash_prev = nil
 
 	if .ROOT in flags {
 		parent = nil
@@ -243,7 +247,6 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 
 	state.boxes.index += 1
 	box.last_frame_touched = state.frame
-
 	return(box)
 }
 
@@ -260,9 +263,10 @@ process_ops :: proc(box: ^Box) {
 	if .EDITTEXT in box.flags || .EDITVALUE in box.flags {
 		box.ops.editing = (box.key == state.boxes.editing)
 	}
-	
+
 	mouse_over := mouse_in_quad(box.clip)
-	if box.layer == 1 do mouse_over = mouse_in_quad(box.quad)
+	// TODO WHY IS THIS HERE MAKE NOTES PLEASE
+	// if box.layer == 1 do mouse_over = mouse_in_quad(box.quad)
 
 	if .HOVERABLE in box.flags {
 		if mouse_over && !lmb_drag() {
@@ -517,7 +521,22 @@ calc_boxes :: proc(root: ^Box) {
 
 	last: ^Box = nil
 	// RELATIVE TO SIBLINGS ------------------------------
+
+	temp_boxes: [dynamic]^Box
+	defer delete(temp_boxes)
 	for box := root; box != nil; box = box.hash_next	{
+		for bx in temp_boxes {
+			if bx == box {
+				for bbb in temp_boxes {
+					fmt.println(">>>", key_to_odin_string(&bbb.key))
+				}
+				fmt.println(key_to_odin_string(&box.key))
+				assert(false)
+			}
+			append(&temp_boxes, box)
+		}
+
+
 		if box.hash_next == nil do last = box
 		for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
@@ -585,16 +604,16 @@ calc_boxes :: proc(root: ^Box) {
 				sbx := sby.next
 				x_handle := sbx.first
 				
-				bar_width :f32= 14
-				x := (box.calc_size.x > scrollbox.calc_size.x)
-				y := (box.calc_size.y > scrollbox.calc_size.y)
-
 				viewport_width := scrollbox.calc_size.x
-				if y do viewport_width -= bar_width
-
 				viewport_height := scrollbox.calc_size.y
+
+				bar_width :f32= 14
+				x := (box.calc_size.x > viewport_width) && (.SCROLLHANDLE_X in viewport.flags)
 				if x do viewport_height -= bar_width
-				
+				y := (box.calc_size.y > viewport_height) && (.SCROLLHANDLE_Y in viewport.flags)
+				if y do viewport_width -= bar_width
+				x = (box.calc_size.x > viewport_width) && (.SCROLLHANDLE_X in viewport.flags)
+
 				handle_size := ((viewport.calc_size + viewport.expand) / viewport.first.calc_size) * (viewport.calc_size + viewport.expand)
 				handle_size.x = max(handle_size.x, 40)
 				handle_size.y = max(handle_size.y, 40)
@@ -632,8 +651,6 @@ calc_boxes :: proc(root: ^Box) {
 				if y {
 					sby.flags = { .NO_OFFSET, .DRAWBACKGROUND }
 					y_handle.flags = { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE }
-					incl(&sby.flags, Box_Flags.DRAWBACKGROUND)
-					incl(&y_handle.flags, Box_Flags.DRAWBACKGROUND)
 					sby.calc_size = {bar_width, viewport_height}
 					sby.offset.x = viewport_width
 					y_handle.calc_size = {sby.calc_size.x, handle_size.y}
@@ -641,26 +658,18 @@ calc_boxes :: proc(root: ^Box) {
 				} else {
 					sby.flags = {}
 					y_handle.flags = {}
-					excl(&sby.flags, Box_Flags.DRAWBACKGROUND)
-					excl(&y_handle.flags, Box_Flags.DRAWBACKGROUND)
 				}
 
 				if x {
 					sbx.flags = { .NO_OFFSET, .DRAWBACKGROUND }
 					x_handle.flags = { .DRAWGRADIENT, .DRAWBACKGROUND, .HOVERABLE, .HOTANIMATION, .ACTIVEANIMATION, .CLICKABLE }
-					incl(&sbx.flags, Box_Flags.DRAWBACKGROUND)
-					incl(&x_handle.flags, Box_Flags.DRAWBACKGROUND)
 					sbx.calc_size = {viewport_width, bar_width}
 					sbx.offset.y = viewport_height
 					x_handle.calc_size = {handle_size.x, sbx.calc_size.y}
 					x_handle.offset.x = -handle_value.x
 				} else {
-					sbx.quad = {}
-					x_handle.quad = {}
 					sbx.flags = {}
 					x_handle.flags = {}
-					excl(&sbx.flags, Box_Flags.DRAWBACKGROUND)
-					excl(&x_handle.flags, Box_Flags.DRAWBACKGROUND)
 				}
 			}
 		}
