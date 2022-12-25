@@ -54,7 +54,7 @@ from_odin_string :: proc(text: string) -> String {
 	es.len = len(text)
 	// assert(es.len <= LONG_STRING_LEN, fmt.tprint("es.len <= LONG_STRING_LEN", es.len, LONG_STRING_LEN, text))
 	if es.len > LONG_STRING_LEN {
-		fmt.println("TRIMMING LONG STRING!")
+		fmt.println("TRIMMING LONG STRING! >> ", text)
 		es.len = LONG_STRING_LEN
 	}
 	copy(es.mem[:es.len], text)

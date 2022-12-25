@@ -31,25 +31,20 @@ default_char_data := #load("default_font_char_data.txt", []Char_Data)
 // g icon-folder
 // f icon-folder-open
 
-// c icon-ok
-// x icon-cancel
+// c icon-check
+// x icon-x
 // o icon-circle
 // q icon-cog
-// p icon-th-list
-
-// r icon-forward
-// u icon-reply
-// y icon-reply-all 
+// p three list with dots
+// = three list +
+// l three menu
+// . three dots
+// ? search
+// ! !
+// t pin full
+// u pin empty
 
 //______ FONT/TEXT ______//
-
-// DEFAULT FONT //
-
-// default_bold_info := ""
-// default_bold_image : [65536]u8
-
-// default_icons_info := ""
-// default_icons_image : [65536]u8
 
 Weight :: struct {
 	type : Weight_Type,
@@ -81,10 +76,10 @@ Text_Align :: enum {
 init_font :: proc(size:f32=18) {
 	state.font.size = size
 	
-	state.font.weight[Weight_Type.REGULAR].path 	= "fontsx/Roboto-Regular.ttf"
-	state.font.weight[Weight_Type.BOLD].path 		= "fontsx/Roboto-Bold.ttf"
-	state.font.weight[Weight_Type.ITALIC].path 	= "fontsx/Roboto-Italic.ttf"
-	state.font.weight[Weight_Type.ICONS].path 	= "fontsx/ui_icons.ttf"
+	state.font.weight[Weight_Type.REGULAR].path 	= "fonts/Roboto-Regular.ttf"
+	state.font.weight[Weight_Type.BOLD].path 		= "fonts/Roboto-Bold.ttf"
+	state.font.weight[Weight_Type.ITALIC].path 	= "fonts/Roboto-Italic.ttf"
+	state.font.weight[Weight_Type.ICONS].path 	= "fonts/ui_icons.ttf"
 
 	load_font()
 }
@@ -128,7 +123,7 @@ load_font :: proc() {
 			defer delete(char_data)
 
 			rng : stb.pack_range = {
-				font_size = 20,
+				font_size = state.font.size,
 				first_unicode_codepoint_in_range = first_rune,
 				array_of_unicode_codepoints = raw_data(runes),
 				num_chars = num_runes,
@@ -380,15 +375,21 @@ draw_editable_text_WITH_BOLD_ITALICS :: proc(editing: bool, es: ^String, quad: Q
 		} else {
 			if letter != ' '
 			{
+				icon_offset :f32= 0
+				if font.type == .ICONS {
+					icon_offset = 200
+				}
+				fmt.println(_font.type)
 				char_quad : Quad
 				char_quad.l = top_left.x + font.char_data[letter].offset.x
-				char_quad.t = top_left.y + font.char_data[letter].offset.y
+				char_quad.t = top_left.y + font.char_data[letter].offset.y + icon_offset
 				char_quad.r = char_quad.l + font.char_data[letter].width
-				char_quad.b = char_quad.t + font.char_data[letter].height
+				char_quad.b = char_quad.t + font.char_data[letter].height + icon_offset
+
 				clamped_quad, ok := quad_clamp_or_reject(char_quad, quad)
 				if ok  {
 					skip :f32= 1
-					push_quad_font(quad, color, font.char_data[letter].uv, 1, clamped_quad)
+					push_quad_font(char_quad, color, font.char_data[letter].uv, 1, clamped_quad)
 				}
 			}
 			top_left.x += font.char_data[letter].advance
@@ -403,14 +404,14 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 	
 	left_align: f32 = quad.l
 	top_align: f32 = quad.t + state.font.margin
-	text_height: f32 = state.font.size
 	text_width: f32
 
 	quad_height := quad.b - quad.t
 
 	if quad_height > state.font.line_space {
-		top_align += (quad_height - state.font.line_space) / 2
+		top_align += math.floor((quad_height - state.font.line_space) / 2)
 	}
+
 
 	if align != .LEFT
 	{
@@ -450,9 +451,11 @@ draw_text :: proc(text: string, quad: Quad, align: Text_Align = .LEFT, color: HS
 		} else {
 			if letter != ' '
 			{
+				v_offset : f32
+				if font.type == .ICONS do v_offset = 1
 				char_quad : Quad
 				char_quad.l = top_left.x + font.char_data[letter].offset.x
-				char_quad.t = top_left.y + font.char_data[letter].offset.y
+				char_quad.t = top_left.y + font.char_data[letter].offset.y + v_offset
 				char_quad.r = char_quad.l + font.char_data[letter].width
 				char_quad.b = char_quad.t + font.char_data[letter].height
 				clamped_quad, ok := quad_clamp_or_reject(char_quad, clip)
@@ -590,27 +593,35 @@ draw_text_multiline :: proc(value:^String, quad:Quad, align:Text_Align=.LEFT, ke
 }
 
 text_size :: proc(axis: Axis, text: ^String) -> f32 {
-	size: f32
-	if axis == .X {
-		for letter in to_odin_string(text) {
-			size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
-		}
-	} else if axis == .Y {
-		lines: f32 = 1
-		for letter in to_odin_string(text) {
-			if letter == '\n' do lines += 1
-		}
-		size = lines * state.font.line_space
-	}
-	return size
+	return text_string_size(axis, to_odin_string(text))
 }
 
 text_string_size :: proc(axis: Axis, text: string) -> f32 {
 	size: f32
 	if axis == .X {
-		for letter in text {
-			size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
+		text_len := len(text)
+		index : int
+		for index < text_len {
+			skip := false
+			letter := rune(text[index])
+			if index < text_len - 3 {
+				if letter == '<' && text[index+2] == '>' {
+					skip = true
+				}
+			}
+			if skip {
+				index += 3
+			} else {
+				size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
+				index += 1
+			}
 		}
+		// for letter, index in text {
+		// 	if index < len(text)-3 {
+		// 		if letter = "<" && text[index+2] == ">"
+		// 	}
+		// 	size += state.font.weight[Weight_Type.REGULAR].char_data[letter].advance
+		// }
 	} else if axis == .Y {
 		lines: f32 = 1
 		for letter in text {

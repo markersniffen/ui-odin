@@ -81,7 +81,7 @@ end :: proc() {
 						yops := button("SPLIT VERTICAL")
 						if yops.released do split_panel(.X)
 						size(.PCT_PARENT, .1, .PCT_PARENT, 1)
-						if button("<#>x").released do delete_panel(state.ctx.panel)
+						if button("<#> x ").released do delete_panel(state.ctx.panel)
 					pop()
 
 					axis(.Y)
@@ -672,8 +672,9 @@ image :: proc(key: string, image: ^Image) -> Box_Ops {
 
 radio :: proc(key: string) -> ^Box {
 	box := create_box(concat(key, "###_radio"), {
-		.CLICKABLE,
 		.HOVERABLE,
+		.CLICKABLE,
+		.SELECTABLE,
 		.DRAWTEXT,
 		.DRAWBACKGROUND,
 		.DRAWGRADIENT,
@@ -711,7 +712,7 @@ tab :: proc(_name:string, names: []string, close_button:bool=false, select_tab:i
 			label := label(concat(name, "###", i))
 			
 			if close_button {
-				close := button(fmt.tprint("<#>x###close", _name, name, i))
+				close := button(fmt.tprint("<#> x ###close", _name, name, i))
 				excl(&state.ctx.box.flags, Box_Flags.DRAWBACKGROUND, Box_Flags.DRAWGRADIENT, Box_Flags.DRAWBORDER)
 				if close.released do tab.ops.middle_clicked = true
 			}
@@ -759,7 +760,7 @@ tab :: proc(_name:string, names: []string, close_button:bool=false, select_tab:i
 // parent must not rely solely on children for .X size
 
 spacer_fill :: proc(name: string) -> Box_Ops {
-	oldsize := state.ctx.size[X]
+	oldsize := state.ctx.size[Axis.X]
 	size_x(.MIN_SIBLINGS, 1)
 	box := create_box(concat(name, "_spacer_fill"), {
 	})
@@ -783,7 +784,7 @@ spacer_pixels :: proc(name: string, pixels: f32) -> Box_Ops {
 // creates a box that will clip it's contents by it's height
 // and offset the first child by x and y
 
-scrollbox :: proc(name:string, show_x:int=true, show_y:bool=true) -> ^Box {
+scrollbox :: proc(name:string, show_x:bool=true, show_y:bool=true) -> ^Box {
 	scrollbox := create_box(concat(name, "_scrollbox"), { })
 	process_ops(scrollbox)
 	push_parent(scrollbox)

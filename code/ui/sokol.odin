@@ -1,5 +1,7 @@
 package ui
 
+when PROFILER do import tracy "../../../odin-tracy"
+
 import sg "../../../sokol-odin/sokol/gfx"
 import sapp "../../../sokol-odin/sokol/app"
 import sglue "../../../sokol-odin/sokol/glue"
@@ -68,6 +70,7 @@ sokol :: proc() {
 		frame_cb = sokol_frame,
 		event_cb = sokol_event,
 		cleanup_cb = sokol_cleanup,
+		sample_count = 4,
 	})
 }
 
@@ -136,10 +139,38 @@ sokol_init :: proc "c" () {
 	state.init()
 }
 
+sokol_load_texture :: proc(pixels:rawptr, width, height, depth: i32) {
+	sokol_destroy_texture()
+
+	pf := sg.Pixel_Format.RGBA8
+	if depth == 1 do pf = .R8
+
+	tex_image := sg.make_image({
+		width = width,
+		height = height,
+		data = { subimage = { 0 = { 0 = { ptr = pixels, size = u64(width * height * depth) } } } },
+		pixel_format = pf,
+		min_filter = .LINEAR,
+		mag_filter = .LINEAR,
+	})
+
+	for layer in &state.sokol.layers {
+		layer.bind.fs_images[1] = tex_image
+	}
+}
+
+sokol_destroy_texture :: proc() {
+	for layer in &state.sokol.layers {
+		sg.destroy_image(layer.bind.fs_images[1])
+	}
+}
+
 sokol_frame :: proc "c" () {
 	context = runtime.default_context()
 
 	state.loop()
+
+	push_quad_texture({state.input.mouse.pos.x,state.input.mouse.pos.y,state.input.mouse.pos.x+512, state.input.mouse.pos.y+512}, {0,0,1,1})
 
 	col := v4(lin.vector4_hsl_to_rgb(state.col.backdrop.h, state.col.backdrop.s, state.col.backdrop.l, state.col.backdrop.a))
 	state.sokol.pass_action = {
@@ -374,30 +405,6 @@ sokol_push_quad :: proc(quad:Quad,
 	}
 }
 
-sokol_load_texture :: proc(pixels:rawptr, width, height, depth: i32) {
-	sokol_destroy_texture()
-
-	pf := sg.Pixel_Format.RGBA8
-	if depth == 1 do pf = .R8
-
-	tex_image := sg.make_image({
-		width = width,
-		height = height,
-		data = { subimage = { 0 = { 0 = { ptr = pixels, size = u64(width * height * depth) } } } },
-		pixel_format = pf,
-	})
-
-	for layer in &state.sokol.layers {
-		layer.bind.fs_images[1] = tex_image
-	}
-}
-
-sokol_destroy_texture :: proc() {
-	for layer in &state.sokol.layers {
-		sg.destroy_image(layer.bind.fs_images[1])
-	}
-}
-
 push_quad :: proc(quad:Quad,
 						cA:			HSL=	{1,1,1,1},
 						cB:			HSL=	{1,1,1,1},
@@ -411,7 +418,7 @@ push_quad :: proc(quad:Quad,
 	sokol_push_quad(quad, cA, cB, cC, cD,border, uv, texture_id,	clip)
 }
 
-push_quad_texture :: proc(quad:Quad, uv:Quad = {0,1,1,1}, texture_id:f32=6) {
+push_quad_texture :: proc(quad:Quad, uv:Quad = {0,1,1,1}, texture_id:f32=1) {
 	push_quad(quad, {0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}, 0.0, uv, texture_id, quad)
 }
 

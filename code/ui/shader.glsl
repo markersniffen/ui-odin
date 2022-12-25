@@ -42,15 +42,19 @@ out vec4 frag_color;
 
 void main()
 {
+	vec4 tex_color = vec4(texture(tex, tex_coords).rgba);
+	vec4 font_color = vec4(vertex_color.rgb, texture(font, tex_coords).r);
+
 	if (((gl_FragCoord.y > clip.y) && (gl_FragCoord.y < clip.w)) && ((gl_FragCoord.x > clip.x) && (gl_FragCoord.x < clip.z))) { 
-		if (texture_id == 0)
-		{
+		if (texture_id == 0) {
 			frag_color = vertex_color;
 		} else if (texture_id == 1) {
-			frag_color = vec4(vertex_color.rgb, texture(font, tex_coords).r);
+			frag_color = font_color;
 		} else if (texture_id == 2) {
-			frag_color = vec4(texture(tex, tex_coords).rgba);
+			frag_color = tex_color;
 		}
+	} else {
+		frag_color = vec4(0,0,0,0);
 	}
 }
 @end

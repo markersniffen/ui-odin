@@ -50,7 +50,6 @@ app_init :: proc() {
 	ui.create_panel(ui.state.ctx.panel, .X,			.DYNAMIC, 	panel_lorem, 					0.7)
 	ui.create_panel(ui.state.ctx.panel, .Y,			.DYNAMIC, 	panel_tab_test, 	0.4)
 
-
 	// ui.load_image("C:/Users/marxn/Desktop/jack2.png", &app.image)
 }
 
@@ -75,6 +74,12 @@ app_load_text_file :: proc(_path:string="") {
 		return	
 }
 	app.lorem = ui.from_odin_string(string(data[:]))
+}
+
+simple :: proc() {
+	ui.begin()
+	ui.label("Sokol")
+	ui.end()
 }
 
 // DEMO //
@@ -148,7 +153,7 @@ panel_colors :: proc() {
 	ui.empty("panel_switcher_icon")
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
-		if ui.button("<#>p").released {
+		if ui.button("<#> p ").released {
 			ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.ctx.panel.quad)
 		}
 	ui.pop()
@@ -203,7 +208,7 @@ panel_lorem :: proc() {
 		ui.empty("panel_switcher_icon")
 			ui.axis(.X)
 			ui.size(.TEXT, 1, .TEXT, 1)
-			if ui.button("<#>p").released {
+			if ui.button("<#> p ").released {
 				ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.ctx.panel.quad)
 			}
 		ui.pop()
@@ -234,7 +239,7 @@ panel_tab_test :: proc() {
 	ui.empty("panel_switcher_icon")
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
-		if ui.button("<#>p").released {
+		if ui.button("<#> p ").released {
 			ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.ctx.panel.quad)
 		}
 	ui.pop()
@@ -276,6 +281,16 @@ panel_tab_test :: proc() {
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
 		ui.label("Sokol Active Layer:")
 		ui.value("active layer", ui.state.sokol.current_layer)
+		ui.label("Window Size")
+		ui.value("win size", ui.state.window.size)
+		ui.label("font size")
+		ui.value("font size", ui.state.font.size)
+		ui.label("line space")
+		ui.value("line space", ui.state.font.line_space)
+		ui.label("offsety")
+		ui.value("offsety", ui.state.font.offset_y)
+
+
 	ui.pop()
 	ui.end()
 }
@@ -287,7 +302,7 @@ panel_boxlist :: proc() {
 	ui.empty("panel_switcher_icon")
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
-		if ui.button("<#>p").released {
+		if ui.button("<#> p ").released {
 			ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.ctx.panel.quad)
 		}
 	ui.pop()
@@ -340,7 +355,7 @@ panel_properties :: proc() {
 	ui.empty("panel_switcher_icon")
 		ui.axis(.X)
 		ui.size(.TEXT, 1, .TEXT, 1)
-		if ui.button("<#>p").released {
+		if ui.button("<#> p ").released {
 			ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, panel_pick_panel, 1.0, ui.state.ctx.panel.quad)
 		}
 	ui.pop()
@@ -373,9 +388,8 @@ panel_pick_panel :: proc() {
 		ui.size(.PIXELS, 250, .TEXT, 1)
 		ui.drag_panel("sel_panel", "Select Panel:")
 		ui.size(.TEXT, 1, .TEXT, 1)
-		if ui.button("<#>x").released {
+		if ui.button("<#> x ").released {
 			if ui.state.panels.floating != nil {
-				fmt.println(ui.state.panels.floating)
 				ui.delete_panel(ui.state.panels.floating)
 			}
 		}
@@ -406,7 +420,7 @@ file_browser :: proc () {
 			ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
 			ui.drag_panel("load_file", "Load file:")
 			ui.size(.TEXT, 1, .TEXT, 1)
-			if ui.button("<#>x").released do ui.delete_panel(ui.state.panels.floating)
+			if ui.button("<#> x ").released do ui.delete_panel(ui.state.panels.floating)
 		ui.pop()
 		ui.axis(.Y)
 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
@@ -447,7 +461,7 @@ find_files_and_run :: proc(run:proc(string) -> ui.Box_Ops, filter:string="") {
 		}
 		for file in file_list {
 			if file.is_dir {
-				if run(fmt.tprintf("%v%v", "<#>g<b>", file.name)).released {
+				if run(ui.concat("<#>g<b> ", file.name)).released {
 					ui.replace_string(&app.path, fmt.tprintf("%v%v%v", path[:len(path)], '\\', file.name))
 				}
 			} else {

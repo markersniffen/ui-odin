@@ -39,6 +39,52 @@ State :: struct {
 	ctx: 		Context,
 }
 
+Panels :: struct {
+	pool: Pool,
+	all: map[Uid]^Panel,
+	root: ^Panel,
+	queued: Panel,
+	queued_parent: ^Panel,
+	floating: ^Panel,
+	active: ^Panel,
+	hot: ^Panel,
+	locked: bool,
+}
+
+Boxes :: struct {
+	pool: Pool,
+	all: map[Key]^Box,
+	no_duplicates: map[Key]bool,
+	to_delete: [MAX_BOXES]rawptr,
+	root: ^Box,
+	hovering: ^Box,
+	pressed: ^Box,
+	editing: Key,
+	
+	index: int,
+}
+
+Context :: struct {
+	panel: ^Panel,
+
+	box: ^Box,
+	parent: ^Box,
+
+	editable_string: String,
+
+	axis: Axis,
+	size: [2]Box_Size,
+
+	bg_color: HSL,
+	border_color: HSL,
+	font_color: HSL,
+	gradient_color: HSL,
+	border: f32,
+	text_align: Text_Align,
+	flags: bit_set[Box_Flags],
+	layer: int,
+}
+
 Font :: struct {
 	weight: [4]Weight,
 	size: f32,			// NOTE pixels tall
@@ -99,53 +145,12 @@ Keys :: struct {
 	v: bool,
 }
 
-Panels :: struct {
-	pool: Pool,
-	all: map[Uid]^Panel,
-	root: ^Panel,
-	queued: Panel,
-	queued_parent: ^Panel,
-	floating: ^Panel,
-	active: ^Panel,
-	hot: ^Panel,
-	locked: bool,
+Axis :: enum {
+	X,
+	Y,
 }
 
-Boxes :: struct {
-	pool: Pool,
-	all: map[Key]^Box,
-	no_duplicates: map[Key]bool,
-	to_delete: [MAX_BOXES]rawptr,
-	root: ^Box,
-	hovering: ^Box,
-	pressed: ^Box,
-	editing: Key,
-	
-	index: int,
-}
-
-Context :: struct {
-	panel: ^Panel,
-
-	box: ^Box,
-	parent: ^Box,
-
-	editable_string: String,
-
-	axis: Axis,
-	size: [XY]Box_Size,
-
-	bg_color: HSL,
-	border_color: HSL,
-	font_color: HSL,
-	gradient_color: HSL,
-	border: f32,
-	text_align: Text_Align,
-	flags: bit_set[Box_Flags],
-	layer: int,
-}
-
-HSL :: struct {
+HSL :: struct { // TODO HSV???
 	h:f32,
 	s:f32,
 	l:f32,
@@ -165,15 +170,6 @@ Colors :: struct {
 	active: HSL,	
 }
 
-
-Axis :: enum {
-	X,
-	Y,
-}
-
-X  :: 0
-Y  :: 1
-XY :: 2
 
 init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", width:i32=1280, height:i32=720) {
 	state = new(State)
@@ -204,7 +200,6 @@ init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", widt
 
 	sokol()
 }
-
 
 debug_check_boxes :: proc(message:string) {
 	if state.ctx.box == nil do return
@@ -281,8 +276,6 @@ update :: proc() {
 		if !eok do state.boxes.editing = {}
 	}
 
-
-
 	// CALC BOXES ------------------------------------------------	
 	{
 		when PROFILER do tracy.ZoneN("CALC BOXES")
@@ -358,6 +351,7 @@ draw_boxes :: proc(box: ^Box, _clip_to:Quad) {
 		clip_to = box.clip
 	} else {
 		box.clip, clip_ok = quad_clamp_or_reject(box.quad, clip_to)
+		// assert(box.panel != nil, concat(box))
 		box.clip, clip_ok = quad_clamp_or_reject(box.clip, box.panel.quad)
 	}
 

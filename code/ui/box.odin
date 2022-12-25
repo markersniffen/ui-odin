@@ -43,7 +43,7 @@ Box :: struct {
 	active_t: f32,
 
 	axis: Axis,
-	size: [XY]Box_Size,
+	size: [2]Box_Size,
 	calc_size: v2,
 	offset: v2,		// from parent
 	scroll: v2,
@@ -94,8 +94,8 @@ Box_Flags :: enum {
  
 	DRAWTEXT,
 	DRAWPARAGRAPH,
-	DISPLAYVALUE,
 	DRAWIMAGE,
+	DISPLAYVALUE,
 	EDITVALUE,
 	DRAWBORDER,
 	DRAWBACKGROUND,
@@ -265,7 +265,7 @@ process_ops :: proc(box: ^Box) {
 	}
 
 	mouse_over := mouse_in_quad(box.clip)
-	// TODO WHY IS THIS HERE MAKE NOTES PLEASE
+	// TODO WHY IS THIS HERE MAKE NOTES PLEASE (for the file/edit menu dropdown which is outside of the panel quad....))
 	// if box.layer == 1 do mouse_over = mouse_in_quad(box.quad)
 
 	if .HOVERABLE in box.flags {
@@ -291,9 +291,10 @@ process_ops :: proc(box: ^Box) {
 			if lmb_click() {
 				is_clicked := true
 				if state.boxes.pressed != nil {
-					if box.layer < state.boxes.pressed.layer {
-						is_clicked = false
-					} 
+					// TODO what actually uses this?
+					// if box.layer < state.boxes.pressed.layer {
+					// 	is_clicked = false
+					// } 
 				}
 				box.ops.pressed = is_clicked
 				box.ops.clicked = is_clicked
@@ -508,11 +509,11 @@ calc_boxes :: proc(root: ^Box) {
 			if size.type == .PIXELS {
 				calc_size^ = box.expand[axis] + size.value
 			} else if size.type == .TEXT || size.type == .MAX_SIBLING {
-				if axis == X {
+				if Axis(axis) == .X {
 					calc_size^ = text_size(.X, &box.name) + (state.font.margin*2)
 					if .DISPLAYVALUE in box.flags do calc_size^ = text_string_size(.X, fmt.tprint(" ", box.value, " "))
 					if .EDITTEXT in box.flags do calc_size^ = String_size(.X, box.editable_string) + state.font.margin*2
-				} else if axis == Y {
+				} else if Axis(axis) == .Y {
 					calc_size^ = text_size(.Y, &box.name) * size.value
 				}
 			}
@@ -521,27 +522,12 @@ calc_boxes :: proc(root: ^Box) {
 
 	last: ^Box = nil
 	// RELATIVE TO SIBLINGS ------------------------------
-
-	temp_boxes: [dynamic]^Box
-	defer delete(temp_boxes)
 	for box := root; box != nil; box = box.hash_next	{
-		for bx in temp_boxes {
-			if bx == box {
-				for bbb in temp_boxes {
-					fmt.println(">>>", key_to_odin_string(&bbb.key))
-				}
-				fmt.println(key_to_odin_string(&box.key))
-				assert(false)
-			}
-			append(&temp_boxes, box)
-		}
-
-
 		if box.hash_next == nil do last = box
 		for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
 			if size.type == .MIN_SIBLINGS	{
-				assert((box.prev != nil) || (box.next != nil), concat(((box.prev != nil) || (box.next != nil))))
+				assert((box.prev != nil) || (box.next != nil), concat(".MIN_SIBLINGS FAILED", key_to_odin_string(&box.key), ((box.prev != nil) || (box.next != nil))))
 				calc_size^ = 0
 				for prev:= box.prev; prev != nil; prev = prev.prev {
 					calc_size^ += prev.calc_size[axis]
@@ -779,26 +765,10 @@ delete_box :: proc(box: ^Box) {
 		if box.prev != nil && box.next != nil {
 			box.prev.next = box.next
 			box.next.prev = box.prev
-			
-			// TODO duplicate?
-			// if box.parent != nil {
-			// 	box.parent.first = nil
-			// 	box.parent.last = nil
-			// }
 		} else if box.prev != nil && box.next == nil {
 			box.prev.next = nil
-
-			// TODO not needed
-			// if box.parent != nil {
-			// 	box.parent.last = box.prev
-			// }
 		} else if box.prev == nil && box. next != nil {
 			box.next.prev = nil
-
-			// TODO not needed
-			// if box.parent != nil {
-			// 	box.parent.first = box.next
-			// }
 		}
 	}
 	box.next = nil
