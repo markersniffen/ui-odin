@@ -678,7 +678,8 @@ calc_boxes :: proc(root: ^Box) {
 			if box.prev == nil {
 				if box.parent != nil {
 					if .VIEWSCROLL in box.parent.flags { // && box.panel == state.panels.hot {
-						if mouse_in_quad(box.parent.parent.quad) {
+						// if mouse_in_quad(box.parent.parent.quad) {
+						if box.parent.parent.ops.hovering {
 							box.scroll = box.scroll + (state.input.mouse.scroll*20)
 
 							if box.ops.middle_dragged {

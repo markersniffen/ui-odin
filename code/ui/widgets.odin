@@ -804,7 +804,7 @@ spacer_pixels :: proc(name: string, pixels: f32) -> Box_Ops {
 // and offset the first child by x and y
 
 scrollbox :: proc(name:string, show_x:bool=true, show_y:bool=true) -> ^Box {
-	scrollbox := create_box(concat(name, "_scrollbox"), { })
+	scrollbox := create_box(concat(name, "_scrollbox"), { .HOVERABLE })
 	process_ops(scrollbox)
 	push_parent(scrollbox)
 
