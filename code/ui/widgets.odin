@@ -561,7 +561,7 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 		released_button : int = -1
 		hovering_button : int = -1
 		selected_button : int = -1
-		off_clicked := false
+		selected_clicked := false
 		for label, i in labels { 
 			buttons[i] = create_box(concat(label, "###", name), {
 				.CLICKABLE,
@@ -575,8 +575,10 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 			process_ops(buttons[i])
 			if buttons[i].ops.released do released_button = i
 			if buttons[i].ops.hovering do hovering_button = i
-			if buttons[i].ops.selected do selected_button = i
-			off_clicked = buttons[i].ops.off_clicked
+			if buttons[i].ops.selected {
+				selected_button = i
+				selected_clicked = buttons[i].ops.clicked
+			}
 		}
 
 	pop()
@@ -588,26 +590,43 @@ menu :: proc (name: string, labels:[]string) -> ([]^Box, ^Box) {
 		axis(.Y)
 		layer(1)
 		size(.MAX_CHILD, 1, .SUM_CHILDREN, 1)
-		container = create_box(concat(name, "_menu elements"), { .NOCLIP, .CLIP, .DRAWBACKGROUND })
+		container = create_box(concat(name, "_menu elements"), { .NOCLIP, .CLIP, .DRAWBACKGROUND, .CLICKABLE })
 		process_ops(container)
 		container.offset.y = state.font.line_space
 		push_parent(container)
 	}
 
-	if selected_button >= 0 && off_clicked && container != nil {
-		if !mouse_in_quad(container.quad) {
+	if container != nil {
+		if container.ops.off_clicked && !selected_clicked {
 			buttons[selected_button].ops.selected = false
 			active_button = nil
 		}
 	} else if released_button >= 0 {
 		buttons[released_button].ops.selected = true
 		if selected_button >= 0 do buttons[selected_button].ops.selected = false
-	} else if selected_button >= 0 {
+	}
+	if selected_button >= 0 {
 		if hovering_button >= 0 && hovering_button != selected_button {
 			buttons[hovering_button].ops.selected = true
 			if selected_button >= 0 do buttons[selected_button].ops.selected = false
 		}
 	}
+
+	// if selected_button >= 0 && off_clicked && container != nil {
+	// 	if !mouse_in_quad(container.quad) {
+	// 		buttons[selected_button].ops.selected = false
+	// 		active_button = nil
+	// 	}
+	
+	
+
+
+	// if selected_button >= 0 && container != nil {
+	// 	if container.ops.off_clicked || any_button_clicked {
+	// 		buttons[selected_button].ops.selected = false
+	// 		active_button = nil
+	// 	}
+	// }
 	if active_button == nil {
 		layer(0)
 	} else {

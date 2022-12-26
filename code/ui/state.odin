@@ -201,14 +201,6 @@ init :: proc(init: proc() = nil, loop: proc() = nil, title:string="My App", widt
 	sokol()
 }
 
-debug_check_boxes :: proc(message:string) {
-	if state.ctx.box == nil do return
-	fmt.println(message)
-	for box := state.ctx.box.panel.box; box != nil; box = box.hash_next {
-		fmt.println("| - >", key_to_odin_string(&box.key))
-	}
-}
-
 //______ UI UPDATE ______//
 update :: proc() {
 	when PROFILER do tracy.Zone()

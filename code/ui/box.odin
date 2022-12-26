@@ -118,6 +118,7 @@ Box_Ops :: struct {
 	middle_dragged: bool,
 	pressed: bool,
 	released: bool,
+	released_raw: bool,
 	selected: bool,
 	dragging: bool,
 	hovering: bool,
@@ -254,6 +255,7 @@ process_ops :: proc(box: ^Box) {
 	// PROCESS OPS ------------------------------
 	box.ops.clicked = false
 	box.ops.released = false
+	box.ops.released_raw = false
 	box.ops.off_clicked = false
 	
 	// if box.panel != state.panels.hot && box.panel != state.panels.floating do return
@@ -330,6 +332,7 @@ process_ops :: proc(box: ^Box) {
 			}
 		} else { // !mouse_over
 			if lmb_release_up() {
+				if lmb_release() do box.ops.released_raw = true
 				box.ops.pressed = false
 			}
 
@@ -527,7 +530,7 @@ calc_boxes :: proc(root: ^Box) {
 		for size, axis in box.size {
 			calc_size := &box.calc_size[axis]
 			if size.type == .MIN_SIBLINGS	{
-				assert((box.prev != nil) || (box.next != nil), concat(".MIN_SIBLINGS FAILED", key_to_odin_string(&box.key), ((box.prev != nil) || (box.next != nil))))
+				assert((box.prev != nil) || (box.next != nil), concat(".MIN_SIBLINGS FAILED" , key_to_odin_string(&box.key), " ", ((box.prev != nil) || (box.next != nil))))
 				calc_size^ = 0
 				for prev:= box.prev; prev != nil; prev = prev.prev {
 					calc_size^ += prev.calc_size[axis]

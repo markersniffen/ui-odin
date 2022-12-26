@@ -170,8 +170,6 @@ sokol_frame :: proc "c" () {
 
 	state.loop()
 
-	push_quad_texture({state.input.mouse.pos.x,state.input.mouse.pos.y,state.input.mouse.pos.x+512, state.input.mouse.pos.y+512}, {0,0,1,1})
-
 	col := v4(lin.vector4_hsl_to_rgb(state.col.backdrop.h, state.col.backdrop.s, state.col.backdrop.l, state.col.backdrop.a))
 	state.sokol.pass_action = {
 		colors = {
