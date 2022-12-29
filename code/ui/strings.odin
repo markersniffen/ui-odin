@@ -49,6 +49,10 @@ replace_string :: proc(es: ^String, text: string) {
 	copy(es.mem[:es.len], text)
 }
 
+clear_string :: proc(es: ^String) {
+	mem.zero(&es.mem, LONG_STRING_LEN)
+}
+
 from_odin_string :: proc(text: string) -> String {
 	es : String
 	es.len = len(text)

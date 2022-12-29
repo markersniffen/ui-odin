@@ -208,6 +208,7 @@ create_box :: proc(_name: string, flags:bit_set[Box_Flags]={}, value: any=nil) -
 	box.gradient_color = state.ctx.gradient_color
 	box.border = state.ctx.border
 	box.text_align = state.ctx.text_align
+	state.ctx.text_align = .LEFT // reset text_align
 	box.panel = state.ctx.panel
 	box.layer = state.ctx.layer
 

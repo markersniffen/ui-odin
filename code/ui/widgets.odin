@@ -374,7 +374,7 @@ edit_value:: proc(key: string, ev: any) -> ^Box {
 
 // creates single line editable text
 
-edit_text :: proc(key: string, es: ^String) -> Box_Ops {
+edit_text :: proc(key: string, es: ^String = nil) -> ^Box {
 	old_size := state.ctx.size
 	box := create_box(concat(key, "_edit_text"), {
 		.CLICKABLE,
@@ -393,7 +393,11 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 	text_box := create_box(concat(key, "editable_text_box"), {
 		.EDITTEXT,
 	})
-	text_box.editable_string = es
+	if es != nil {
+		text_box.editable_string = es
+	} else {
+		text_box.editable_string = &state.ctx.editable_string
+	}
 
 	if box.ops.clicked {
 		state.boxes.editing = text_box.key
@@ -413,7 +417,7 @@ edit_text :: proc(key: string, es: ^String) -> Box_Ops {
 	}
 
 	state.ctx.size = old_size
-	return text_box.ops
+	return text_box
 }
 
 
