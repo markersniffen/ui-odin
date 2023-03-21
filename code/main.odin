@@ -96,7 +96,7 @@ top_bar :: proc() {
 				switch labels[i] {
 					case "File":
 						if ui.menu_button("Open").released {
-							ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, file_browser, 1.0, ui.state.ctx.panel.quad)
+							ui.queue_panel(ui.state.ctx.panel, .Y, .FLOATING, main_file_browser, 1.0, ui.state.ctx.panel.quad)
 							active.ops.selected = false
 						}
 						ui.menu_button("Close")
@@ -220,7 +220,7 @@ panel_lorem :: proc() {
 			ui.axis(.X)
 			ui.size(.PCT_PARENT, 1, .TEXT, 1)
 			if ui.menu_button("Open Text File").clicked {
-				ui.queue_panel(panel, .Y, .FLOATING, file_browser, 1.0, ui.state.ctx.panel.quad)
+				ui.queue_panel(panel, .Y, .FLOATING, main_file_browser, 1.0, ui.state.ctx.panel.quad)
 			}
 		ui.pop()
 		ui.axis(.Y)
@@ -410,75 +410,83 @@ panel_pick_panel :: proc() {
 	ui.end()
 }
 
-file_browser :: proc () {
+main_file_browser :: proc() {
 	ui.begin()
-	ui.axis(.Y)
-	ui.size(.PIXELS, 600, .SUM_CHILDREN, 1)
-	ui.empty("file_browser_header")
-		ui.axis(.X)
-		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.empty("file_browser")
-			ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
-			ui.drag_panel("load_file", "Load file:")
-			ui.size(.TEXT, 1, .TEXT, 1)
-			if ui.button("<#> x ").released do ui.delete_panel(ui.state.panels.floating)
-		ui.pop()
-		ui.axis(.Y)
-		ui.size(.PCT_PARENT, 1, .TEXT, 1)
-		ui.edit_text("file browser", &app.path)
-		ui.size(.PCT_PARENT, 1, .TEXT, 12)
-		ui.scrollbox("file_browser")
-		ui.axis(.Y)
-		ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
-		ui.empty("file_scroller")
-			ui.axis(.Y)
-			ui.size(.PCT_PARENT, 1, .TEXT, 1)
-			find_files_and_run(ui.button, ".txt")
-		ui.pop()
-	ui.pop()
+	if ui.file_browser(&app.path, {".txt"}) {
+		// TODO open file
+		}
 	ui.end()
 }
 
-find_files_and_run :: proc(run:proc(string) -> ui.Box_Ops, filter:string="") {
-	using filepath
-	if app.path.mem[app.path.len] == '\\' {
-		app.path.mem[app.path.len] = 0
-		app.path.len -= 1
-	}
-	path := ui.to_odin_string(&app.path)
-	if os.is_dir(path) {
-		handle, hok := os.open(path)
-		file_list, fok := os.read_dir(handle, 0)
+// file_browser :: proc () {
+// 	ui.begin()
+// 	ui.axis(.Y)
+// 	ui.size(.PIXELS, 600, .SUM_CHILDREN, 1)
+// 	ui.empty("file_browser_header")
+// 		ui.axis(.X)
+// 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
+// 		ui.empty("file_browser")
+// 			ui.size(.MIN_SIBLINGS, 1, .TEXT, 1)
+// 			ui.drag_panel("load_file", "Load file:")
+// 			ui.size(.TEXT, 1, .TEXT, 1)
+// 			if ui.button("<#> x ").released do ui.delete_panel(ui.state.panels.floating)
+// 		ui.pop()
+// 		ui.axis(.Y)
+// 		ui.size(.PCT_PARENT, 1, .TEXT, 1)
+// 		ui.edit_text("file browser", &app.path)
+// 		ui.size(.PCT_PARENT, 1, .TEXT, 12)
+// 		ui.scrollbox("file_browser")
+// 		ui.axis(.Y)
+// 		ui.size(.PCT_PARENT, 1, .SUM_CHILDREN, 1)
+// 		ui.empty("file_scroller")
+// 			ui.axis(.Y)
+// 			ui.size(.PCT_PARENT, 1, .TEXT, 1)
+// 			find_files_and_run(ui.button, ".txt")
+// 		ui.pop()
+// 	ui.pop()
+// 	ui.end()
+// }
 
-		if run("..").released {
-			for i := app.path.len-1; i > 0; i -= 1 {
-				char := app.path.mem[i]
-				app.path.mem[i] = 0
-				app.path.len -= 1
-				if char == '\\' {
-					break
-				}
-			}
-		}
-		for file in file_list {
-			if file.is_dir {
-				if run(ui.concat("<#>g<b> ", file.name)).released {
-					ui.replace_string(&app.path, fmt.tprintf("%v%v%v", path[:len(path)], '\\', file.name))
-				}
-			} else {
-				skip := false
-				if filter != "" && ext(file.name) != filter do skip = true
-				if !skip {
-					if run(file.name).released {
-						switch ext(file.name) {
-							case ".txt":
-								app_load_text_file(file.fullpath)
-						}
-						ui.state.boxes.editing = {}
-						ui.delete_panel(ui.state.panels.floating)
-					}
-				}
-			}
-		}
-	}
-}
+// find_files_and_run :: proc(run:proc(string) -> ui.Box_Ops, filter:string="") {
+// 	using filepath
+// 	if app.path.mem[app.path.len] == '\\' {
+// 		app.path.mem[app.path.len] = 0
+// 		app.path.len -= 1
+// 	}
+// 	path := ui.to_odin_string(&app.path)
+// 	if os.is_dir(path) {
+// 		handle, hok := os.open(path)
+// 		file_list, fok := os.read_dir(handle, 0)
+
+// 		if run("..").released {
+// 			for i := app.path.len-1; i > 0; i -= 1 {
+// 				char := app.path.mem[i]
+// 				app.path.mem[i] = 0
+// 				app.path.len -= 1
+// 				if char == '\\' {
+// 					break
+// 				}
+// 			}
+// 		}
+// 		for file in file_list {
+// 			if file.is_dir {
+// 				if run(ui.concat("<#>g<b> ", file.name)).released {
+// 					ui.replace_string(&app.path, fmt.tprintf("%v%v%v", path[:len(path)], '\\', file.name))
+// 				}
+// 			} else {
+// 				skip := false
+// 				if filter != "" && ext(file.name) != filter do skip = true
+// 				if !skip {
+// 					if run(file.name).released {
+// 						switch ext(file.name) {
+// 							case ".txt":
+// 								app_load_text_file(file.fullpath)
+// 						}
+// 						ui.state.boxes.editing = {}
+// 						ui.delete_panel(ui.state.panels.floating)
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }

@@ -47,6 +47,7 @@ Box :: struct {
 	calc_size: v2,
 	offset: v2,		// from parent
 	scroll: v2,
+	scroll_y_pct: f32,
 	expand: v2,
 	scrollbars: [2]bool,
 
@@ -612,6 +613,7 @@ calc_boxes :: proc(root: ^Box) {
 				scr_value := viewport.first.offset
 				mpl := scr_value / scr_range
 				handle_value := handle_range * mpl
+				box.scroll_y_pct = abs(mpl.y)
 				
 				if y_handle.ops.pressed {
 					state.panels.locked = true

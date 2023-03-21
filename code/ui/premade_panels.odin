@@ -4,7 +4,6 @@ import fp "core:path/filepath"
 import "core:os"
 
 file_browser :: proc (path: ^String, _filters:[]string={}) -> bool {
-	begin()
 	axis(.Y)
 	size(.PIXELS, 600, .SUM_CHILDREN, 1)
 	empty("file_browser")
@@ -42,7 +41,6 @@ file_browser :: proc (path: ^String, _filters:[]string={}) -> bool {
 		size(.PCT_PARENT, 1, .TEXT, 1)
 		result := find_files_and_run(path, filters)
 	pop()
-	end()
 	if override_result do result = true
 	return result
 }
