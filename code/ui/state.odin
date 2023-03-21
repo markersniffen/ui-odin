@@ -441,6 +441,12 @@ esc :: proc() -> bool { return state.input.keys.escape }
 shift :: proc() -> bool { return state.input.keys.shift }
 alt :: proc() -> bool { return state.input.keys.alt }
 ctrl :: proc() -> bool { return state.input.keys.ctrl }
+del :: proc() -> bool { return state.input.keys.delete }
+
+right :: proc() -> bool { return read_key(&state.input.keys.right) }
+left :: proc() -> bool { return read_key(&state.input.keys.left) }
+up :: proc() -> bool { return read_key(&state.input.keys.up) }
+down :: proc() -> bool { return read_key(&state.input.keys.down) }
 
 mouse_button :: proc(button: Button, type: Button) -> bool { return (button == type) }
 
